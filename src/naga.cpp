@@ -15,6 +15,7 @@
 #include <mutex>
 #include <map>
 #include <sstream>
+#include <algorithm>
 #define OFFSET 262
 using namespace std;
 
@@ -286,6 +287,7 @@ NagaDaemon(const string mapConfig = "defaultConfig") {
 	devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");          // NAGA Left Handed
 	devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd" , "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse"); 							// NAGA PRO WIRELESS
 	devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd" , "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse"); // NAGA PRO
+	devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd" , "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse"); // NAGA PRO
 
 	//modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
 	configKeysMap.insert(stringAndConfigKey("key", NULL));//special one
