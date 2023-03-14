@@ -7,24 +7,12 @@
 
 #define N_MODIFIER_INDEXES (Mod5MapIndex + 1)
 
-typedef enum
-{
-	FAKEKEYMOD_SHIFT = (1 << 1),
-	FAKEKEYMOD_CONTROL = (1 << 2),
-	FAKEKEYMOD_ALT = (1 << 3)
-
-} FakeKeyModifier;
-
 struct FakeKey
 {
 	Display *xdpy;
-	int min_keycode, max_keycode;
-	int n_keysyms_per_keycode;
+	int min_keycode, max_keycode, n_keysyms_per_keycode, held_keycode, held_state_flags, alt_mod_index;
 	KeySym *keysyms;
-	int held_keycode;
-	int held_state_flags;
 	KeyCode modifier_table[N_MODIFIER_INDEXES];
-	int alt_mod_index;
 };
 
 static void deleteFakeKey(FakeKey *aKeyFaker)
@@ -104,19 +92,13 @@ static int utf8_to_ucs4(const unsigned char *src_orig, unsigned int *dst, int le
 FakeKey *fakekey_init(Display *xdpy)
 {
 	FakeKey *fk = NULL;
-	int event, error, major, minor;
+	int event, error, major, minor, mod_index, mod_key;
 	XModifierKeymap *modifiers;
-	int mod_index;
-	int mod_key;
 	KeyCode *kp;
 
-	if (xdpy == NULL)
+	if (xdpy == NULL || !XTestQueryExtension(xdpy, &event, &error, &major, &minor))
 		return NULL;
 
-	if (!XTestQueryExtension(xdpy, &event, &error, &major, &minor))
-	{
-		return NULL;
-	}
 
 	fk = (FakeKey *)malloc(sizeof(FakeKey));
 	memset(fk, 0, sizeof(FakeKey));
@@ -151,23 +133,6 @@ FakeKey *fakekey_init(Display *xdpy)
 		}
 	}
 
-	for (mod_index = Mod1MapIndex; mod_index <= Mod5MapIndex; mod_index++)
-	{
-		if (fk->modifier_table[mod_index])
-		{
-			KeySym ks = XkbKeycodeToKeysym(fk->xdpy, fk->modifier_table[mod_index], 0, 0);
-
-			switch (ks)
-			{				
-			case XK_Alt_R:
-			case XK_Alt_L:
-				fk->alt_mod_index = mod_index;
-				break;
-
-			}
-		}
-	}
-
 	if (modifiers)
 		XFreeModifiermap(modifiers);
 
@@ -178,16 +143,16 @@ int fakekey_send_keyevent(FakeKey *fk, KeyCode keycode, Bool is_press, int flags
 {
 	if (flags)
 	{
-		if (flags & FAKEKEYMOD_SHIFT)
+		if (flags & LockMask)
 			XTestFakeKeyEvent(fk->xdpy, fk->modifier_table[ShiftMapIndex],
 							  is_press, CurrentTime);
 
-		if (flags & FAKEKEYMOD_CONTROL)
+		if (flags & ControlMask)
 			XTestFakeKeyEvent(fk->xdpy, fk->modifier_table[ControlMapIndex],
 							  is_press, CurrentTime);
 
-		if (flags & FAKEKEYMOD_ALT)
-			XTestFakeKeyEvent(fk->xdpy, fk->modifier_table[fk->alt_mod_index],
+		if (flags & Mod1Mask) //ALT MASK
+			XTestFakeKeyEvent(fk->xdpy, fk->modifier_table[Mod1MapIndex],
 							  is_press, CurrentTime);
 
 		XSync(fk->xdpy, False);
@@ -210,13 +175,13 @@ int fakekey_press_keysym(FakeKey *fk, KeySym keysym, int flags)
 		if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 0) != keysym)
 		{
 			if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 1) == keysym)
-				flags |= FAKEKEYMOD_SHIFT;
+				flags |= LockMask;
 			else
 				code = 0;
 		}
 		else
 		{
-			flags &= ~FAKEKEYMOD_SHIFT;
+			flags &= ~LockMask;
 		}
 	}
 
@@ -238,10 +203,9 @@ int fakekey_press_keysym(FakeKey *fk, KeySym keysym, int flags)
 
 		code = fk->max_keycode - modifiedkey - 1;
 
-		if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 0) != keysym)
+		if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 0) != keysym && XkbKeycodeToKeysym(fk->xdpy, code, 0, 1) == keysym)
 		{
-			if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 1) == keysym)
-				flags |= FAKEKEYMOD_SHIFT;
+			flags |= LockMask;
 		}
 	}
 
