@@ -11,8 +11,7 @@ typedef enum
 {
 	FAKEKEYMOD_SHIFT = (1 << 1),
 	FAKEKEYMOD_CONTROL = (1 << 2),
-	FAKEKEYMOD_ALT = (1 << 3),
-	FAKEKEYMOD_META = (1 << 4)
+	FAKEKEYMOD_ALT = (1 << 3)
 
 } FakeKeyModifier;
 
