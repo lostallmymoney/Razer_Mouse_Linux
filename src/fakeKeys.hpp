@@ -24,7 +24,7 @@ struct FakeKey
 	int held_keycode;
 	int held_state_flags;
 	KeyCode modifier_table[N_MODIFIER_INDEXES];
-	int shift_mod_index, alt_mod_index, meta_mod_index;
+	int alt_mod_index;
 };
 
 static void deleteFakeKey(FakeKey *aKeyFaker)
@@ -158,21 +158,12 @@ FakeKey *fakekey_init(Display *xdpy)
 			KeySym ks = XkbKeycodeToKeysym(fk->xdpy, fk->modifier_table[mod_index], 0, 0);
 
 			switch (ks)
-			{
-			case XK_Meta_R:
-			case XK_Meta_L:
-				fk->meta_mod_index = mod_index;
-				break;
-
+			{				
 			case XK_Alt_R:
 			case XK_Alt_L:
 				fk->alt_mod_index = mod_index;
 				break;
 
-			case XK_Shift_R:
-			case XK_Shift_L:
-				fk->shift_mod_index = mod_index;
-				break;
 			}
 		}
 	}
@@ -216,32 +207,24 @@ int fakekey_press_keysym(FakeKey *fk, KeySym keysym, int flags)
 
 	if ((code = XKeysymToKeycode(fk->xdpy, keysym)) != 0)
 	{
-		/* we already have a keycode for this keysym */
-		/* Does it need a shift key though ? */
 		if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 0) != keysym)
 		{
-			/* TODO: Assumes 1st modifier is shifted */
 			if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 1) == keysym)
-				flags |= FAKEKEYMOD_SHIFT; /* can get at it via shift */
+				flags |= FAKEKEYMOD_SHIFT;
 			else
-				code = 0; /* urg, some other modifier do it the heavy way */
+				code = 0;
 		}
 		else
 		{
-			/* the keysym is unshifted; clear the shift flag if it is set */
 			flags &= ~FAKEKEYMOD_SHIFT;
 		}
 	}
 
 	if (!code)
 	{
-		int index;
-
 		modifiedkey = (modifiedkey + 1) % 10;
 
-		/* Point at the end of keysyms, modifier 0 */
-
-		index = (fk->max_keycode - fk->min_keycode - modifiedkey - 1) * fk->n_keysyms_per_keycode;
+		int index = (fk->max_keycode - fk->min_keycode - modifiedkey - 1) * fk->n_keysyms_per_keycode;
 
 		fk->keysyms[index] = keysym;
 
@@ -257,7 +240,6 @@ int fakekey_press_keysym(FakeKey *fk, KeySym keysym, int flags)
 
 		if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 0) != keysym)
 		{
-			/* TODO: Assumes 1st modifier is shifted */
 			if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 1) == keysym)
 				flags |= FAKEKEYMOD_SHIFT;
 		}
