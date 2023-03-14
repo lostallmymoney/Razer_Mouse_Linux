@@ -1,4 +1,3 @@
-// EXPERIMENTAL
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 #include <X11/extensions/XTest.h>
@@ -6,8 +5,6 @@
 #include <cstring>
 #include <stdlib.h>
 
-#ifndef FAKEKEYS_H_
-#define FAKEKEYS_H_
 #define N_MODIFIER_INDEXES (Mod5MapIndex + 1)
 
 typedef enum
@@ -133,14 +130,6 @@ FakeKey *fakekey_init(Display *xdpy)
 
 	/* Get the mapping */
 
-	/* TODO: Below needs to be kept in sync with anything else
-	 * that may change the keyboard mapping.
-	 *
-	 * case MappingNotify:
-	 * XRefreshKeyboardMapping(&ev.xmapping);
-	 *
-	 */
-
 	fk->keysyms = XGetKeyboardMapping(fk->xdpy, fk->min_keycode, fk->max_keycode - fk->min_keycode + 1, &fk->n_keysyms_per_keycode);
 
 	modifiers = XGetModifierMapping(fk->xdpy);
@@ -249,13 +238,6 @@ int fakekey_press_keysym(FakeKey *fk, KeySym keysym, int flags)
 	{
 		int index;
 
-		/* Change one of the last 10 keysyms to our converted utf8,
-		 * remapping the x keyboard on the fly.
-		 *
-		 * This make assumption the last 10 arn't already used.
-		 * TODO: probably safer to check for this.
-		 */
-
 		modifiedkey = (modifiedkey + 1) % 10;
 
 		/* Point at the end of keysyms, modifier 0 */
@@ -272,31 +254,13 @@ int fakekey_press_keysym(FakeKey *fk, KeySym keysym, int flags)
 
 		XSync(fk->xdpy, False);
 
-		/* From dasher src;
-		 * There's no way whatsoever that this could ever possibly
-		 * be guaranteed to work (ever), but it does.
-		 *
-		 */
-
 		code = fk->max_keycode - modifiedkey - 1;
-
-		/* The below is lightly safer;
-		 *
-		 * code = XKeysymToKeycode(fk->xdpy, keysym);
-		 *
-		 * but this appears to break in that the new mapping is not immediatly
-		 * put to work. It would seem a MappingNotify event is needed so
-		 * Xlib can do some changes internally ? ( xlib is doing something
-		 * related to above ? )
-		 *
-		 * Probably better to try and grab the mapping notify *here* ?
-		 */
 
 		if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 0) != keysym)
 		{
 			/* TODO: Assumes 1st modifier is shifted */
 			if (XkbKeycodeToKeysym(fk->xdpy, code, 0, 1) == keysym)
-				flags |= FAKEKEYMOD_SHIFT; /* can get at it via shift */
+				flags |= FAKEKEYMOD_SHIFT;
 		}
 	}
 
@@ -313,7 +277,7 @@ int fakekey_press_keysym(FakeKey *fk, KeySym keysym, int flags)
 	fk->held_state_flags = 0;
 	fk->held_keycode = 0;
 
-	return 0; /* failed */
+	return 0;
 }
 
 int fakekey_press(FakeKey *fk, const unsigned char *utf8_char_in, int len_bytes, int flags)
@@ -323,27 +287,17 @@ int fakekey_press(FakeKey *fk, const unsigned char *utf8_char_in, int len_bytes,
 	if (fk->held_keycode) /* key is already held down */
 		return 0;
 
-	/* TODO: check for Return key here and other chars */
+	
 
 	if (len_bytes < 0)
 	{
-		/*
-		   unsigned char *p = utf8_char_in;
-		   while (*p != '\0') { len_bytes++; p++; }
-		 */
-		len_bytes = strlen((const char *)utf8_char_in); /* OK ? */
+		len_bytes = strlen((const char *)utf8_char_in);
 	}
 
 	if (utf8_to_ucs4(utf8_char_in, &ucs4_out, len_bytes) < 1)
 	{
 		return 0;
 	}
-
-	/* first check for Latin-1 characters (1:1 mapping)
-	   if ((keysym >= 0x0020 && keysym <= 0x007e) ||
-	   (keysym >= 0x00a0 && keysym <= 0x00ff))
-	   return keysym;
-	 */
 
 	if (ucs4_out > 0x00ff)				  /* < 0xff assume Latin-1 1:1 mapping */
 		ucs4_out = ucs4_out | 0x01000000; /* This gives us the magic X keysym */
@@ -361,5 +315,3 @@ void fakekey_release(FakeKey *fk)
 	fk->held_state_flags = 0;
 	fk->held_keycode = 0;
 }
-
-#endif
