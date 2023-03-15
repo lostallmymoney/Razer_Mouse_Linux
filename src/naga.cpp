@@ -3,7 +3,6 @@
 // can do whatever you want with this stuff.
 
 #include "fakeKeys.hpp"
-
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -16,31 +15,31 @@
 #include <mutex>
 #include <map>
 #include <sstream>
-#define OFFSET 262
 using namespace std;
 
 typedef pair<const char *, const char *> CharAndChar;
 typedef pair<char, FakeKey *> CharAndFakeKey;
-vector<CharAndFakeKey *> fakeKeyFollowUps;
-mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
-int fakeKeyFollowCount = 0;
+static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
+static vector<CharAndFakeKey *> *const fakeKeyFollowUps = new vector<CharAndFakeKey *>();
+static int fakeKeyFollowCount = 0;
 
 class configKey
 {
 private:
-	const string prefix;
+	const string *const prefix;
 	const bool onKeyPressed;
-	const void (*internalFunction)(const string *c);
+	const void (*const internalFunction)(const string *const c);
 
 public:
 	const bool &IsOnKeyPressed() const { return onKeyPressed; }
-	const void runInternal(const string *content) const { internalFunction(content); }
-	const string &Prefix() const { return prefix; }
+	const void runInternal(const string *const content) const { internalFunction(content); }
+	const string *const Prefix() const { return prefix; }
 
-	configKey(const string &&tcontent, const bool tonKeyPressed, const void (*tinternalF)(const string *cc) = NULL) : prefix(tcontent), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	configKey(const string tcontent, const bool tonKeyPressed, const void (*const tinternalF)(const string *cc) = NULL) : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
-	configKey(const bool tonKeyPressed, const void (*tinternalF)(const string *cc) = NULL) : prefix(""), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+
+	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *cc) = NULL) : prefix(new string("")), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -50,14 +49,14 @@ typedef pair<string, configKey *> stringAndConfigKey;
 class MacroEvent
 {
 private:
-	const configKey *keyType;
-	const string type, content;
+	const configKey *const keyType;
+	const string *const content;
 
 public:
 	const configKey *KeyType() const { return keyType; }
-	const string *Content() const { return &content; }
+	const string *Content() const { return content; }
 
-	MacroEvent(const configKey *tkeyType, const string *tcontent) : keyType(tkeyType), content(*tcontent)
+	MacroEvent(const configKey *tkeyType, const string *tcontent) : keyType(tkeyType), content(new string(*tcontent))
 	{
 	}
 };
@@ -90,18 +89,19 @@ public:
 	}
 };
 
-configSwitchScheduler *configSwitcher = new configSwitchScheduler();
+static configSwitchScheduler *const configSwitcher = new configSwitchScheduler();
 
 class NagaDaemon
 {
 private:
 	const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
 
-	map<string, configKey *> configKeysMap;
+	map<string, configKey *const> configKeysMap;
 	map<string, map<int, map<bool, MacroEventVector>>> macroEventsKeyMaps;
 
 	string currentConfigName;
 	struct input_event ev1[64];
+	const int size = sizeof(struct input_event) * 64;
 	vector<CharAndChar> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
 
@@ -153,21 +153,21 @@ private:
 					if (commandContent[0] == '#' || commandContent.find_first_not_of(' ') == string::npos)
 						continue; // Ignore comments, empty lines
 					pos = commandContent.find('=');
-					string commandType = commandContent.substr(0, pos);										   // commandType = numbers + command type
+					string * commandType = new string(commandContent.substr(0, pos));										   // commandType = numbers + command type
 					commandContent.erase(0, pos + 1);														   // commandContent = command content
-					commandType.erase(remove(commandType.begin(), commandType.end(), ' '), commandType.end()); // Erase spaces inside 1st part of the line
-					pos = commandType.find("-");
-					const string buttonNumber = commandType.substr(0, pos); // Isolate button number
-					commandType = commandType.substr(pos + 1);				// Isolate command type
-					for (char &c : commandType)
+					commandType->erase(remove(commandType->begin(), commandType->end(), ' '), commandType->end()); // Erase spaces inside 1st part of the line
+					pos = commandType->find("-");
+					const string *const buttonNumber = new string(commandType->substr(0, pos)); // Isolate button number
+					commandType = new string(commandType->substr(pos + 1));				// Isolate command type
+					for (char &c : *commandType)
 						c = tolower(c);
 
-					if (configKeysMap.contains(commandType))
+					if (configKeysMap.contains(*commandType))
 					{ // filter out bad types
 						int buttonNumberI;
 						try
 						{
-							buttonNumberI = stoi(buttonNumber);
+							buttonNumberI = stoi(*buttonNumber);
 						}
 						catch (...)
 						{
@@ -175,22 +175,22 @@ private:
 							exit(1);
 						}
 
-						if (commandType == "key")
+						if (*commandType == "key")
 						{
 							if (commandContent.size() == 1)
 							{
 								commandContent = hexChar(commandContent[0]);
 							}
-							const string commandContent2 = configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent;
-							commandContent = configKeysMap["keypressonpress"]->Prefix() + commandContent;
+							const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
+							commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
 							macroEventsKeyMaps[configName][buttonNumberI][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-							macroEventsKeyMaps[configName][buttonNumberI][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], &commandContent2));
+							macroEventsKeyMaps[configName][buttonNumberI][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
 						}
 						else
 						{
-							if (configKeysMap[commandType]->Prefix() != "")
-								commandContent = configKeysMap[commandType]->Prefix() + commandContent;
-							macroEventsKeyMaps[configName][buttonNumberI][configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], &commandContent));
+							if (*configKeysMap[*commandType]->Prefix() != "")
+								commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
+							macroEventsKeyMaps[configName][buttonNumberI][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
 						} // Encode and store mapping v3
 					}
 				}
@@ -201,20 +201,19 @@ private:
 		(void)!(system(("notify-send -t 200 'New config :' '" + configName + "'").c_str()));
 	}
 
-	string hexChar(char a)
+	string hexChar(const char a)
 	{
 		stringstream hexedChar;
 		hexedChar << "0x00" << hex << (int)(a);
 		return hexedChar.str();
 	}
 
-	int side_btn_fd, extra_btn_fd, size;
+	int side_btn_fd, extra_btn_fd;
 	input_event *ev11;
 	fd_set readset;
 
 	void run()
 	{
-
 		if (areSideBtnEnabled)
 			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
 		ev11 = &ev1[1];
@@ -270,7 +269,7 @@ private:
 					case 276:
 					case 277:
 					case 278:
-						thread(runActions, &macroEventsKeyMaps[currentConfigName][ev11->code - OFFSET][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET
+						thread(runActions, &macroEventsKeyMaps[currentConfigName][ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}
@@ -282,7 +281,7 @@ private:
 	const static void writeStringNow(const string *macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-		FakeKey *aKeyFaker = fakekey_init(XOpenDisplay(NULL));
+		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
 		const int strSize = macroContent->size();
 		for (int z = 0; z < strSize; z++)
 		{
@@ -297,28 +296,28 @@ private:
 	const static void specialPressNow(const string *macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-		FakeKey *aKeyFaker = fakekey_init(XOpenDisplay(NULL));
+		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
 		fakekey_press(aKeyFaker, (unsigned char *)&(*macroContent)[0], 8, 0);
 		XFlush(aKeyFaker->xdpy);
-		fakeKeyFollowUps.emplace_back(new CharAndFakeKey((*macroContent)[0], aKeyFaker));
+		fakeKeyFollowUps->emplace_back(new CharAndFakeKey((*macroContent)[0], aKeyFaker));
 		fakeKeyFollowCount++;
 	}
 
 	const static void specialReleaseNow(const string *macroContent)
 	{
-		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 		if (fakeKeyFollowCount > 0)
 		{
-			for (int vectorId = fakeKeyFollowUps.size() - 1; vectorId >= 0; vectorId--)
+			lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
+			for (int vectorId = fakeKeyFollowUps->size() - 1; vectorId >= 0; vectorId--)
 			{
-				CharAndFakeKey *aKeyFollowUp = fakeKeyFollowUps[vectorId];
+				CharAndFakeKey *const aKeyFollowUp = (*fakeKeyFollowUps)[vectorId];
 				if (get<0>(*aKeyFollowUp) == (*macroContent)[0])
 				{
-					FakeKey *aKeyFaker = get<1>(*aKeyFollowUp);
+					FakeKey *const aKeyFaker = get<1>(*aKeyFollowUp);
 					fakekey_release(aKeyFaker);
 					XFlush(aKeyFaker->xdpy);
 					XCloseDisplay(aKeyFaker->xdpy);
-					fakeKeyFollowUps.erase(fakeKeyFollowUps.begin() + vectorId);
+					fakeKeyFollowUps->erase(fakeKeyFollowUps->begin() + vectorId);
 					fakeKeyFollowCount--;
 					deleteFakeKey(aKeyFaker);
 				}
@@ -329,26 +328,26 @@ private:
 			clog << "No candidate for key release" << endl;
 	}
 
-	const static void chmapNow(const string *macroContent)
+	const static void chmapNow(const string *const macroContent)
 	{
 		lock_guard<mutex> guard(configSwitcherMutex);
 		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
 	}
 
-	const static void sleepNow(const string *macroContent)
+	const static void sleepNow(const string *const macroContent)
 	{
 		usleep(stoul(*macroContent) * 1000); // microseconds make me dizzy in keymap.txt
 	}
 
-	const static void executeNow(const string *macroContent)
+	const static void executeNow(const string *const macroContent)
 	{
 		(void)!(system(macroContent->c_str()));
 	}
 	// end of configKeys functions
 
-	static void runActions(MacroEventVector *relativeMacroEventsPointer)
+	static void runActions(MacroEventVector *const relativeMacroEventsPointer)
 	{
-		for (MacroEvent *macroEventPointer : *relativeMacroEventsPointer)
+		for (MacroEvent *const macroEventPointer : *relativeMacroEventsPointer)
 		{ // run all the events at Key
 			macroEventPointer->KeyType()->runInternal(macroEventPointer->Content());
 		}
@@ -371,13 +370,11 @@ public:
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");	 // NAGA Left Handed
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse");		 // NAGA PRO WIRELESS
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
-		//devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE ~ ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
+		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE ~ ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
-		size = sizeof(struct input_event) * 64;
 		for (CharAndChar &device : devices)
 		{ // Setup check
-			side_btn_fd = open(device.first, O_RDONLY);
-			extra_btn_fd = open(device.second, O_RDONLY);
+			side_btn_fd = open(device.first, O_RDONLY), extra_btn_fd = open(device.second, O_RDONLY);
 			if (side_btn_fd != -1 || extra_btn_fd != -1)
 			{
 				if (side_btn_fd == -1)
@@ -446,14 +443,8 @@ void stopD()
 	(void)!(system(("/usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
 };
 
-void daemonise()
-{
-	if (daemon(0, 1))
-		perror("Couldn't daemonise from unistd");
-};
-
 // arguments manage
-int main(int argc, char *argv[])
+int main(const int argc, const char *const argv[])
 {
 	if (argc > 1)
 	{
@@ -463,13 +454,14 @@ int main(int argc, char *argv[])
 			clog << "Starting naga daemon in hidden mode, keep the window for the logs..." << endl;
 			usleep(40000);
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-			daemonise();
+
+			if (daemon(0, 1))
+				perror("Couldn't daemonise from unistd");
+
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
 			else
-			{
 				NagaDaemon();
-			}
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{
@@ -492,7 +484,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  -start          Starts the daemon in hidden mode. (stops it before)\n  -stop           Stops the daemon." << endl;
+		clog << "Possible arguments : \n  -start          Starts the daemon in hidden mode. (stops it before)\n  -stop           Stops the daemon.\n  -uninstall           Uninstalls the daemon." << endl;
 	}
 	return 0;
 }
