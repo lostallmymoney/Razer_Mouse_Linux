@@ -38,9 +38,11 @@ public:
 	const string &Prefix() const { return prefix; }
 
 	configKey(const string &&tcontent, const bool tonKeyPressed, const void (*tinternalF)(const string *cc) = NULL) : prefix(tcontent), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
-	{	}
+	{
+	}
 	configKey(const bool tonKeyPressed, const void (*tinternalF)(const string *cc) = NULL) : prefix(""), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
-	{	}
+	{
+	}
 };
 
 typedef pair<string, configKey *> stringAndConfigKey;
@@ -88,7 +90,7 @@ public:
 	}
 };
 
-configSwitchScheduler * configSwitcher = new configSwitchScheduler();
+configSwitchScheduler *configSwitcher = new configSwitchScheduler();
 
 class NagaDaemon
 {
@@ -101,6 +103,7 @@ private:
 	string currentConfigName;
 	struct input_event ev1[64];
 	vector<CharAndChar> devices;
+	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
 
 	void loadConf(const string configName)
 	{
@@ -185,7 +188,7 @@ private:
 						}
 						else
 						{
-							if (configKeysMap[commandType]->Prefix()!="")
+							if (configKeysMap[commandType]->Prefix() != "")
 								commandContent = configKeysMap[commandType]->Prefix() + commandContent;
 							macroEventsKeyMaps[configName][buttonNumberI][configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], &commandContent));
 						} // Encode and store mapping v3
@@ -211,24 +214,28 @@ private:
 
 	void run()
 	{
-		ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
+
+		if (areSideBtnEnabled)
+			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
 		ev11 = &ev1[1];
 		while (1)
 		{
 			if (configSwitcher->isRemapScheduled())
-			{											// remap
+			{											 // remap
 				loadConf(configSwitcher->RemapString()); // change config for macroEvents[ii]->Content()
 				configSwitcher->unScheduleReMap();
 			}
 
 			FD_ZERO(&readset);
-			FD_SET(side_btn_fd, &readset);
-			FD_SET(extra_btn_fd, &readset);
+			if (areSideBtnEnabled)
+				FD_SET(side_btn_fd, &readset);
+			if (areExtraBtnEnabled)
+				FD_SET(extra_btn_fd, &readset);
 			if (select(FD_SETSIZE, &readset, NULL, NULL, NULL) == -1)
 				exit(2);
-			if (FD_ISSET(side_btn_fd, &readset)) // Side buttons
+			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
 			{
-				if (read(side_btn_fd, ev1, size * 64) == -1)
+				if (read(side_btn_fd, ev1, size) == -1)
 					exit(2);
 				if (ev1[0].value != ' ' && ev11->type == EV_KEY)
 				{ // Key event (press or release)
@@ -251,9 +258,9 @@ private:
 					}
 				}
 			}
-			else if (FD_ISSET(extra_btn_fd, &readset)) // Extra buttons
+			if (areExtraBtnEnabled && FD_ISSET(extra_btn_fd, &readset)) // Extra buttons
 			{
-				if (read(extra_btn_fd, ev1, size * 64) == -1)
+				if (read(extra_btn_fd, ev1, size) == -1)
 					exit(2);
 				if (ev11->type == 1)
 				{ // Only extra buttons
@@ -261,6 +268,8 @@ private:
 					{
 					case 275:
 					case 276:
+					case 277:
+					case 278:
 						thread(runActions, &macroEventsKeyMaps[currentConfigName][ev11->code - OFFSET][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET
 						break;
 					}
@@ -362,6 +371,36 @@ public:
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");	 // NAGA Left Handed
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse");		 // NAGA PRO WIRELESS
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
+		//devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE ~ ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
+
+		size = sizeof(struct input_event) * 64;
+		for (CharAndChar &device : devices)
+		{ // Setup check
+			side_btn_fd = open(device.first, O_RDONLY);
+			extra_btn_fd = open(device.second, O_RDONLY);
+			if (side_btn_fd != -1 || extra_btn_fd != -1)
+			{
+				if (side_btn_fd == -1)
+				{
+					if (extra_btn_fd == -1)
+					{
+						cerr << "No naga devices found or you don't have permission to access them." << endl;
+						exit(1);
+					}
+					clog << "Reading from: " << device.second << endl;
+					areSideBtnEnabled = false;
+				}
+				else if (extra_btn_fd == -1)
+				{
+					clog << "Reading from: " << device.first << endl;
+					areExtraBtnEnabled = false;
+				}
+				else
+					clog << "Reading from: " << device.first << endl
+						 << " and " << device.second << endl;
+				break;
+			}
+		}
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
 		configKeysMap.insert(stringAndConfigKey("key", NULL)); // special one
@@ -396,20 +435,6 @@ public:
 		configKeysMap.insert(stringAndConfigKey("specialreleaseonpress", new configKey(true, specialReleaseNow)));
 		configKeysMap.insert(stringAndConfigKey("specialreleaseonrelease", new configKey(false, specialReleaseNow)));
 
-		size = sizeof(struct input_event);
-		for (CharAndChar &device : devices)
-		{ // Setup check
-			if ((side_btn_fd = open(device.first, O_RDONLY)) != -1 && (extra_btn_fd = open(device.second, O_RDONLY)) != -1)
-			{
-				clog << "Reading from: " << device.first << " and " << device.second << endl;
-				break;
-			}
-		}
-		if (side_btn_fd == -1 || extra_btn_fd == -1)
-		{
-			cerr << "No naga devices found or you don't have permission to access them." << endl;
-			exit(1);
-		}
 		loadConf(mapConfig); // Initialize config
 		run();
 	}
@@ -467,7 +492,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  -start          Starts the daemon in hidden mode. (stops it before)\n  -stop           Stops the daemon."<< endl;
+		clog << "Possible arguments : \n  -start          Starts the daemon in hidden mode. (stops it before)\n  -stop           Stops the daemon." << endl;
 	}
 	return 0;
 }
