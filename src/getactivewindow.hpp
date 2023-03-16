@@ -97,6 +97,7 @@ char *print_window_class(Display *d, Window w)
     }
 
     s = XGetClassHint(d, w, clas); // see man
+    XCloseDisplay(d);
     if (xerror || s)
     {
         return clas->res_class;
