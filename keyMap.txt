@@ -1,30 +1,3 @@
-configWindow=Spotify
-1 - key=XF86AudioMute
-5 - runRelease=gnome-terminal
-7 - key=XF86AudioLowerVolume
-8 - key=XF86AudioPlay
-9 - key=XF86AudioRaiseVolume
-10 - keyClick=XF86AudioPrev
-11 - key=XF86AudioPlay
-12 - keyClick=XF86AudioNext
-13 - key=XF86AudioPrev
-14 - key=XF86AudioNext
-configEnd
-
-configWindow=Gnome-terminal
-1 - key=XF86AudioMute
-4 - run2=if [ $(pgrep -c spotify) -eq 0 ]; then setsid spotify; fi
-5 - run=gnome-terminal
-7 - key=XF86AudioLowerVolume
-8 - key=XF86AudioPlay
-9 - key=XF86AudioRaiseVolume
-10 - keyClick=XF86AudioPrev
-11 - key=XF86AudioPlay
-12 - keyClick=XF86AudioNext
-13 - key=XF86AudioPrev
-14 - key=XF86AudioNext
-configEnd
-
 config=defaultConfig
 1 - run=xdotool getactivewindow getwindowname
 2 - specialPressOnPress=;
@@ -63,5 +36,31 @@ config=defaultConfig2
 14 - run=gnome-terminal
 configEnd
 
+configWindow=Spotify
+1 - key=XF86AudioMute
+5 - runRelease=gnome-terminal
+7 - key=XF86AudioLowerVolume
+8 - key=XF86AudioPlay
+9 - key=XF86AudioRaiseVolume
+10 - keyClick=XF86AudioPrev
+11 - key=XF86AudioPlay
+12 - keyClick=XF86AudioNext
+13 - key=XF86AudioPrev
+14 - key=XF86AudioNext
+configEnd
+
+configWindow=Gnome-terminal
+1 - key=XF86AudioMute
+4 - run2=if [ $(pgrep -c spotify) -eq 0 ]; then setsid spotify; fi
+5 - run=gnome-terminal
+7 - key=XF86AudioLowerVolume
+8 - key=XF86AudioPlay
+9 - key=XF86AudioRaiseVolume
+10 - keyClick=XF86AudioPrev
+11 - key=XF86AudioPlay
+12 - keyClick=XF86AudioNext
+13 - key=XF86AudioPrev
+14 - key=XF86AudioNext
+configEnd
 
 
