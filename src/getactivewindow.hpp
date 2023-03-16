@@ -93,7 +93,7 @@ char *print_window_class(Display *d, Window w)
     if (xerror)
     {
         printf("ERROR: XAllocClassHint\n");
-        return 0;
+        return new char[1]('E');
     }
 
     s = XGetClassHint(d, w, clas); // see man
@@ -104,7 +104,7 @@ char *print_window_class(Display *d, Window w)
     else
     {
         printf("ERROR: XGetClassHint\n");
-        return 0;
+        return new char[1]('E');
     }
 }
 
