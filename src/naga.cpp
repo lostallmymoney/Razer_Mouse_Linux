@@ -3,6 +3,7 @@
 // can do whatever you want with this stuff.
 
 #include "fakeKeys.hpp"
+#include "getactivewindow.hpp"
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -35,11 +36,7 @@ public:
 	const void runInternal(const string *const content) const { internalFunction(content); }
 	const string *const Prefix() const { return prefix; }
 
-	configKey(const string tcontent, const bool tonKeyPressed, const void (*const tinternalF)(const string *cc) = NULL) : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
-	{
-	}
-
-	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *cc) = NULL) : prefix(new string("")), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *cc) = NULL, const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -66,13 +63,27 @@ typedef vector<MacroEvent *> MacroEventVector;
 class configSwitchScheduler
 {
 private:
-	bool scheduledReMap = false;
-	string scheduledReMapString = "";
+	bool scheduledReMap = false, aWindowConfigActive = false;
+	string scheduledReMapString = "", temporaryWindowConfigName = "", backupConfigName = "";
 
 public:
+	vector<string *> configWindowsNamesVector;
+
 	const string &RemapString() const
 	{
 		return scheduledReMapString;
+	}
+	const string &temporaryWindowName() const
+	{
+		return temporaryWindowConfigName;
+	}
+	const string &getBackupConfigName() const
+	{
+		return backupConfigName;
+	}
+	const bool &isAWindowConfigActive() const
+	{
+		return aWindowConfigActive;
 	}
 	const bool &isRemapScheduled() const
 	{
@@ -82,6 +93,20 @@ public:
 	{
 		scheduledReMapString = *reMapString;
 		scheduledReMap = true;
+		aWindowConfigActive = false;
+		temporaryWindowConfigName = "";
+		backupConfigName = "";
+	}
+	const void scheduleWindowReMap(const string *reMapString)
+	{
+		if (!aWindowConfigActive)
+		{
+			backupConfigName = scheduledReMapString;
+		}
+		scheduledReMapString = *reMapString;
+		temporaryWindowConfigName = *reMapString;
+		scheduledReMap = true;
+		aWindowConfigActive = true;
 	}
 	const void unScheduleReMap()
 	{
@@ -103,9 +128,9 @@ private:
 	struct input_event ev1[64];
 	const int size = sizeof(struct input_event) * 64;
 	vector<CharAndChar> devices;
-	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
+	bool areSideBtnEnabled = true, areExtraBtnEnabled = true, areWindowConfigsInitialised = false;
 
-	void loadConf(const string configName)
+	void loadConf(const string configName, bool silent = false)
 	{
 		if (!macroEventsKeyMaps.contains(configName))
 		{
@@ -119,11 +144,27 @@ private:
 			int pos, configLine, configEndLine;
 			string commandContent;
 
+			if (!areWindowConfigsInitialised)
+			{
+				for (int readingLine = 1; getline(in, commandContent) && !found2; readingLine++)
+				{
+					if (commandContent.find("configWindow=") != string::npos)
+					{
+						commandContent.erase(0, 13);
+						(*configSwitcher).configWindowsNamesVector.emplace_back(new string(commandContent));
+					}
+				}
+				areWindowConfigsInitialised = true;
+			}
+
+			in.clear();
+			in.seekg(0, ios::beg); // reset file reading
+
 			for (int readingLine = 1; getline(in, commandContent) && !found2; readingLine++)
 			{
 				if (!found1)
 				{
-					if (commandContent.find("config=" + configName) != string::npos) // finding configname
+					if (commandContent.find("config=" + configName) != string::npos || commandContent.find("configWindow=" + configName) != string::npos) // finding configname
 					{
 						configLine = readingLine;
 						found1 = true;
@@ -153,15 +194,14 @@ private:
 					if (commandContent[0] == '#' || commandContent.find_first_not_of(' ') == string::npos)
 						continue; // Ignore comments, empty lines
 					pos = commandContent.find('=');
-					string * commandType = new string(commandContent.substr(0, pos));										   // commandType = numbers + command type
-					commandContent.erase(0, pos + 1);														   // commandContent = command content
+					string *commandType = new string(commandContent.substr(0, pos));							   // commandType = numbers + command type
+					commandContent.erase(0, pos + 1);															   // commandContent = command content
 					commandType->erase(remove(commandType->begin(), commandType->end(), ' '), commandType->end()); // Erase spaces inside 1st part of the line
 					pos = commandType->find("-");
 					const string *const buttonNumber = new string(commandType->substr(0, pos)); // Isolate button number
-					commandType = new string(commandType->substr(pos + 1));				// Isolate command type
+					commandType = new string(commandType->substr(pos + 1));						// Isolate command type
 					for (char &c : *commandType)
 						c = tolower(c);
-
 					if (configKeysMap.contains(*commandType))
 					{ // filter out bad types
 						int buttonNumberI;
@@ -198,7 +238,10 @@ private:
 			in.close();
 		}
 		currentConfigName = configName;
-		(void)!(system(("notify-send -t 200 'New config :' '" + configName + "'").c_str()));
+		if (!silent)
+		{
+			(void)!(system(("notify-send -t 200 'New config :' '" + configName + "'").c_str()));
+		}
 	}
 
 	string hexChar(const char a)
@@ -212,6 +255,43 @@ private:
 	input_event *ev11;
 	fd_set readset;
 
+	void checkForWindowConfig()
+	{
+		char *c;
+		try
+		{
+			c = getActiveWindow();
+		}
+		catch (...)
+		{
+			return;
+		}
+		clog << "Name of current window : " << c << endl;
+		bool found = false;
+		if (configSwitcher->temporaryWindowName() == "" || strstr(c, configSwitcher->temporaryWindowName().c_str()) == NULL)
+		{
+			for (string *configWindowName : (*configSwitcher).configWindowsNamesVector)
+			{
+				if (strstr(c, configWindowName->c_str()) != NULL)
+				{
+					lock_guard<mutex> guard(configSwitcherMutex);
+					configSwitcher->scheduleWindowReMap(configWindowName);
+					loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
+					configSwitcher->unScheduleReMap();
+					found = true;
+					break;
+				}
+			}
+			if (!found && configSwitcher->isAWindowConfigActive())
+			{
+				lock_guard<mutex> guard(configSwitcherMutex);
+				configSwitcher->scheduleReMap(&configSwitcher->getBackupConfigName());
+				loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
+				configSwitcher->unScheduleReMap();
+			}
+		}
+	}
+
 	void run()
 	{
 		if (areSideBtnEnabled)
@@ -220,8 +300,9 @@ private:
 		while (1)
 		{
 			if (configSwitcher->isRemapScheduled())
-			{											 // remap
-				loadConf(configSwitcher->RemapString()); // change config for macroEvents[ii]->Content()
+			{
+				lock_guard<mutex> guard(configSwitcherMutex); // remap
+				loadConf(configSwitcher->RemapString());	  // change config for macroEvents[ii]->Content()
 				configSwitcher->unScheduleReMap();
 			}
 
@@ -252,6 +333,7 @@ private:
 					case 11:
 					case 12:
 					case 13:
+						checkForWindowConfig();
 						thread(runActions, &macroEventsKeyMaps[currentConfigName][ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
@@ -269,6 +351,7 @@ private:
 					case 276:
 					case 277:
 					case 278:
+						checkForWindowConfig();
 						thread(runActions, &macroEventsKeyMaps[currentConfigName][ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
@@ -408,20 +491,20 @@ public:
 		configKeysMap.insert(stringAndConfigKey("sleep", new configKey(true, sleepNow)));
 		configKeysMap.insert(stringAndConfigKey("sleeprelease", new configKey(false, sleepNow)));
 
-		configKeysMap.insert(stringAndConfigKey("run", new configKey("setsid ", true, executeNow)));
+		configKeysMap.insert(stringAndConfigKey("run", new configKey(true, executeNow, "setsid ")));
 		configKeysMap.insert(stringAndConfigKey("run2", new configKey(true, executeNow)));
 
-		configKeysMap.insert(stringAndConfigKey("runrelease", new configKey("setsid ", false, executeNow)));
+		configKeysMap.insert(stringAndConfigKey("runrelease", new configKey(false, executeNow, "setsid ")));
 		configKeysMap.insert(stringAndConfigKey("runrelease2", new configKey(false, executeNow)));
 
-		configKeysMap.insert(stringAndConfigKey("keypressonpress", new configKey("setsid xdotool keydown --window getactivewindow ", true, executeNow)));
-		configKeysMap.insert(stringAndConfigKey("keypressonrelease", new configKey("setsid xdotool keydown --window getactivewindow ", false, executeNow)));
+		configKeysMap.insert(stringAndConfigKey("keypressonpress", new configKey(true, executeNow, "setsid xdotool keydown --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keypressonrelease", new configKey(false, executeNow, "setsid xdotool keydown --window getactivewindow ")));
 
-		configKeysMap.insert(stringAndConfigKey("keyreleaseonpress", new configKey("setsid xdotool keyup --window getactivewindow ", true, executeNow)));
-		configKeysMap.insert(stringAndConfigKey("keyreleaseonrelease", new configKey("setsid xdotool keyup --window getactivewindow ", false, executeNow)));
+		configKeysMap.insert(stringAndConfigKey("keyreleaseonpress", new configKey(true, executeNow, "setsid xdotool keyup --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keyreleaseonrelease", new configKey(false, executeNow, "setsid xdotool keyup --window getactivewindow ")));
 
-		configKeysMap.insert(stringAndConfigKey("keyclick", new configKey("setsid xdotool key --window getactivewindow ", true, executeNow)));
-		configKeysMap.insert(stringAndConfigKey("keyclickrelease", new configKey("setsid xdotool key --window getactivewindow ", false, executeNow)));
+		configKeysMap.insert(stringAndConfigKey("keyclick", new configKey(true, executeNow, "setsid xdotool key --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keyclickrelease", new configKey(false, executeNow, "setsid xdotool key --window getactivewindow ")));
 
 		configKeysMap.insert(stringAndConfigKey("string", new configKey(true, writeStringNow)));
 		configKeysMap.insert(stringAndConfigKey("stringrelease", new configKey(false, writeStringNow)));
@@ -432,7 +515,9 @@ public:
 		configKeysMap.insert(stringAndConfigKey("specialreleaseonpress", new configKey(true, specialReleaseNow)));
 		configKeysMap.insert(stringAndConfigKey("specialreleaseonrelease", new configKey(false, specialReleaseNow)));
 
+		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(mapConfig); // Initialize config
+		configSwitcher->unScheduleReMap();
 		run();
 	}
 };
