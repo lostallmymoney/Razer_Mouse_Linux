@@ -1,15 +1,17 @@
 #!/bin/bash
 
+
 sudo nohup killall naga > /dev/null 2>&1 &
 
 sudo echo "Installing requirements..."
 
 sudo apt install libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev
 
-sudo echo "Checking requirements..."
-command -v xdotool >/dev/null 2>&1 || { tput setaf 1; echo >&2 "I require xdotool but it's not installed! Aborting."; tput sgr0; exit 1; }
-command -v xinput >/dev/null 2>&1 || { tput setaf 1; echo >&2 "I require xinput but it's not installed! Aborting."; tput sgr0; exit 1; }
-command -v g++ >/dev/null 2>&1 || { tput setaf 1; echo >&2 "I require g++ but it's not installed! Aborting."; tput sgr0; exit 1; }
+echo "Checking requirements..."
+
+command -v xdotool >/dev/null 2>&1 || { tput setaf 1; echo >&2 "I require xdotool but it's not installed! Aborting."; exit 1; }
+command -v xinput >/dev/null 2>&1 || { tput setaf 1; echo >&2 "I require xinput but it's not installed! Aborting."; exit 1; }
+command -v g++ >/dev/null 2>&1 || { tput setaf 1; echo >&2 "I require g++ but it's not installed! Aborting."; exit 1; }
 
 reset
 
@@ -19,7 +21,6 @@ g++ naga.cpp -o naga -pthread -Ofast --std=c++2a -lX11 -lXtst -lXmu
 
 if [ ! -f ./naga ]; then
 	tput setaf 1; echo "Error at compile! Ensure you have g++ installed. !!!Aborting!!!"
-	tput sgr0;
 	exit 1
 fi
 

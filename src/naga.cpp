@@ -18,8 +18,8 @@
 #include <sstream>
 using namespace std;
 
-typedef pair<const char *, const char *> CharAndChar;
-typedef pair<char, FakeKey *> CharAndFakeKey;
+typedef pair<const char *const, const char *const> CharAndChar;
+typedef pair<const char *const, FakeKey *const> CharAndFakeKey;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static vector<CharAndFakeKey *> *const fakeKeyFollowUps = new vector<CharAndFakeKey *>();
 static int fakeKeyFollowCount = 0;
@@ -132,6 +132,7 @@ private:
 
 	void loadConf(const string configName, bool silent = false)
 	{
+		configSwitcher->unScheduleReMap();
 		if (!macroEventsKeyMaps.contains(configName))
 		{
 			ifstream in(conf_file.c_str(), ios::in);
@@ -202,36 +203,41 @@ private:
 					commandType = new string(commandType->substr(pos + 1));						// Isolate command type
 					for (char &c : *commandType)
 						c = tolower(c);
-					if (configKeysMap.contains(*commandType))
-					{ // filter out bad types
-						int buttonNumberI;
+
+					const auto getNumber = [&](const string *const numberString)
+					{
 						try
 						{
-							buttonNumberI = stoi(*buttonNumber);
+							return stoi(*numberString);
 						}
 						catch (...)
 						{
 							clog << "At config line " << readingLine << ": expected a number" << endl;
 							exit(1);
 						}
+					};
 
-						if (*commandType == "key")
+					if (configKeysMap.contains(*commandType))
+					{ // filter out bad types
+						
+						int buttonNumberI = getNumber(buttonNumber);
+
+						if (*configKeysMap[*commandType]->Prefix() != "")
+							commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
+						macroEventsKeyMaps[configName][buttonNumberI][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
+						// Encode and store mapping v3
+					}
+					else if (*commandType == "key")
+					{
+						int buttonNumberI = getNumber(buttonNumber);
+						if (commandContent.size() == 1)
 						{
-							if (commandContent.size() == 1)
-							{
-								commandContent = hexChar(commandContent[0]);
-							}
-							const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
-							commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
-							macroEventsKeyMaps[configName][buttonNumberI][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-							macroEventsKeyMaps[configName][buttonNumberI][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+							commandContent = hexChar(commandContent[0]);
 						}
-						else
-						{
-							if (*configKeysMap[*commandType]->Prefix() != "")
-								commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
-							macroEventsKeyMaps[configName][buttonNumberI][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
-						} // Encode and store mapping v3
+						const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
+						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
+						macroEventsKeyMaps[configName][buttonNumberI][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
+						macroEventsKeyMaps[configName][buttonNumberI][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
 					}
 				}
 			}
@@ -277,7 +283,6 @@ private:
 					lock_guard<mutex> guard(configSwitcherMutex);
 					configSwitcher->scheduleWindowReMap(configWindowName);
 					loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
-					configSwitcher->unScheduleReMap();
 					found = true;
 					break;
 				}
@@ -287,7 +292,6 @@ private:
 				lock_guard<mutex> guard(configSwitcherMutex);
 				configSwitcher->scheduleReMap(&configSwitcher->getBackupConfigName());
 				loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
-				configSwitcher->unScheduleReMap();
 			}
 		}
 	}
@@ -303,7 +307,6 @@ private:
 			{
 				lock_guard<mutex> guard(configSwitcherMutex); // remap
 				loadConf(configSwitcher->RemapString());	  // change config for macroEvents[ii]->Content()
-				configSwitcher->unScheduleReMap();
 			}
 
 			FD_ZERO(&readset);
@@ -376,17 +379,17 @@ private:
 		deleteFakeKey(aKeyFaker);
 	}
 
-	const static void specialPressNow(const string *macroContent)
+	const static void specialPressNow(const string *const macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
 		fakekey_press(aKeyFaker, (unsigned char *)&(*macroContent)[0], 8, 0);
 		XFlush(aKeyFaker->xdpy);
-		fakeKeyFollowUps->emplace_back(new CharAndFakeKey((*macroContent)[0], aKeyFaker));
+		fakeKeyFollowUps->emplace_back(new CharAndFakeKey(&(*macroContent)[0], aKeyFaker));
 		fakeKeyFollowCount++;
 	}
 
-	const static void specialReleaseNow(const string *macroContent)
+	const static void specialReleaseNow(const string *const macroContent)
 	{
 		if (fakeKeyFollowCount > 0)
 		{
@@ -394,7 +397,7 @@ private:
 			for (int vectorId = fakeKeyFollowUps->size() - 1; vectorId >= 0; vectorId--)
 			{
 				CharAndFakeKey *const aKeyFollowUp = (*fakeKeyFollowUps)[vectorId];
-				if (get<0>(*aKeyFollowUp) == (*macroContent)[0])
+				if (*get<0>(*aKeyFollowUp) == (*macroContent)[0])
 				{
 					FakeKey *const aKeyFaker = get<1>(*aKeyFollowUp);
 					fakekey_release(aKeyFaker);
@@ -435,6 +438,10 @@ private:
 			macroEventPointer->KeyType()->runInternal(macroEventPointer->Content());
 		}
 	}
+
+	void newStrAndCfgKey(){
+
+	};
 
 public:
 	NagaDaemon(const string mapConfig = "defaultConfig")
@@ -483,7 +490,6 @@ public:
 		}
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
-		configKeysMap.insert(stringAndConfigKey("key", NULL)); // special one
 
 		configKeysMap.insert(stringAndConfigKey("chmap", new configKey(true, chmapNow))); // change keymap
 		configKeysMap.insert(stringAndConfigKey("chmaprelease", new configKey(false, chmapNow)));
@@ -517,7 +523,6 @@ public:
 
 		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(mapConfig); // Initialize config
-		configSwitcher->unScheduleReMap();
 		run();
 	}
 };
