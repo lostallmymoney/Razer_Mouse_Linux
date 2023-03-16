@@ -204,7 +204,7 @@ private:
 					for (char &c : *commandType)
 						c = tolower(c);
 
-					const auto getNumber = [&](const string *const numberString)
+					const auto stoiNumber = [&](const string *const numberString)
 					{
 						try
 						{
@@ -219,25 +219,22 @@ private:
 
 					if (configKeysMap.contains(*commandType))
 					{ // filter out bad types
-						
-						int buttonNumberI = getNumber(buttonNumber);
-
 						if (*configKeysMap[*commandType]->Prefix() != "")
 							commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
-						macroEventsKeyMaps[configName][buttonNumberI][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
+						macroEventsKeyMaps[configName][stoiNumber(buttonNumber)][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
 						// Encode and store mapping v3
 					}
 					else if (*commandType == "key")
 					{
-						int buttonNumberI = getNumber(buttonNumber);
 						if (commandContent.size() == 1)
 						{
 							commandContent = hexChar(commandContent[0]);
 						}
 						const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
-						macroEventsKeyMaps[configName][buttonNumberI][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-						macroEventsKeyMaps[configName][buttonNumberI][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+						map<bool, MacroEventVector> *const mEKMCB = &macroEventsKeyMaps[configName][stoiNumber(buttonNumber)];
+						(*mEKMCB)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
+						(*mEKMCB)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
 					}
 				}
 			}
@@ -272,7 +269,7 @@ private:
 		{
 			return;
 		}
-		clog << "Name of current window : " << c << endl;
+		clog << "CurrentWindowNameLog : " << c << endl;
 		bool found = false;
 		if (configSwitcher->temporaryWindowName() == "" || strcmp(c, configSwitcher->temporaryWindowName().c_str()) != 0)
 		{
@@ -439,13 +436,11 @@ private:
 		}
 	}
 
-	void newStrAndCfgKey(){
-
-	};
-
 public:
 	NagaDaemon(const string mapConfig = "defaultConfig")
 	{
+		if (daemon(0, 1))
+			perror("Couldn't daemonise from unistd");
 		// modulable device files list
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic-event-mouse");								 // NAGA EPIC
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-event-mouse");						 // NAGA EPIC DOCK
@@ -544,9 +539,6 @@ int main(const int argc, const char *const argv[])
 			clog << "Starting naga daemon in hidden mode, keep the window for the logs..." << endl;
 			usleep(40000);
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-
-			if (daemon(0, 1))
-				perror("Couldn't daemonise from unistd");
 
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
