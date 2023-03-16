@@ -84,35 +84,6 @@ Window get_named_window(Display *d, Window start)
     return w;
 }
 
-// (XFetchName cannot get a name with multi-byte chars)
-char *print_window_name(Display *d, Window w)
-{
-    XTextProperty prop;
-    Status s;
-
-    s = XGetWMName(d, w, &prop); // see man
-    if (!xerror && s)
-    {
-        int count = 0, result;
-        char **list = NULL;
-        result = XmbTextPropertyToTextList(d, &prop, &list, &count); // see man
-        if (result == Success)
-        {
-            return list[0];
-        }
-        else
-        {
-            printf("ERROR: XmbTextPropertyToTextList\n");
-            return 0;
-        }
-    }
-    else
-    {
-        printf("ERROR: XGetWMName\n");
-        return 0;
-    }
-}
-
 char *print_window_class(Display *d, Window w)
 {
     Status s;
@@ -135,13 +106,6 @@ char *print_window_class(Display *d, Window w)
         printf("ERROR: XGetClassHint\n");
         return 0;
     }
-}
-
-void print_window_info(Display *d, Window w)
-{
-    printf("--\n");
-    print_window_name(d, w);
-    print_window_class(d, w);
 }
 
 char *getActiveWindow()
