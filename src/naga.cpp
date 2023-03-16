@@ -268,11 +268,11 @@ private:
 		}
 		clog << "Name of current window : " << c << endl;
 		bool found = false;
-		if (configSwitcher->temporaryWindowName() == "" || strstr(c, configSwitcher->temporaryWindowName().c_str()) == NULL)
+		if (configSwitcher->temporaryWindowName() == "" || strcmp(c, configSwitcher->temporaryWindowName().c_str()) != 0)
 		{
 			for (string *configWindowName : (*configSwitcher).configWindowsNamesVector)
 			{
-				if (strstr(c, configWindowName->c_str()) != NULL)
+				if (strcmp(c, configWindowName->c_str()) == 0)
 				{
 					lock_guard<mutex> guard(configSwitcherMutex);
 					configSwitcher->scheduleWindowReMap(configWindowName);
