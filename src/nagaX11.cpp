@@ -128,7 +128,7 @@ private:
 	const int size = sizeof(struct input_event) * 64;
 	vector<CharAndChar> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
-	map<int, std::map<bool, MacroEventVector>> currentConfigPtr;
+	map<int, std::map<bool, MacroEventVector>> * currentConfigPtr;
 
 	void initConf()
 	{
@@ -227,7 +227,7 @@ private:
 		configSwitcher->unScheduleReMap();
 
 		currentConfigName = configName;
-		currentConfigPtr = macroEventsKeyMaps[currentConfigName];
+		currentConfigPtr = &macroEventsKeyMaps[currentConfigName];
 		if (!silent)
 		{
 			(void)!(system(("notify-send -t 200 'New config :' '" + configName + "'").c_str()));
@@ -312,7 +312,7 @@ private:
 					case 12:
 					case 13:
 						checkForWindowConfig();
-						thread(runActions, &currentConfigPtr[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
+						thread(runActions, &(*currentConfigPtr)[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
 				}
@@ -328,7 +328,7 @@ private:
 					case 275:
 					case 276:
 						checkForWindowConfig();
-						thread(runActions, &currentConfigPtr[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
+						thread(runActions, &(*currentConfigPtr)[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}
