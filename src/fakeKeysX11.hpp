@@ -2,7 +2,7 @@
 #include <X11/XKBlib.h>
 #include <X11/extensions/XTest.h>
 
-#include <cstring>
+#include <string.h>
 #include <stdlib.h>
 
 #define N_MODIFIER_INDEXES (Mod5MapIndex + 1)

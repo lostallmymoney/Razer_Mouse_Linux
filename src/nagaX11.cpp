@@ -2,8 +2,8 @@
 // RaulPPelaez, et. al wrote the original file.  As long as you retain this notice you
 // can do whatever you want with this stuff.
 
-#include "fakeKeys.hpp"
-#include "getactivewindow.hpp"
+#include "fakeKeysX11.hpp"
+#include "getactivewindowX11.hpp"
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -11,7 +11,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/input.h>
-#include <cstring>
 #include <thread>
 #include <mutex>
 #include <map>
@@ -232,9 +231,8 @@ private:
 						}
 						const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
-						map<bool, MacroEventVector> *const mEKMCB = &macroEventsKeyMaps[configName][stoiNumber(buttonNumber)];
-						(*mEKMCB)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-						(*mEKMCB)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+						macroEventsKeyMaps[configName][stoiNumber(buttonNumber)][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
+						macroEventsKeyMaps[configName][stoiNumber(buttonNumber)][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
 					}
 				}
 			}
@@ -258,21 +256,13 @@ private:
 	input_event *ev11;
 	fd_set readset;
 
-	void checkForWindowConfig()
+	bool checkForWindowConfig()
 	{
-		char *c;
-		try
-		{
-			c = getActiveWindow();
-		}
-		catch (...)
-		{
-			return;
-		}
+		char *c = getActiveWindow();
 		clog << "CurrentWindowNameLog : " << c << endl;
-		bool found = false;
 		if (configSwitcher->temporaryWindowName() == "" || strcmp(c, configSwitcher->temporaryWindowName().c_str()) != 0)
 		{
+			bool found = false;
 			for (string *configWindowName : (*configSwitcher).configWindowsNamesVector)
 			{
 				if (strcmp(c, configWindowName->c_str()) == 0)
@@ -281,7 +271,7 @@ private:
 					configSwitcher->scheduleWindowReMap(configWindowName);
 					loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
 					found = true;
-					break;
+					return true;
 				}
 			}
 			if (!found && configSwitcher->isAWindowConfigActive())
@@ -289,12 +279,16 @@ private:
 				lock_guard<mutex> guard(configSwitcherMutex);
 				configSwitcher->scheduleReMap(&configSwitcher->getBackupConfigName());
 				loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
-			}
+				return true;
+			}		
 		}
+		return false;	
 	}
 
 	void run()
 	{
+		map<int, std::map<bool, MacroEventVector>> currenConfigPtr = macroEventsKeyMaps[currentConfigName];
+
 		if (areSideBtnEnabled)
 			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
 		ev11 = &ev1[1];
@@ -304,6 +298,7 @@ private:
 			{
 				lock_guard<mutex> guard(configSwitcherMutex); // remap
 				loadConf(configSwitcher->RemapString());	  // change config for macroEvents[ii]->Content()
+				currenConfigPtr = macroEventsKeyMaps[currentConfigName];
 			}
 
 			FD_ZERO(&readset);
@@ -333,8 +328,9 @@ private:
 					case 11:
 					case 12:
 					case 13:
-						checkForWindowConfig();
-						thread(runActions, &macroEventsKeyMaps[currentConfigName][ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
+						if (checkForWindowConfig())
+							currenConfigPtr = macroEventsKeyMaps[currentConfigName];
+						thread(runActions, &currenConfigPtr[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
 				}
@@ -349,10 +345,9 @@ private:
 					{
 					case 275:
 					case 276:
-					case 277:
-					case 278:
-						checkForWindowConfig();
-						thread(runActions, &macroEventsKeyMaps[currentConfigName][ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
+						if (checkForWindowConfig())
+							currenConfigPtr = macroEventsKeyMaps[currentConfigName];
+						thread(runActions, &currenConfigPtr[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}

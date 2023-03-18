@@ -16,8 +16,8 @@ command -v g++ >/dev/null 2>&1 || { tput setaf 1; echo >&2 "I require g++ but it
 reset
 
 echo "Compiling code..."
-cd src
-g++ naga.cpp -o naga -pthread -Ofast --std=c++2a -lX11 -lXtst -lXmu
+cd src || exit
+g++ nagaX11.cpp -o naga -pthread -Ofast --std=c++2b -lX11 -lXtst -lXmu
 
 if [ ! -f ./naga ]; then
 	tput setaf 1; echo "Error at compile! Ensure you have g++ installed. !!!Aborting!!!"
@@ -47,11 +47,11 @@ for u in $(sudo awk -F'[/:]' '{if ($3 >= 1000 && $3 != 65534) print $1}' /etc/pa
 do
 	sudo gpasswd -a "$u" razer
 	_dir="/home/${u}/.naga"
-	sudo mkdir -p $_dir
+	sudo mkdir -p "$_dir"
 	if [ -d "$_dir" ]
 	then
 		sudo cp -r -n -v "keyMap.txt" "$_dir"
-		sudo chown -R $(id -un $u):users "$_dir"
+		sudo chown -R "$(id -un "$u"):users" "$_dir"
 	fi
 done
 if [ -d "/root" ];
@@ -67,5 +67,5 @@ sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules
 
 naga start
 
-tput setaf 2; echo "Please add (naga.desktop or a script with naga start) to be executed\nwhen your window manager starts."
+tput setaf 2; printf "Please add (naga.desktop or a script with naga start) to be executed\nwhen your window manager starts."
 tput sgr0;
