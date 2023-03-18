@@ -507,7 +507,7 @@ void stopD()
 
 // arguments manage
 int main(const int argc, const char *const argv[])
-{	
+{
 	if (argc > 1)
 	{
 		if (strstr(argv[1], "start") != NULL)
@@ -530,14 +530,10 @@ int main(const int argc, const char *const argv[])
 		{
 			(void)!(system("nano ~/.naga/keyMap.txt"));
 
-			stopD();
-			clog << "Starting naga daemon in hidden mode, keep the window for the logs..." << endl;
-			usleep(40000);
-			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 			if (argc > 2)
-				NagaDaemon(string(argv[2]).c_str());
+				(void)!(system(("naga start " + string(argv[2])).c_str()));
 			else
-				NagaDaemon();
+				(void)!(system("naga start"));
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
 		{
