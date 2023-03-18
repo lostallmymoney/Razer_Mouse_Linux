@@ -70,5 +70,5 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 naga start
 
-tput setaf 2; printf "Please add (naga.desktop or a script with naga start) to be executed\nwhen your window manager starts."
+tput setaf 2; printf "Please add (naga.desktop or a script with naga start) to be executed\nwhen your window manager starts.\n"
 tput sgr0;
