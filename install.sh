@@ -66,9 +66,10 @@ sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules
 
 #udev reload so no need to reboot
 sudo udevadm control --reload-rules && sudo udevadm trigger
-
+#restart mouse drivers
+sudo bash -c "modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse"
+sleep 0.5
 naga start
 
 tput setaf 2; printf "Please add (naga.desktop or a script with naga start) to be executed\nwhen your window manager starts.\n" ; tput sgr0;
-
 cd ..
