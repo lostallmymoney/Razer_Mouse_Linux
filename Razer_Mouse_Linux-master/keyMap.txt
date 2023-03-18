@@ -1,0 +1,69 @@
+config=defaultConfig
+1 - run=xdotool getactivewindow getwindowname
+2 - specialPressOnPress=;
+2 - specialReleaseOnRelease=;
+3 - string=hello@hotmail.com
+4 - run2=if [ $(pgrep -c spotify) -eq 0 ]; then setsid spotify; fi
+5 - run=gnome-terminal
+6 - specialPressOnPress=È
+6 - specialReleaseOnRelease=È
+7 - key=XF86AudioLowerVolume
+8 - chmap=defaultConfig2
+9 - key=XF86AudioRaiseVolume
+10 - keyClick=XF86AudioPrev
+11 - key=XF86AudioPlay
+12 - keyClick=XF86AudioNext
+13 - key=XF86AudioPrev
+14 - key=XF86AudioNext
+configEnd
+
+
+config=defaultConfig2
+1 - key=XF86AudioMute
+4 - run=gnome-terminal
+4 - sleep=1000
+4 - run=gnome-terminal
+5 - runRelease=gnome-terminal
+5 - sleeprelease=1000
+5 - runRelease=gnome-terminal
+7 - key=XF86AudioLowerVolume
+8 - key=XF86AudioPlay
+9 - key=XF86AudioRaiseVolume
+10 - keyClick=XF86AudioPrev
+11 - chmap=defaultConfig
+12 - keyClick=XF86AudioNext
+13 - run=gnome-terminal
+14 - run=gnome-terminal
+configEnd
+
+configWindow=Spotify
+1 - key=XF86AudioMute
+5 - runRelease=gnome-terminal
+7 - key=XF86AudioLowerVolume
+8 - key=XF86AudioPlay
+9 - key=XF86AudioRaiseVolume
+10 - keyClick=XF86AudioPrev
+11 - key=XF86AudioPlay
+12 - keyClick=XF86AudioNext
+13 - key=XF86AudioPrev
+14 - key=XF86AudioNext
+configEnd
+
+configWindow=Gnome-terminal
+1 - key=XF86AudioMute
+3 - string=gnome@terminal.com
+4 - run2=if [ $(pgrep -c spotify) -eq 0 ]; then setsid spotify; fi
+5 - run=gnome-terminal
+6 - specialPressOnPress=È
+6 - specialReleaseOnRelease=È
+7 - key=XF86AudioLowerVolume
+8 - key=XF86AudioPlay
+9 - key=XF86AudioRaiseVolume
+10 - keyClick=XF86AudioPrev
+11 - key=XF86AudioPlay
+12 - keyClick=XF86AudioNext
+13 - key=XF86AudioPrev
+14 - key=XF86AudioNext
+configEnd
+
+
