@@ -8,7 +8,7 @@ Now with app auto profiles !
 
 (requires unzip)
 
-Configure macros : naga edit
+Configure macros : `naga edit`
 
 Run sh install.sh from the directory to install.
 
