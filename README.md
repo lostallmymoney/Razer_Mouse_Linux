@@ -8,6 +8,8 @@ Now with app auto profiles !
 
 (requires unzip)
 
+Configure macros : `naga edit`
+
 Run sh install.sh from the directory to install.
 
 If there is an error about config files just copy it to your /home/.naga/
