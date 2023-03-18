@@ -230,9 +230,7 @@ int fakekey_press(FakeKey *fk, const unsigned char *utf8_char_in, int len_bytes,
 	unsigned int ucs4_out;
 
 	if (fk->held_keycode) /* key is already held down */
-		return 0;
-
-	
+		return 0;	
 
 	if (len_bytes < 0)
 	{

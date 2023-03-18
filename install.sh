@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-sudo nohup killall naga > /dev/null 2>&1 &
+sudo sh src/nagaKillroot.sh
 
 sudo echo "Installing requirements..."
 
@@ -64,6 +64,9 @@ fi
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razer",MODE="640"' > /tmp/80-naga.rules
 
 sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules
+
+#udev reload so no need to reboot
+sudo udevadm control --reload-rules && sudo udevadm trigger
 
 naga start
 

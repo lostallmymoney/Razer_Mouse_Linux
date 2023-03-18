@@ -1,26 +1,29 @@
-#!/bin/bash
+#!/bin/sh
+# shellcheck disable=SC2046
+# shellcheck disable=SC2009
 if [ "$(id -u)" -ne 0 ];then
 	if [ $# -eq 0 ]; then
-		kill $(ps aux | grep naga | grep -v root | grep start | awk '{print $2}') > /dev/null 2>&1
-		if [ $(ps aux | grep naga | grep -v grep | grep -v nagaKillroot | grep -c root) -ne 0 ]; then
-			pkexec --user root kill $(ps aux | grep naga | grep -v grep | grep -v nagaKillroot | grep root | awk '{print $2}')
+		kill $(pgrep -f "naga start" -G "$USER") > /dev/null 2>&1
+		if [ "$(pgrep -f "naga start" -G 0 -c)" -ne 0 ]; then
+			pkexec --user root killall "$(pgrep -f "naga start" -G 0)"
 		fi
 	else
-		kill $(ps aux | grep naga | grep -v root | grep start | grep -v $1 | awk '{print $2}') > /dev/null 2>&1
-		if [ $(ps aux | grep naga | grep -v grep | grep -v nagaKillroot | grep -v $1 | grep -c root) -ne 0 ]; then
-			pkexec --user root kill $(ps aux | grep naga | grep -v grep | grep -v nagaKillroot | grep -v $1 | grep root | awk '{print $2}')
+	
+		kill $(pgrep -f "naga start" -G "$USER" | grep -v "$1") > /dev/null 2>&1
+		if [ "$(pgrep -f "naga start" -G 0 | grep -v "$1" -c)" -ne 0 ]; then
+			pkexec --user root killall "$(pgrep -f "naga start" -G 0 | grep -v "$1")"
 		fi
 	fi	
 else
 	if [ $# -eq 0 ]; then
-		kill $(ps aux | grep naga | grep -v root | grep start | awk '{print $2}') > /dev/null 2>&1
-		if [ $(ps aux | grep naga | grep -v grep | grep -v nagaKillroot | grep -c root) -ne 0 ]; then
-			kill $(ps aux | grep naga | grep -v grep | grep -v nagaKillRoot | grep root | awk '{print $2}')
+		kill $(ps aux | grep "naga start" | grep -v root | grep -v grep | awk '{print $2}') > /dev/null 2>&1
+		if [ "$(pgrep -f "naga start" -G 0 -c)" -ne 0 ]; then
+			kill $(pgrep -f "naga start" -G 0)
 		fi
 	else
-		kill $(ps aux | grep naga | grep -v root | grep start | grep -v $1 | awk '{print $2}') > /dev/null 2>&1
-		if [ $(ps aux | grep naga | grep -v grep | grep -v nagaKillroot | grep -v $1 | grep -c root) -ne 0 ]; then
-			kill $(ps aux | grep naga | grep -v grep | grep -v nagaKillroot | grep -v $1 | grep root | awk '{print $2}')
+		kill $(ps aux | grep "naga start" | grep -v root | grep -v "$1" | grep -v grep | awk '{print $2}') > /dev/null 2>&1
+		if [ "$(pgrep -f "naga start" -G 0 | grep -v "$1" -c)" -ne 0 ]; then
+			kill $(pgrep -f "naga start" -G 0 | grep -v "$1")
 		fi
 	fi
 fi

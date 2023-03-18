@@ -555,7 +555,7 @@ int main(const int argc, const char *const argv[])
 			}
 			else
 			{
-				(void)!(system("bash /usr/local/bin/Naga_Linux/nagaUninstall.sh"));
+				(void)!(system("/usr/local/bin/Naga_Linux/nagaUninstall.sh"));
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 sudo naga stop
 sleep 0.3 > /dev/null 2>&1 &
 echo "Deleting files"
