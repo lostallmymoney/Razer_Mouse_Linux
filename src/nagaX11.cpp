@@ -461,35 +461,38 @@ public:
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
 
-		configKeysMap.insert(stringAndConfigKey("chmap", new configKey(true, chmapNow))); // change keymap
-		configKeysMap.insert(stringAndConfigKey("chmaprelease", new configKey(false, chmapNow)));
+		#define ONKEYPRESSED true
+		#define ONKEYRELEASED false
 
-		configKeysMap.insert(stringAndConfigKey("sleep", new configKey(true, sleepNow)));
-		configKeysMap.insert(stringAndConfigKey("sleeprelease", new configKey(false, sleepNow)));
+		configKeysMap.insert(stringAndConfigKey("chmap", new configKey(ONKEYPRESSED, chmapNow))); // change keymap
+		configKeysMap.insert(stringAndConfigKey("chmaprelease", new configKey(ONKEYRELEASED, chmapNow)));
 
-		configKeysMap.insert(stringAndConfigKey("run", new configKey(true, executeNow, "setsid ")));
-		configKeysMap.insert(stringAndConfigKey("run2", new configKey(true, executeNow)));
+		configKeysMap.insert(stringAndConfigKey("sleep", new configKey(ONKEYPRESSED, sleepNow)));
+		configKeysMap.insert(stringAndConfigKey("sleeprelease", new configKey(ONKEYRELEASED, sleepNow)));
 
-		configKeysMap.insert(stringAndConfigKey("runrelease", new configKey(false, executeNow, "setsid ")));
-		configKeysMap.insert(stringAndConfigKey("runrelease2", new configKey(false, executeNow)));
+		configKeysMap.insert(stringAndConfigKey("run", new configKey(ONKEYPRESSED, executeNow, "setsid ")));
+		configKeysMap.insert(stringAndConfigKey("run2", new configKey(ONKEYPRESSED, executeNow)));
 
-		configKeysMap.insert(stringAndConfigKey("keypressonpress", new configKey(true, executeNow, "setsid xdotool keydown --window getactivewindow ")));
-		configKeysMap.insert(stringAndConfigKey("keypressonrelease", new configKey(false, executeNow, "setsid xdotool keydown --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("runrelease", new configKey(ONKEYRELEASED, executeNow, "setsid ")));
+		configKeysMap.insert(stringAndConfigKey("runrelease2", new configKey(ONKEYRELEASED, executeNow)));
 
-		configKeysMap.insert(stringAndConfigKey("keyreleaseonpress", new configKey(true, executeNow, "setsid xdotool keyup --window getactivewindow ")));
-		configKeysMap.insert(stringAndConfigKey("keyreleaseonrelease", new configKey(false, executeNow, "setsid xdotool keyup --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keypressonpress", new configKey(ONKEYPRESSED, executeNow, "setsid xdotool keydown --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keypressonrelease", new configKey(ONKEYRELEASED, executeNow, "setsid xdotool keydown --window getactivewindow ")));
 
-		configKeysMap.insert(stringAndConfigKey("keyclick", new configKey(true, executeNow, "setsid xdotool key --window getactivewindow ")));
-		configKeysMap.insert(stringAndConfigKey("keyclickrelease", new configKey(false, executeNow, "setsid xdotool key --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keyreleaseonpress", new configKey(ONKEYPRESSED, executeNow, "setsid xdotool keyup --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keyreleaseonrelease", new configKey(ONKEYRELEASED, executeNow, "setsid xdotool keyup --window getactivewindow ")));
 
-		configKeysMap.insert(stringAndConfigKey("string", new configKey(true, writeStringNow)));
-		configKeysMap.insert(stringAndConfigKey("stringrelease", new configKey(false, writeStringNow)));
+		configKeysMap.insert(stringAndConfigKey("keyclick", new configKey(ONKEYPRESSED, executeNow, "setsid xdotool key --window getactivewindow ")));
+		configKeysMap.insert(stringAndConfigKey("keyclickrelease", new configKey(ONKEYRELEASED, executeNow, "setsid xdotool key --window getactivewindow ")));
 
-		configKeysMap.insert(stringAndConfigKey("specialpressonpress", new configKey(true, specialPressNow)));
-		configKeysMap.insert(stringAndConfigKey("specialpressonrelease", new configKey(false, specialPressNow)));
+		configKeysMap.insert(stringAndConfigKey("string", new configKey(ONKEYPRESSED, writeStringNow)));
+		configKeysMap.insert(stringAndConfigKey("stringrelease", new configKey(ONKEYRELEASED, writeStringNow)));
 
-		configKeysMap.insert(stringAndConfigKey("specialreleaseonpress", new configKey(true, specialReleaseNow)));
-		configKeysMap.insert(stringAndConfigKey("specialreleaseonrelease", new configKey(false, specialReleaseNow)));
+		configKeysMap.insert(stringAndConfigKey("specialpressonpress", new configKey(ONKEYPRESSED, specialPressNow)));
+		configKeysMap.insert(stringAndConfigKey("specialpressonrelease", new configKey(ONKEYRELEASED, specialPressNow)));
+
+		configKeysMap.insert(stringAndConfigKey("specialreleaseonpress", new configKey(ONKEYPRESSED, specialReleaseNow)));
+		configKeysMap.insert(stringAndConfigKey("specialreleaseonrelease", new configKey(ONKEYRELEASED, specialReleaseNow)));
 
 		initConf();
 
@@ -526,6 +529,18 @@ int main(const int argc, const char *const argv[])
 		{
 			stopD();
 		}
+		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL)
+		{			
+			stopD();
+			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
+			(void)!(system("pkexec --user root bash -c \"modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse\""));
+			usleep(50000);
+
+			if (argc > 2)
+				(void)!(system(("naga start " + string(argv[2])).c_str()));
+			else
+				(void)!(system("naga start"));
+		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
 			(void)!(system("x-terminal-emulator -e nano ~/.naga/keyMap.txt"));
@@ -552,7 +567,7 @@ int main(const int argc, const char *const argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  uninstall      Uninstalls the daemon." << endl;
+		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  repair           For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
 	}
 	return 0;
 }

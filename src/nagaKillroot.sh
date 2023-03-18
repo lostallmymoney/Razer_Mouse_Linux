@@ -5,13 +5,13 @@ if [ "$(id -u)" -ne 0 ];then
 	if [ $# -eq 0 ]; then
 		kill $(pgrep -f "naga start" -G "$USER") > /dev/null 2>&1
 		if [ "$(pgrep -f "naga start" -G 0 -c)" -ne 0 ]; then
-			pkexec --user root killall "$(pgrep -f "naga start" -G 0)"
+			pkexec --user root kill $(pgrep -f "naga start" -G 0)
 		fi
 	else
 	
 		kill $(pgrep -f "naga start" -G "$USER" | grep -v "$1") > /dev/null 2>&1
 		if [ "$(pgrep -f "naga start" -G 0 | grep -v "$1" -c)" -ne 0 ]; then
-			pkexec --user root killall "$(pgrep -f "naga start" -G 0 | grep -v "$1")"
+			pkexec --user root kill $(pgrep -f "naga start" -G 0 | grep -v "$1")
 		fi
 	fi	
 else
