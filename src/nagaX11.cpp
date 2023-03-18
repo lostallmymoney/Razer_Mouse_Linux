@@ -517,7 +517,7 @@ int main(const int argc, const char *const argv[])
 		{
 			stopD();
 			clog << "Starting naga daemon in hidden mode, keep the window for the logs..." << endl;
-			usleep(40000);
+			usleep(70000);
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 
 			if (argc > 2)
@@ -534,7 +534,7 @@ int main(const int argc, const char *const argv[])
 			stopD();
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
 			(void)!(system("pkexec --user root bash -c \"modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse\""));
-			usleep(50000);
+			usleep(70000);
 
 			if (argc > 2)
 				(void)!(system(("naga start " + string(argv[2])).c_str()));
