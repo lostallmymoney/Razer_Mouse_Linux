@@ -217,7 +217,7 @@ private:
 		in.close();
 	}
 
-	void loadConf(const string configName, bool silent = false)
+	void loadConf(const string configName, const bool silent = false)
 	{
 		if (!macroEventsKeyMaps.contains(configName))
 		{
