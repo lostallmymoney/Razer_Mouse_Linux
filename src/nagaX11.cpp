@@ -127,69 +127,32 @@ private:
 	struct input_event ev1[64];
 	const int size = sizeof(struct input_event) * 64;
 	vector<CharAndChar> devices;
-	bool areSideBtnEnabled = true, areExtraBtnEnabled = true, areWindowConfigsInitialised = false;
+	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
+	map<int, std::map<bool, MacroEventVector>> currentConfigPtr;
 
-	void loadConf(const string configName, bool silent = false)
+	void initConf()
 	{
-		configSwitcher->unScheduleReMap();
-		if (!macroEventsKeyMaps.contains(configName))
+		int pos;
+		string commandContent, iteratedConfig;
+		bool isIteratingConfig = false;
+
+		ifstream in(conf_file.c_str(), ios::in);
+		if (!in)
 		{
-			ifstream in(conf_file.c_str(), ios::in);
-			if (!in)
-			{
-				cerr << "Cannot open " << conf_file << ". Exiting." << endl;
-				exit(1);
-			}
-			bool found1 = false, found2 = false;
-			int pos, configLine, configEndLine;
-			string commandContent;
+			cerr << "Cannot open " << conf_file << ". Exiting." << endl;
+			exit(1);
+		}
 
-			if (!areWindowConfigsInitialised)
+		for (int readingLine = 1; getline(in, commandContent); readingLine++)
+		{
+
+			if (isIteratingConfig)
 			{
-				for (int readingLine = 1; getline(in, commandContent) && !found2; readingLine++)
+				if (commandContent.find("configEnd") != string::npos) // finding configEnd
 				{
-					if (commandContent.find("configWindow=") != string::npos)
-					{
-						commandContent.erase(0, 13);
-						(*configSwitcher).configWindowsNamesVector.emplace_back(new string(commandContent));
-					}
-				}
-				areWindowConfigsInitialised = true;
-			}
-
-			in.clear();
-			in.seekg(0, ios::beg); // reset file reading
-
-			for (int readingLine = 1; getline(in, commandContent) && !found2; readingLine++)
-			{
-				if (!found1)
-				{
-					if (commandContent.find("config=" + configName) != string::npos || commandContent.find("configWindow=" + configName) != string::npos) // finding configname
-					{
-						configLine = readingLine;
-						found1 = true;
-					}
+					isIteratingConfig = false;
 				}
 				else
-				{
-					if (commandContent.find("configEnd") != string::npos) // finding configEnd
-					{
-						configEndLine = readingLine;
-						found2 = true;
-					}
-				}
-			}
-			if (!found1 || !found2)
-			{
-				clog << "Error with config names and configEnd : " << configName << ". Exiting." << endl;
-				exit(1);
-			}
-			in.clear();
-			in.seekg(0, ios::beg); // reset file reading
-
-			for (int readingLine = 1; getline(in, commandContent) && readingLine < configEndLine; readingLine++)
-			{
-				if (readingLine > configLine)
 				{
 					if (commandContent[0] == '#' || commandContent.find_first_not_of(' ') == string::npos)
 						continue; // Ignore comments, empty lines
@@ -220,7 +183,7 @@ private:
 					{ // filter out bad types
 						if (*configKeysMap[*commandType]->Prefix() != "")
 							commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
-						macroEventsKeyMaps[configName][stoiNumber(buttonNumber)][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
+						macroEventsKeyMaps[iteratedConfig][stoiNumber(buttonNumber)][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
 						// Encode and store mapping v3
 					}
 					else if (*commandType == "key")
@@ -231,14 +194,40 @@ private:
 						}
 						const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
-						macroEventsKeyMaps[configName][stoiNumber(buttonNumber)][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-						macroEventsKeyMaps[configName][stoiNumber(buttonNumber)][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+						macroEventsKeyMaps[iteratedConfig][stoiNumber(buttonNumber)][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
+						macroEventsKeyMaps[iteratedConfig][stoiNumber(buttonNumber)][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
 					}
 				}
 			}
-			in.close();
+			else if (commandContent.find("configWindow=") != string::npos)
+			{
+				isIteratingConfig = true;
+				commandContent.erase(0, 13);
+				iteratedConfig = commandContent;
+				configSwitcher->configWindowsNamesVector.emplace_back(new string(commandContent));
+			}
+			else if (commandContent.find("config=") != string::npos)
+			{
+				isIteratingConfig = true;
+				commandContent.erase(0, 7);
+				iteratedConfig = commandContent;
+			}
 		}
+
+		in.close();
+	}
+
+	void loadConf(const string configName, bool silent = false)
+	{
+		if (!macroEventsKeyMaps.contains(configName))
+		{
+			clog << "Undefined profile : " << configName << endl;
+			return;
+		}
+		configSwitcher->unScheduleReMap();
+
 		currentConfigName = configName;
+		currentConfigPtr = macroEventsKeyMaps[currentConfigName];
 		if (!silent)
 		{
 			(void)!(system(("notify-send -t 200 'New config :' '" + configName + "'").c_str()));
@@ -256,7 +245,7 @@ private:
 	input_event *ev11;
 	fd_set readset;
 
-	bool checkForWindowConfig()
+	void checkForWindowConfig()
 	{
 		char *c = getActiveWindow();
 		clog << "CurrentWindowNameLog : " << c << endl;
@@ -271,7 +260,6 @@ private:
 					configSwitcher->scheduleWindowReMap(configWindowName);
 					loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
 					found = true;
-					return true;
 				}
 			}
 			if (!found && configSwitcher->isAWindowConfigActive())
@@ -279,16 +267,12 @@ private:
 				lock_guard<mutex> guard(configSwitcherMutex);
 				configSwitcher->scheduleReMap(&configSwitcher->getBackupConfigName());
 				loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
-				return true;
-			}		
+			}
 		}
-		return false;	
 	}
 
 	void run()
 	{
-		map<int, std::map<bool, MacroEventVector>> currenConfigPtr = macroEventsKeyMaps[currentConfigName];
-
 		if (areSideBtnEnabled)
 			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
 		ev11 = &ev1[1];
@@ -298,7 +282,6 @@ private:
 			{
 				lock_guard<mutex> guard(configSwitcherMutex); // remap
 				loadConf(configSwitcher->RemapString());	  // change config for macroEvents[ii]->Content()
-				currenConfigPtr = macroEventsKeyMaps[currentConfigName];
 			}
 
 			FD_ZERO(&readset);
@@ -328,9 +311,8 @@ private:
 					case 11:
 					case 12:
 					case 13:
-						if (checkForWindowConfig())
-							currenConfigPtr = macroEventsKeyMaps[currentConfigName];
-						thread(runActions, &currenConfigPtr[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
+						checkForWindowConfig();
+						thread(runActions, &currentConfigPtr[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
 				}
@@ -345,9 +327,8 @@ private:
 					{
 					case 275:
 					case 276:
-						if (checkForWindowConfig())
-							currenConfigPtr = macroEventsKeyMaps[currentConfigName];
-						thread(runActions, &currenConfigPtr[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
+						checkForWindowConfig();
+						thread(runActions, &currentConfigPtr[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}
@@ -510,6 +491,8 @@ public:
 
 		configKeysMap.insert(stringAndConfigKey("specialreleaseonpress", new configKey(true, specialReleaseNow)));
 		configKeysMap.insert(stringAndConfigKey("specialreleaseonrelease", new configKey(false, specialReleaseNow)));
+
+		initConf();
 
 		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(mapConfig); // Initialize config
