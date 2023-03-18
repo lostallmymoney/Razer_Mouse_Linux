@@ -128,7 +128,7 @@ private:
 	const int size = sizeof(struct input_event) * 64;
 	vector<CharAndChar> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
-	map<int, std::map<bool, MacroEventVector>> * currentConfigPtr;
+	map<int, std::map<bool, MacroEventVector>> *currentConfigPtr;
 
 	void initConf()
 	{
@@ -213,7 +213,6 @@ private:
 				iteratedConfig = commandContent;
 			}
 		}
-
 		in.close();
 	}
 
@@ -508,7 +507,7 @@ void stopD()
 
 // arguments manage
 int main(const int argc, const char *const argv[])
-{
+{	
 	if (argc > 1)
 	{
 		if (strstr(argv[1], "start") != NULL)
@@ -527,6 +526,19 @@ int main(const int argc, const char *const argv[])
 		{
 			stopD();
 		}
+		else if (strstr(argv[1], "edit") != NULL)
+		{
+			(void)!(system("nano ~/.naga/keyMap.txt"));
+
+			stopD();
+			clog << "Starting naga daemon in hidden mode, keep the window for the logs..." << endl;
+			usleep(40000);
+			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+			if (argc > 2)
+				NagaDaemon(string(argv[2]).c_str());
+			else
+				NagaDaemon();
+		}
 		else if (strstr(argv[1], "uninstall") != NULL)
 		{
 			string answer;
@@ -544,7 +556,7 @@ int main(const int argc, const char *const argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  -start          Starts the daemon in hidden mode. (stops it before)\n  -stop           Stops the daemon.\n  -uninstall           Uninstalls the daemon." << endl;
+		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  uninstall      Uninstalls the daemon." << endl;
 	}
 	return 0;
 }
