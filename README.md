@@ -10,6 +10,18 @@ Now with app auto profiles !
 
 Run sh install.sh from the directory to install.
 
+The commands are :
+
+	`naga stop` or `naga kill` 			//stops the daemon.
+	`naga start <optional:selectedMapping>` 	//restart the daemon if there is one running and starts a hidden daemon with the optional key mapping passed as the default config.
+	
+	`naga edit` 					//Edit naga config.
+	`naga fix` or `naga tame` 			//Restart usb services.
+	`naga uninstall` 				//uninstall the daemon tool
+	`naga killroot` 				//kill root daemon if launched as root
+	`naga` 						//gives help
+
+
 If there is an error about config files just copy it to your /home/.naga/
 
 Run in root if there is an error accessing the device.
@@ -149,20 +161,6 @@ Since autorun is a bit complicated for all the distros you can simply add nagast
 
 If you ever were to login as root then unlog and log as another user the daemon might ask you for your password to kill the rooted daemon. If the device still doesn't work after root access, unplugging and replugging the device then starting the daemon will surely work.
 
-## Debugging
-
-The commands are :
-
-	`naga stop` or `naga kill` //stops the daemon.
-	`naga start <optional:selectedMapping>` //restart the daemon if there is one running and starts a hidden daemon with the optional key mapping passed as the default config.
-	
-	`naga edit` //Edit naga config.
-	`naga fix` or `naga tame` //Restart usb services.
-	`naga uninstall` //uninstall the daemon tool
-	`naga killroot` //kill root daemon if launched as root
-	`naga` //gives help
-
-For all the double dashed ocd people the commands also works with 2 dashes.
 
 #### In depth
 
