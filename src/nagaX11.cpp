@@ -118,7 +118,7 @@ static configSwitchScheduler *const configSwitcher = new configSwitchScheduler()
 class NagaDaemon
 {
 private:
-	const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
+	const string conf_file = "/home/razerInput/.naga/keyMap.txt";
 
 	map<string, configKey *const> configKeysMap;
 	map<string, map<int, map<bool, MacroEventVector>>> macroEventsKeyMaps;
@@ -425,8 +425,6 @@ private:
 public:
 	NagaDaemon(const string mapConfig = "defaultConfig")
 	{
-		if (daemon(0, 1))
-			perror("Couldn't daemonise from unistd");
 		// modulable device files list
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic-event-mouse");								 // NAGA EPIC
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-event-mouse");						 // NAGA EPIC DOCK
@@ -524,17 +522,50 @@ int main(const int argc, const char *const argv[])
 {
 	if (argc > 1)
 	{
-		if (strstr(argv[1], "start") != NULL)
+		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
-			stopD();
-			clog << "Starting naga daemon in hidden mode, keep the window for the logs..." << endl;
-			usleep(70000);
+			(void)!(system("xhost +SI:localuser:razerInput"));
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
 			else
 				NagaDaemon();
+		}
+		else if (strstr(argv[1], "service") != NULL)
+		{
+			if (argc > 2)
+			{
+				if (strstr(argv[2], "start") != NULL)
+				{
+					(void)!(system("sudo systemctl start naga"));
+				}
+				else if (strstr(argv[2], "stop") != NULL)
+				{
+					(void)!(system("sudo systemctl stop naga"));
+				}
+				else if (strstr(argv[2], "disable") != NULL)
+				{
+					(void)!(system("sudo systemctl disable naga"));
+				}
+				else if (strstr(argv[2], "enable") != NULL)
+				{
+					(void)!(system("sudo systemctl enable naga"));
+				}
+			}
+		}
+		else if (strstr(argv[1], "start") != NULL)
+		{
+			stopD();
+			clog << "Starting naga daemon as service, naga debug to see logs..." << endl;
+			if (argc > 2 && strstr(argv[2], "debug") != NULL)
+			{
+				clog << "Starting naga debug, logs :" << endl;
+				usleep(70000);
+				(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+				NagaDaemon();
+			}
+			else
+				(void)!(system("sudo systemctl start naga"));
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{
@@ -542,24 +573,12 @@ int main(const int argc, const char *const argv[])
 		}
 		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
 		{
-			stopD();
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
-			(void)!(system("pkexec --user root bash -c \"modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse\""));
-			usleep(600000);
-
-			if (argc > 2)
-				(void)!(system(("naga start " + string(argv[2])).c_str()));
-			else
-				(void)!(system("naga start"));
+			(void)!(system("sudo bash -c \"naga stop && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && systemctl start naga\""));
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
-			(void)!(system("x-terminal-emulator -e sudo nano ~/.naga/keyMap.txt"));
-
-			if (argc > 2)
-				(void)!(system(("naga start " + string(argv[2])).c_str()));
-			else
-				(void)!(system("naga start"));
+			(void)!(system("x-terminal-emulator -e sudo bash -c \"nano /home/razerInput/.naga/keyMap.txt && systemctl restart naga\""));
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
 		{
@@ -578,7 +597,7 @@ int main(const int argc, const char *const argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  repair         For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
+		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  start debug     Shows log.\n  repair         For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
 	}
 	return 0;
 }

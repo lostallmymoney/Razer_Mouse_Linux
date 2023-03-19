@@ -1,5 +1,6 @@
 #!/bin/bash
 
+sudo systemctl stop naga
 sudo sh src/nagaKillroot.sh
 
 sudo echo "Installing requirements..."
@@ -29,8 +30,6 @@ sudo chmod 755 /usr/local/bin/naga
 
 cd ..
 
-sudo groupadd -f razer
-
 sudo mkdir -p /usr/local/bin/Naga_Linux
 
 sudo cp -f ./src/nagaXinputStart.sh /usr/local/bin/Naga_Linux/
@@ -42,35 +41,36 @@ sudo chmod 755 /usr/local/bin/Naga_Linux/nagaKillroot.sh
 sudo cp -f ./src/nagaUninstall.sh /usr/local/bin/Naga_Linux/
 sudo chmod 755 /usr/local/bin/Naga_Linux/nagaUninstall.sh
 
-for u in $(sudo awk -F'[/:]' '{if ($3 >= 1000 && $3 != 65534) print $1}' /etc/passwd)
-do
-	sudo gpasswd -a "$u" razer
-	_dir="/home/${u}/.naga"
-	sudo mkdir -p "$_dir"
-	if [ -d "$_dir" ]
-	then
-		sudo cp -r -n -v "keyMap.txt" "$_dir"
-		sudo chown -R "root:root" "$_dir"
-	fi
-done
-if [ -d "/root" ];
+_dir="/home/razerInput/.naga"
+sudo mkdir -p "$_dir"
+if [ -d "$_dir" ]
 then
-	sudo gpasswd -a "root" razer
-	sudo mkdir -p /root/.naga
-	sudo cp -r -n -v "keyMap.txt" "/root/.naga"
-	sudo chown -R "root:root" "/root/.naga"
+	sudo cp -r -n -v "keyMap.txt" "$_dir"
+	sudo chown -R "root:root" "$_dir"
 fi
 
-echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razer",MODE="640"' > /tmp/80-naga.rules
+sudo groupadd -f razerInputGroup
+sudo bash -c "useradd razerInput > /dev/null 2>&1"
+sudo usermod -aG razerInputGroup razerInput
+
+echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' > /tmp/80-naga.rules
 
 sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules
+
+sudo cp -f src/naga.service /etc/systemd/system/
+sudo mkdir -p /etc/systemd/system/naga.service.d
+sudo cp -f src/naga.conf /etc/systemd/system/naga.service.d/
+echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf > /dev/null
+
 
 #udev reload so no need to reboot
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
-naga start
 
-tput setaf 2; printf "Please add (naga.desktop or a script with naga start) to be executed\nwhen your window manager starts.\n" ; tput sgr0;
+sudo systemctl enable naga
+sudo systemctl start naga
+
+tput setaf 2; printf "Service started !\nStop with naga service stop\nStart with naga service start\n" ; tput sgr0;
 printf "Star the repo here 😁 :\nhttps://github.com/lostallmymoney/Razer_Mouse_Linux\n"
 cd ..

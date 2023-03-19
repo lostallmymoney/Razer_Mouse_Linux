@@ -1,0 +1,9 @@
+[Unit]
+Description=Custom key bindings for the side panel of razer mouses.
+
+[Service]
+ExecStart=/usr/local/bin/naga serviceHelper
+User=razerInput
+
+[Install]
+WantedBy=default.target
