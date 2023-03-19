@@ -10,20 +10,9 @@ Now with app auto profiles !
 
 Run sh install.sh from the directory to install.
 
-
-## COMMANDS :
-
-	`naga start <optional:configName>` 		//Starts a daemon with the optional config name.	
-	`naga edit <optional:configName>` 		//Edits naga config, then starts with optional config name.
-	`naga stop`					//stops the daemon.
-	`naga fix`					//Restarts usb services.
-	`naga uninstall` 				//Uninstalls the daemon tool.
-	`naga` 						//Gives help.
-
-
 If there is an error about config files just copy it to your /home/.naga/
 
-Run in root if there is an error accessing the device.
+Run in root if there is an error accessing the device, also look up naga debug it'll give all the info you need most of the time.
 
 Map razer naga devices keys with the config file : `keyMap.txt` under `$HOME/.naga/`
 
@@ -66,21 +55,18 @@ The configuration file `keyMap.txt` has the following syntax:
 	The possible choices are :
 		-chmap : Changes the keymap for another config inside `keymap.txt` in ~/.naga .
 		-champRelease : Changes the keymap on key release.
+		-keyPress : Runs <command> in xdotool so the possible keys are on google ( i didn't find a list of all the keys ) .
+			The <command> is run in : **xdotool keydown** or/and **keyup --window getactivewindow <command>** so it's already 'framed' by the program.
+			By example to play/pause music you can put **key=XF86AudioPlay**.
 		-sleep and sleepRelease :
 			Sleeps
 		-string and stringRelease :
 			Writes a string, doesn't use xdotool so xdotool keys won't work
 			
 		-key : does keyPress at press and keyRelease at release
-		-specialKey : does speical keyPress at press and special keyRelease at release.
-		-keyPressOnPress :
-			The xdotool key is pressed when the key is pressed.
-		-keyReleaseOnRelease :
-			The xdotool key is released when the key is released.			
-		-keyPressOnRelease :
-			The xdotool key is pressed when the key is released.
-		-keyReleaseOnPress :
-			The xdotool key is released when the key is pressed.
+		-keyPress :
+		-keyRelease :
+			The xdotool key is released when the key is released.
 			There seems to be a list of keys on https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h but you need to remove **XK_** and they're not all there so google them if you want to be sure.
 		-run : Runs the command <command> on key press with setsid before the command.
 		-run2 : Runs the command without setsid.
@@ -101,7 +87,7 @@ The configuration file `keyMap.txt` has the following syntax:
 
 		To test any <command> run it in the command cited above.
 
-		"configEnd" Marks the end of a config.
+		"configEnd" Marks the end of <configName>.
 		
 		For a mouseclick run xdotool click <command>) (Can put numbers from 1 to 9 and options such as *--window etc).
 
@@ -163,6 +149,18 @@ Since autorun is a bit complicated for all the distros you can simply add nagast
 
 If you ever were to login as root then unlog and log as another user the daemon might ask you for your password to kill the rooted daemon. If the device still doesn't work after root access, unplugging and replugging the device then starting the daemon will surely work.
 
+## Debugging
+
+The commands are :
+
+	`naga stop` or `naga kill` //stops the daemon.
+	`naga start <optional:selectedMapping>` //restart the daemon if there is one running and starts a hidden daemon with the optional key mapping passed as the default config.
+	`naga debug <optional:selectedMapping>` //restart the daemon if there is one running and starts one in the console for debugging with the optional key mapping passed as the default config.
+	`naga uninstall` //uninstall the daemon tool
+	`naga killroot` //kill root daemon if launched as root
+	`naga` //gives help
+
+For all the double dashed ocd people the commands also works with 2 dashes.
 
 #### In depth
 

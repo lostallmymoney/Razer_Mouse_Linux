@@ -31,11 +31,11 @@ private:
 	const void (*const internalFunction)(const string *const c);
 
 public:
-	const bool &IsOnKeyPressed() const { return onKeyPressed; }
+	const bool IsOnKeyPressed() const { return onKeyPressed; }
 	const void runInternal(const string *const content) const { internalFunction(content); }
 	const string *const Prefix() const { return prefix; }
 
-	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *cc) = NULL, const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -49,8 +49,8 @@ private:
 	const string *const content;
 
 public:
-	const configKey *KeyType() const { return keyType; }
-	const string *Content() const { return content; }
+	const configKey *const KeyType() const { return keyType; }
+	const string *const Content() const { return content; }
 
 	MacroEvent(const configKey *tkeyType, const string *tcontent) : keyType(tkeyType), content(new string(*tcontent))
 	{
@@ -68,23 +68,23 @@ private:
 public:
 	vector<string *> configWindowsNamesVector;
 
-	const string &RemapString() const
+	const string *RemapString() const
 	{
-		return scheduledReMapString;
+		return &scheduledReMapString;
 	}
-	const string &temporaryWindowName() const
+	const string *temporaryWindowName() const
 	{
-		return temporaryWindowConfigName;
+		return &temporaryWindowConfigName;
 	}
-	const string &getBackupConfigName() const
+	const string *getBackupConfigName() const
 	{
-		return backupConfigName;
+		return &backupConfigName;
 	}
-	const bool &isAWindowConfigActive() const
+	const bool isAWindowConfigActive() const
 	{
 		return aWindowConfigActive;
 	}
-	const bool &isRemapScheduled() const
+	const bool isRemapScheduled() const
 	{
 		return scheduledReMap;
 	}
@@ -151,7 +151,7 @@ private:
 
 			if (isIteratingConfig)
 			{
-				if (commandContent.substr(0,10) == "configEnd") // finding configEnd
+				if (commandContent.substr(0, 10) == "configEnd") // finding configEnd
 				{
 					isIteratingConfig = false;
 				}
@@ -209,14 +209,14 @@ private:
 					}
 				}
 			}
-			else if (commandContent.substr(0,13) == "configWindow=")
+			else if (commandContent.substr(0, 13) == "configWindow=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				configSwitcher->configWindowsNamesVector.emplace_back(new string(commandContent));
 			}
-			else if (commandContent.substr(0,7) == "config=")
+			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
@@ -226,20 +226,20 @@ private:
 		in.close();
 	}
 
-	void loadConf(const string configName, const bool silent = false)
+	void loadConf(const string *const configName, const bool silent = false)
 	{
-		if (!macroEventsKeyMaps.contains(configName))
+		if (!macroEventsKeyMaps.contains(*configName))
 		{
 			clog << "Undefined profile : " << configName << endl;
 			return;
 		}
 		configSwitcher->unScheduleReMap();
 
-		currentConfigName = configName;
+		currentConfigName = *configName;
 		currentConfigPtr = &macroEventsKeyMaps[currentConfigName];
 		if (!silent)
 		{
-			(void)!(system(("notify-send -t 200 'New config :' '" + configName + "'").c_str()));
+			(void)!(system(("notify-send -t 200 'New config :' '" + *configName + "'").c_str()));
 		}
 	}
 
@@ -257,8 +257,8 @@ private:
 	void checkForWindowConfig()
 	{
 		char *c = getActiveWindow();
-		clog << "CurrentWindowNameLog : " << c << endl;
-		if (configSwitcher->temporaryWindowName() == "" || strcmp(c, configSwitcher->temporaryWindowName().c_str()) != 0)
+		clog << "WindowNameLog : " << c << endl;
+		if (*configSwitcher->temporaryWindowName() == "" || strcmp(c, configSwitcher->temporaryWindowName()->c_str()) != 0)
 		{
 			bool found = false;
 			for (string *configWindowName : (*configSwitcher).configWindowsNamesVector)
@@ -274,7 +274,7 @@ private:
 			if (!found && configSwitcher->isAWindowConfigActive())
 			{
 				lock_guard<mutex> guard(configSwitcherMutex);
-				configSwitcher->scheduleReMap(&configSwitcher->getBackupConfigName());
+				configSwitcher->scheduleReMap(configSwitcher->getBackupConfigName());
 				loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
 			}
 		}
@@ -508,7 +508,7 @@ public:
 		initConf();
 
 		configSwitcher->scheduleReMap(&mapConfig);
-		loadConf(mapConfig); // Initialize config
+		loadConf(&mapConfig); // Initialize config
 		run();
 	}
 };
