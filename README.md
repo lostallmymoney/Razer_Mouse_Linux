@@ -14,7 +14,7 @@ Run sh install.sh from the directory to install.
 ## COMMANDS :
 
 	`naga start <optional:configName>` 		//Starts a daemon with the optional config name.	
-	`naga edit <optional:configName>` 		//Edit naga config, then start with optional config name.
+	`naga edit <optional:configName>` 		//Edits naga config, then start with optional config name.
 	`naga stop`					//stops the daemon.
 	`naga fix`					//Restart usb services.
 	`naga uninstall` 				//uninstall the daemon tool
