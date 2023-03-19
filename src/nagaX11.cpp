@@ -22,6 +22,7 @@ typedef pair<const char *const, FakeKey *const> CharAndFakeKey;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static vector<CharAndFakeKey *> *const fakeKeyFollowUps = new vector<CharAndFakeKey *>();
 static int fakeKeyFollowCount = 0;
+static string userPrefixString = "";
 
 class configKey
 {
@@ -145,7 +146,6 @@ private:
 
 		for (int readingLine = 1; getline(in, commandContent); readingLine++)
 		{
-
 			if (commandContent[0] == '#' || commandContent.find_first_not_of(' ') == string::npos)
 				continue; // Ignore comments, empty lines
 
@@ -222,8 +222,19 @@ private:
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 			}
+			else if (commandContent.substr(0, 5) == "user=")
+			{
+				commandContent.erase(0, 5);
+				commandContent.erase(remove(commandContent.begin(), commandContent.end(), ' '), commandContent.end()); // Erase spaces inside 1st part of the line
+				userPrefixString = "sudo -u " + commandContent + " bash -c \"";
+			}
 		}
 		in.close();
+		if (userPrefixString == "")
+		{
+			clog << "user= not set" << endl;
+			exit(1);
+		}
 	}
 
 	void loadConf(const string *const configName, const bool silent = false)
@@ -239,7 +250,7 @@ private:
 		currentConfigPtr = &macroEventsKeyMaps[currentConfigName];
 		if (!silent)
 		{
-			(void)!(system(("notify-send -t 200 'New config :' '" + *configName + "'").c_str()));
+			(void)!(system((userPrefixString + "notify-send -t 200 New config : '" + *configName + "'\"").c_str()));
 		}
 	}
 
@@ -410,7 +421,7 @@ private:
 
 	const static void executeNow(const string *const macroContent)
 	{
-		(void)!(system(macroContent->c_str()));
+		(void)!(system((userPrefixString + *macroContent + "\"").c_str()));
 	}
 	// end of configKeys functions
 

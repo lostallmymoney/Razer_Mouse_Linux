@@ -43,15 +43,15 @@ sudo chmod 755 /usr/local/bin/Naga_Linux/nagaUninstall.sh
 
 _dir="/home/razerInput/.naga"
 sudo mkdir -p "$_dir"
-if [ -d "$_dir" ]
-then
-	sudo cp -r -n -v "keyMap.txt" "$_dir"
-	sudo chown -R "root:root" "$_dir"
-fi
+sudo cp -r -n -v "keyMap.txt" "$_dir"
+sudo chown -R "root:root" "$_dir"
+
+grep -qF "user=$USER" /home/razerInput/.naga/keyMap.txt || sudo sed -i "1i user=$USER" /home/razerInput/.naga/keyMap.txt
 
 sudo groupadd -f razerInputGroup
 sudo bash -c "useradd razerInput > /dev/null 2>&1"
 sudo usermod -aG razerInputGroup razerInput
+sudo usermod -s /sbin/nologin razerInput
 
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' > /tmp/80-naga.rules
 
@@ -67,7 +67,9 @@ echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf > /de
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
+sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) ALL" || echo -e "\nrazerInput ALL=($USER) ALL\n" | sudo EDITOR='tee -a' visudo > /dev/null
 grep -qF 'xhost +SI:localuser:razerInput' ~/.profile || echo -e "\nxhost +SI:localuser:razerInput\n" >> ~/.profile
+sudo touch /home/razerInput/.bashrc && grep -qxF "export PATH=\`sudo -u $USER echo \$PATH\`" /home/razerInput/.bashrc || echo "export PATH=\`sudo -u $USER echo \$PATH\`" | sudo tee -a /home/razerInput/.bashrc > /dev/null
 xhost +SI:localuser:razerInput
 
 sudo systemctl enable naga
