@@ -5,7 +5,7 @@ Now with app auto profiles !
 
 !!! ONE LINE INSTALL !!! :
 
-`sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux && sudo sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`
+`sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sudo sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`
 
 Or run sh install.sh from the directory to install.
 
