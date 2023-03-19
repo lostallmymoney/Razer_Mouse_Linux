@@ -69,7 +69,7 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 sleep 0.5
 
 if ! grep -q "xhost +SI:localuser:razerInput" ~/.bashrc; then
-    echo -e "\nxhost +SI:localuser:razerInput\n" >> ~/.bashrc
+    bash -c "echo -e \"\nxhost +SI:localuser:razerInput\n\" >> ~/.bashrc"
 fi
 
 xhost +SI:localuser:razerInput
