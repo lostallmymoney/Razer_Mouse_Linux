@@ -554,7 +554,7 @@ int main(const int argc, const char *const argv[])
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
-			(void)!(system("x-terminal-emulator -e nano ~/.naga/keyMap.txt"));
+			(void)!(system("x-terminal-emulator -e sudo nano ~/.naga/keyMap.txt"));
 
 			if (argc > 2)
 				(void)!(system(("naga start " + string(argv[2])).c_str()));

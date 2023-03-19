@@ -50,7 +50,7 @@ do
 	if [ -d "$_dir" ]
 	then
 		sudo cp -r -n -v "keyMap.txt" "$_dir"
-		sudo chown -R "$(id -un "$u"):users" "$_dir"
+		sudo chown -R "root:root" "$_dir"
 	fi
 done
 if [ -d "/root" ];
@@ -58,6 +58,7 @@ then
 	sudo gpasswd -a "root" razer
 	sudo mkdir -p /root/.naga
 	sudo cp -r -n -v "keyMap.txt" "/root/.naga"
+	sudo chown -R "root:root" "/root/.naga"
 fi
 
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razer",MODE="640"' > /tmp/80-naga.rules
@@ -66,8 +67,7 @@ sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules
 
 #udev reload so no need to reboot
 sudo udevadm control --reload-rules && sudo udevadm trigger
-#restart mouse drivers
-sudo bash -c "modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse"
+
 sleep 0.5
 naga start
 
