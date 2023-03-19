@@ -10,7 +10,8 @@ Now with app auto profiles !
 
 Run sh install.sh from the directory to install.
 
-The commands are :
+
+## COMMANDS :
 
 	`naga stop` or `naga kill` 			//stops the daemon.
 	`naga start <optional:selectedMapping>` 	//restart the daemon if there is one running and starts a hidden daemon with the optional key mapping passed as the default config.
