@@ -69,7 +69,8 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 sleep 0.5
 sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) ALL" || echo -e "\nrazerInput ALL=($USER) ALL\n" | sudo EDITOR='tee -a' visudo > /dev/null
 grep -qF 'xhost +SI:localuser:razerInput' ~/.profile || echo -e "\nxhost +SI:localuser:razerInput\n" >> ~/.profile
-sudo touch /home/razerInput/.bashrc && grep -qxF "export PATH=\`sudo -u $USER echo \$PATH\`" /home/razerInput/.bashrc || echo "export PATH=\`sudo -u $USER echo \$PATH\`" | sudo tee -a /home/razerInput/.bashrc > /dev/null
+sudo touch /home/razerInput/.profile && grep -qxF "export PATH=\`sudo -u $USER echo \$PATH\`" /home/razerInput/.profile || echo "export PATH=\`sudo -u $USER echo \$PATH\`" | sudo tee -a /home/razerInput/.profile > /dev/null
+sudo -u razerInput bash -c "export PATH=$PATH"
 xhost +SI:localuser:razerInput
 
 sudo systemctl enable naga
