@@ -51,7 +51,7 @@ CAUTION, in this alpha version the run option wont work for text environment com
 As an alpha version, there might be bugs.
 
 ## CONFIGURATION
-The configuration file `keyMap.txt` has the following syntax:
+The configuration file `keyMap.txt` has the following syntax
 
     `config=<configName>` set the name of the following config. The initial loaded config be `defaultConfig` unless specified as argument.
 
