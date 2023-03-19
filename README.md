@@ -1,5 +1,5 @@
-# Razer Mouse Mapper for Linux (X11)
-..also can accept other devices by adding the files. Contact me to add devices.
+# Razer Mouse Linux
+..also can accept other devices by adding the files. Contact me to add devices. Currently supporting X11.
 Now with app auto profiles !
 
 !!! ONE LINE INSTALL !!! :
