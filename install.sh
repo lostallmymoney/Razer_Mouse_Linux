@@ -72,4 +72,5 @@ sleep 0.5
 naga start
 
 tput setaf 2; printf "Please add (naga.desktop or a script with naga start) to be executed\nwhen your window manager starts.\n" ; tput sgr0;
+printf "Star the repo here 😁 :\nhttps://github.com/lostallmymoney/Razer_Mouse_Linux\n"
 cd ..
