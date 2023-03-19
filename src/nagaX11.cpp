@@ -524,7 +524,6 @@ int main(const int argc, const char *const argv[])
 	{
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
-			(void)!(system("xhost +SI:localuser:razerInput"));
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
