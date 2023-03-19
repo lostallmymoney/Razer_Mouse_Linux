@@ -12,12 +12,14 @@ Or run sh install.sh from the directory to install.
 
 ## COMMANDS :
 
-	`naga start <optional:configName>` 		//Starts a daemon with the optional config name.	
-	`naga edit <optional:configName>` 		//Edits naga config, then starts with optional config name.
-	`naga stop`					//stops the daemon.
+	`naga start` 					//Starts a daemon.	
+	`naga edit` 					//Edits naga config, then restart service.
+	`naga stop`					//Stops the daemon.
 	`naga fix`					//Restarts usb services.
+	`naga serviceHelper`				//For the services.
 	`naga uninstall` 				//Uninstalls the daemon tool.
 	`naga` 						//Gives help.
+	There's also naga service (start | stop | disable | enable)
 
 
 If there is an error about config files just copy it to your /home/.naga/
