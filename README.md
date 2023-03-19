@@ -13,13 +13,11 @@ Run sh install.sh from the directory to install.
 
 ## COMMANDS :
 
-	`naga stop` or `naga kill` 			//stops the daemon.
-	`naga start <optional:selectedMapping>` 	//restart the daemon if there is one running and starts a hidden daemon with the optional key mapping passed as the default config.
-	
+	`naga start <optional:selectedMapping>` 	//restart the daemon if there is one running and starts a hidden daemon with the optional key mapping passed as the default config.	
 	`naga edit` 					//Edit naga config.
-	`naga fix` or `naga tame` 			//Restart usb services.
+	`naga stop`					//stops the daemon.
+	`naga fix`					//Restart usb services.
 	`naga uninstall` 				//uninstall the daemon tool
-	`naga killroot` 				//kill root daemon if launched as root
 	`naga` 						//gives help
 
 
