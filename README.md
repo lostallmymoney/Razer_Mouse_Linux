@@ -25,7 +25,7 @@ Run in root if there is an error accessing the device.
 
 Map razer naga devices keys with the config file : `keyMap.txt` under `$HOME/.naga/`
 
-Requires: libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
+##Requires: libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
 	If you are running something else than ubuntu and it's not compiling theses are the packages to find.
 
 Probably works with :
