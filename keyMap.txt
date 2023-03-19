@@ -1,7 +1,6 @@
 config=defaultConfig
-1 - run=xdotool getactivewindow getwindowname
-2 - specialPressOnPress=;
-2 - specialReleaseOnRelease=;
+1 - keyClick=XF86AudioMute
+2 - specialKey=;
 3 - string=hello@hotmail.com
 4 - run2=if [ $(pgrep -c spotify) -eq 0 ]; then setsid spotify; fi
 5 - run=gnome-terminal

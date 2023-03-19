@@ -132,8 +132,8 @@ private:
 
 	void initConf()
 	{
-		int pos;
-		string commandContent, iteratedConfig;
+		string commandContent;
+		map<int, std::map<bool, MacroEventVector>> *iteratedConfig;
 		bool isIteratingConfig = false;
 
 		ifstream in(conf_file.c_str(), ios::in);
@@ -146,17 +146,18 @@ private:
 		for (int readingLine = 1; getline(in, commandContent); readingLine++)
 		{
 
+			if (commandContent[0] == '#' || commandContent.find_first_not_of(' ') == string::npos)
+				continue; // Ignore comments, empty lines
+
 			if (isIteratingConfig)
 			{
-				if (commandContent.find("configEnd") != string::npos) // finding configEnd
+				if (commandContent.substr(0,10) == "configEnd") // finding configEnd
 				{
 					isIteratingConfig = false;
 				}
 				else
 				{
-					if (commandContent[0] == '#' || commandContent.find_first_not_of(' ') == string::npos)
-						continue; // Ignore comments, empty lines
-					pos = commandContent.find('=');
+					int pos = commandContent.find('=');
 					string *commandType = new string(commandContent.substr(0, pos));							   // commandType = numbers + command type
 					commandContent.erase(0, pos + 1);															   // commandContent = command content
 					commandType->erase(remove(commandType->begin(), commandType->end(), ' '), commandType->end()); // Erase spaces inside 1st part of the line
@@ -166,24 +167,24 @@ private:
 					for (char &c : *commandType)
 						c = tolower(c);
 
-					const auto stoiNumber = [&](const string *const numberString)
+					int buttonNumberInt;
+					try
 					{
-						try
-						{
-							return stoi(*numberString);
-						}
-						catch (...)
-						{
-							clog << "At config line " << readingLine << ": expected a number" << endl;
-							exit(1);
-						}
-					};
+						buttonNumberInt = stoi(*buttonNumber);
+					}
+					catch (...)
+					{
+						clog << "At config line " << readingLine << ": expected a number" << endl;
+						exit(1);
+					}
+
+					map<bool, MacroEventVector> *iteratedButtonConfig = &(*iteratedConfig)[buttonNumberInt];
 
 					if (configKeysMap.contains(*commandType))
 					{ // filter out bad types
 						if (*configKeysMap[*commandType]->Prefix() != "")
 							commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
-						macroEventsKeyMaps[iteratedConfig][stoiNumber(buttonNumber)][configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
+						(*iteratedButtonConfig)[configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
 						// Encode and store mapping v3
 					}
 					else if (*commandType == "key")
@@ -194,23 +195,32 @@ private:
 						}
 						const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
-						macroEventsKeyMaps[iteratedConfig][stoiNumber(buttonNumber)][true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-						macroEventsKeyMaps[iteratedConfig][stoiNumber(buttonNumber)][false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+					}
+					else if (*commandType == "specialkey")
+					{
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["specialpressonpress"], &commandContent));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["specialreleaseonrelease"], &commandContent));
+					}
+					else
+					{
+						clog << "Discarding : " << *commandType << "=" << commandContent << endl;
 					}
 				}
 			}
-			else if (commandContent.find("configWindow=") != string::npos)
+			else if (commandContent.substr(0,13) == "configWindow=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 13);
-				iteratedConfig = commandContent;
+				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				configSwitcher->configWindowsNamesVector.emplace_back(new string(commandContent));
 			}
-			else if (commandContent.find("config=") != string::npos)
+			else if (commandContent.substr(0,7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
-				iteratedConfig = commandContent;
+				iteratedConfig = &macroEventsKeyMaps[commandContent];
 			}
 		}
 		in.close();
@@ -355,7 +365,8 @@ private:
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
-		fakekey_press(aKeyFaker, (unsigned char *)&(*macroContent)[0], 8, 0);
+		clog << "Pressing " << (*macroContent)[0] << endl;
+		fakekey_press(aKeyFaker, (const unsigned char *)&(*macroContent)[0], 8, 0);
 		XFlush(aKeyFaker->xdpy);
 		fakeKeyFollowUps->emplace_back(new CharAndFakeKey(&(*macroContent)[0], aKeyFaker));
 		fakeKeyFollowCount++;
@@ -461,8 +472,8 @@ public:
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
 
-		#define ONKEYPRESSED true
-		#define ONKEYRELEASED false
+#define ONKEYPRESSED true
+#define ONKEYRELEASED false
 
 		configKeysMap.insert(stringAndConfigKey("chmap", new configKey(ONKEYPRESSED, chmapNow))); // change keymap
 		configKeysMap.insert(stringAndConfigKey("chmaprelease", new configKey(ONKEYRELEASED, chmapNow)));
@@ -529,12 +540,12 @@ int main(const int argc, const char *const argv[])
 		{
 			stopD();
 		}
-		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL)
-		{			
+		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
+		{
 			stopD();
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
 			(void)!(system("pkexec --user root bash -c \"modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse\""));
-			usleep(70000);
+			usleep(600000);
 
 			if (argc > 2)
 				(void)!(system(("naga start " + string(argv[2])).c_str()));
