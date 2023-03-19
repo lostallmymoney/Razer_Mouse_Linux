@@ -53,55 +53,45 @@ As an alpha version, there might be bugs.
 ## CONFIGURATION
 The configuration file `keyMap.txt` has the following syntax:
 
-    "config="<configName> set the name of the following config. The initial loaded config will always be <configName> = defaultConfig .
+    `config=<configName>` set the name of the following config. The initial loaded config be `defaultConfig` unless specified as argument.
 
-    <keynumber> - <option>=<command>
+    `<keynumber> - <option>=<command>`
 
-    <keynumber> is a number between 1-14 representing the 12 keys of the naga's keypad + two on the top of the naga.
+    `<keynumber>` is a number between 1-14 representing the 12 keys of the naga's keypad + two on the top of the naga.
 
-    <option> decides what is going to be applied to <command>
-
-	The possible choices are :
-		-chmap : Changes the keymap for another config inside `keymap.txt` in ~/.naga .
-		-champRelease : Changes the keymap on key release.
-		-sleep and sleepRelease :
-			Sleeps
-		-string and stringRelease :
-			Writes a string, doesn't use xdotool so xdotool keys won't work
-			
-		-key : does keyPress at press and keyRelease at release
-		-specialKey : does speical keyPress at press and special keyRelease at release.
-		-keyPressOnPress :
-			The xdotool key is pressed when the key is pressed.
-		-keyReleaseOnRelease :
-			The xdotool key is released when the key is released.			
-		-keyPressOnRelease :
-			The xdotool key is pressed when the key is released.
-		-keyReleaseOnPress :
-			The xdotool key is released when the key is pressed.
-			There seems to be a list of keys on https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h but you need to remove **XK_** and they're not all there so google them if you want to be sure.
-		-run : Runs the command <command> on key press with setsid before the command.
-		-run2 : Runs the command without setsid.
-		-runRelease : Runs a bash command when the button is released .
-		-runRelease2 : Runs the command without setsid when button released.
-		-setWorkspace : Runs <command> in **xdotool set_desktop <command>** .
-		-mousePosition : Runs <command> in **xdotool mousemove <command>** .
-		-keyClick : Press a key once when the button is pressed .
-		-keyClickRelease : Press a key once when the button is released .
+    `<option>` determines what will be applied to `<command>`. The possible choices are:
+		  - `chmap`: Changes the keymap for another config inside `keymap.txt` in `~/.naga`.
+		  - `champRelease`: Changes the keymap on key release.
+		  - `sleep` and `sleepRelease`: Sleeps.
+		  - `string` and `stringRelease`: Writes a string. This doesn't use xdotool so xdotool keys won't work.
+		  - `key`: Does keyPress at press and keyRelease at release.
+		  - `specialKey`: Does special keyPress at press and special keyRelease at release.
+		  - `keyPressOnPress`: The xdotool key is pressed when the key is pressed.
+		  - `keyReleaseOnRelease`: The xdotool key is released when the key is released.			
+		  - `keyPressOnRelease`: The xdotool key is pressed when the key is released.
+		  - `keyReleaseOnPress`: The xdotool key is released when the key is pressed. There seems to be a list of keys on https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h but you need to remove **XK_** and they're not all there so google them if you want to be sure.
+		  - `run`: Runs the command `<command>` on key press with setsid before the command.
+		  - `run2`: Runs the command without setsid.
+		  - `runRelease`: Runs a bash command when the button is released .
+		  - `runRelease2`: Runs the command without setsid when button released.
+		  - `setWorkspace`: Runs `<command>` in **xdotool set_desktop <command>** .
+		  - `mousePosition`: Runs `<command>` in **xdotool mousemove <command>** .
+		  -`keyClick` : Presses a key once when button pressed
+		  - `keyClickRelease` : Presses a Key once when button released
 		
 		#Use theses to press/unpress special chars that won't work using xdotool
-		-specialPressOnPress : Supports 1 char only...
-		-specialPressOnRelease : 1 char
-		-specialReleaseOnPress : 1 char
-		-specialReleaseOnRelease : 1 char
+		-`specialPressOnPress` : Supports 1 char.
+		-`specialPressOnRelease` : 1 char
+		-`specialReleaseOnPress` : 1 char
+		-`specialReleaseOnRelease` : 1 char
 
-    		<command> is what is going to be used based on the option.
+    		`<command>` is what is going to be used based on the option.
 
-		To test any <command> run it in the command cited above.
+		To test any `<command>` run it in the command cited above.
 
-		"configEnd" Marks the end of a config.
+		`configEnd` Marks the end of a config.
 		
-		For a mouseclick run xdotool click <command>) (Can put numbers from 1 to 9 and options such as *--window etc).
+		For a mouseclick run `xdotool click <command>` (Can put numbers from 1 to 9 and options such as *--window etc).
 
 You may have as many configs as you want in the keyMap.txt file, just make sure to give them different names and include defaultConfig.
 
