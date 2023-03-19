@@ -1,6 +1,6 @@
 [Unit]
 Description=Custom key bindings for the side panel of razer mouses.
-After=x_server_started.service
+After=graphical.target
 
 [Service]
 ExecStart=/usr/local/bin/naga serviceHelper

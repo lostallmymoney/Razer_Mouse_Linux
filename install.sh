@@ -67,7 +67,7 @@ echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf > /de
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
-
+grep -qF 'xhost +SI:localuser:razerInput' ~/.profile || echo -e "\nxhost +SI:localuser:razerInput\n" >> ~/.profile
 xhost +SI:localuser:razerInput
 
 sudo systemctl enable naga
