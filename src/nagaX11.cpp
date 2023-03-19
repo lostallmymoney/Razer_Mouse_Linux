@@ -578,7 +578,7 @@ int main(const int argc, const char *const argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  repair           For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
+		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  repair         For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
 	}
 	return 0;
 }
