@@ -22,7 +22,28 @@ typedef pair<const char *const, FakeKey *const> CharAndFakeKey;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static vector<CharAndFakeKey *> *const fakeKeyFollowUps = new vector<CharAndFakeKey *>();
 static int fakeKeyFollowCount = 0;
-static string userPrefixString = "";
+string userString = "";
+
+const string *applyUserString(string *c)
+{
+	return new string("sudo -u " + userString + " bash -c \"" + *c + "\"");
+}
+
+const void fetchUserString()
+{
+	ifstream file("/home/razerInput/.naga/user.txt");
+	string line;
+	if (getline(file, line))
+	{
+		line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char c)
+								  { return std::isspace(c); }),
+				   line.end()); // nuke all whitespaces
+		userString = line;
+	}
+	else
+		exit(1);
+	file.close();
+}
 
 class configKey
 {
@@ -35,6 +56,7 @@ public:
 	const bool IsOnKeyPressed() const { return onKeyPressed; }
 	const void runInternal(const string *const content) const { internalFunction(content); }
 	const string *const Prefix() const { return prefix; }
+	const void (*InternalFunction() const)(const string *const) { return internalFunction; }
 
 	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
@@ -184,7 +206,11 @@ private:
 					{ // filter out bad types
 						if (*configKeysMap[*commandType]->Prefix() != "")
 							commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
-						(*iteratedButtonConfig)[configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
+
+						if (configKeysMap[*commandType]->InternalFunction() == executeNow)
+							(*iteratedButtonConfig)[configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], applyUserString(&commandContent)));
+						else
+							(*iteratedButtonConfig)[configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
 						// Encode and store mapping v3
 					}
 					else if (*commandType == "key")
@@ -193,10 +219,10 @@ private:
 						{
 							commandContent = hexChar(commandContent[0]);
 						}
-						const string *const commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
+						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], applyUserString(&commandContent)));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], applyUserString(commandContent2)));
 					}
 					else if (*commandType == "specialkey")
 					{
@@ -222,19 +248,8 @@ private:
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 			}
-			else if (commandContent.substr(0, 5) == "user=")
-			{
-				commandContent.erase(0, 5);
-				commandContent.erase(remove(commandContent.begin(), commandContent.end(), ' '), commandContent.end()); // Erase spaces inside 1st part of the line
-				userPrefixString = "sudo -u " + commandContent + " bash -c \"";
-			}
 		}
 		in.close();
-		if (userPrefixString == "")
-		{
-			clog << "user= not set" << endl;
-			exit(1);
-		}
 	}
 
 	void loadConf(const string *const configName, const bool silent = false)
@@ -250,7 +265,7 @@ private:
 		currentConfigPtr = &macroEventsKeyMaps[currentConfigName];
 		if (!silent)
 		{
-			(void)!(system((userPrefixString + "notify-send -t 200 New config : '" + *configName + "'\"").c_str()));
+			(void)!(system(applyUserString(new string("notify-send -t 200 New config : '" + *configName + "'"))->c_str()));
 		}
 	}
 
@@ -421,7 +436,8 @@ private:
 
 	const static void executeNow(const string *const macroContent)
 	{
-		(void)!(system((userPrefixString + *macroContent + "\"").c_str()));
+		clog << "Content " << macroContent->c_str() << endl;
+		(void)!(system(macroContent->c_str()));
 	}
 	// end of configKeys functions
 
@@ -480,7 +496,7 @@ public:
 		}
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
-
+		fetchUserString();
 #define ONKEYPRESSED true
 #define ONKEYRELEASED false
 
@@ -518,6 +534,9 @@ public:
 
 		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(&mapConfig); // Initialize config
+
+		//(void)!(system(("export PATH=$("+ *applyUserString(new string("printf %%s $PATH")) + ")").c_str()));
+		(void)!(system((applyUserString(new string(" xhost +SI:localuser:razerInput"))->c_str())));
 		run();
 	}
 };
@@ -536,7 +555,6 @@ int main(const int argc, const char *const argv[])
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-			(void)!(system("/usr/local/bin/Naga_Linux/nagaPathExport.sh"));
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
 			else
@@ -589,7 +607,7 @@ int main(const int argc, const char *const argv[])
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
-			(void)!(system("x-terminal-emulator -e sudo bash -c \"nano /home/razerInput/.naga/keyMap.txt && systemctl restart naga\""));
+			(void)!(system("sudo bash -c \"nano /home/razerInput/.naga/keyMap.txt && systemctl restart naga\""));
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
 		{

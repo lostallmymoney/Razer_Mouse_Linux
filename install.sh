@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$(id -u)" = "0" ]; then
+    echo "This script must not be run as root"
+    exit 1
+fi
+
 sudo systemctl stop naga
 sudo sh src/nagaKillroot.sh
 
@@ -41,12 +46,14 @@ sudo chmod 755 /usr/local/bin/Naga_Linux/nagaKillroot.sh
 sudo cp -f ./src/nagaUninstall.sh /usr/local/bin/Naga_Linux/
 sudo chmod 755 /usr/local/bin/Naga_Linux/nagaUninstall.sh
 
+printf '#!/bin/bash\nsleep 7\nsudo systemctl start naga\n' | sudo tee /etc/profile.d/start-naga.sh  > /dev/null && sudo chmod +x /etc/profile.d/start-naga.sh
+
 _dir="/home/razerInput/.naga"
 sudo mkdir -p "$_dir"
 sudo cp -r -n -v "keyMap.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"
 
-grep -qF "user=$USER" /home/razerInput/.naga/keyMap.txt || sudo sed -i "1i user=$USER" /home/razerInput/.naga/keyMap.txt
+printf "%s" "$USER" | sudo tee /home/razerInput/.naga/user.txt > /dev/null
 
 sudo groupadd -f razerInputGroup
 sudo bash -c "useradd razerInput > /dev/null 2>&1"
@@ -67,11 +74,9 @@ echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf > /de
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
-sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) NOPASSWD:ALL" || printf "\nrazerInput ALL=(%s) NOPASSWD:ALL\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
-grep -qF 'xhost +SI:localuser:razerInput' ~/.profile || printf "\nxhost +SI:localuser:razerInput\n" >> ~/.profile
-sudo printf '#!/bin/sh\nexport PATH=$(sudo -u %s echo $PATH)' "$USER" | sudo tee /usr/local/bin/Naga_Linux/nagaPathExport.sh > /dev/null
-sudo chmod 755 /usr/local/bin/Naga_Linux/nagaPathExport.sh
-xhost +SI:localuser:razerInput
+sudo cat /etc/sudoers | grep -qxF "%razerInputGroup ALL=($USER) NOPASSWD:ALL" || printf "\n%%razerInputGroup ALL=(%s) NOPASSWD:ALL\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
+sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
+
 
 sudo systemctl enable naga
 sudo systemctl start naga
