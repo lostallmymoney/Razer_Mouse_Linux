@@ -20,6 +20,8 @@ Or run sh install.sh from the directory to install.
 	`naga uninstall` 				//Uninstalls the daemon tool.
 	`naga` 						//Gives help.
 	There's also naga service (start | stop | disable | enable)
+	
+	`sudo -su razerInput bash -c "naga start debug"` to debug
 
 
 If there is an error about config files just copy it to your /home/.naga/
