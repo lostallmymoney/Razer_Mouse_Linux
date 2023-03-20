@@ -5,3 +5,6 @@ After=graphical.target
 [Service]
 ExecStart=/usr/local/bin/naga serviceHelper
 User=razerInput
+
+[Install]
+WantedBy=default.target
