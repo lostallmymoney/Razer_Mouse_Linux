@@ -46,8 +46,6 @@ sudo chmod 755 /usr/local/bin/Naga_Linux/nagaKillroot.sh
 sudo cp -f ./src/nagaUninstall.sh /usr/local/bin/Naga_Linux/
 sudo chmod 755 /usr/local/bin/Naga_Linux/nagaUninstall.sh
 
-printf '#!/bin/bash\nsleep 7\nsudo systemctl start naga\n' | sudo tee /etc/profile.d/start-naga.sh  > /dev/null && sudo chmod +x /etc/profile.d/start-naga.sh
-
 _dir="/home/razerInput/.naga"
 sudo mkdir -p "$_dir"
 sudo cp -r -n -v "keyMap.txt" "$_dir"
@@ -57,8 +55,8 @@ printf "%s" "$USER" | sudo tee /home/razerInput/.naga/user.txt > /dev/null
 
 sudo groupadd -f razerInputGroup
 sudo bash -c "useradd razerInput > /dev/null 2>&1"
-sudo usermod -aG razerInputGroup razerInput
-sudo usermod -s /sbin/nologin razerInput
+sudo usermod -aG razerInputGroup razerInput > /dev/null
+sudo usermod -s /sbin/nologin razerInput > /dev/null
 
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' > /tmp/80-naga.rules
 

@@ -535,7 +535,7 @@ public:
 		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(&mapConfig); // Initialize config
 
-		//(void)!(system(("export PATH=$("+ *applyUserString(new string("printf %%s $PATH")) + ")").c_str()));
+		(void)!(system(("export PATH=$("+ *applyUserString(new string("printf '%%s' $PATH")) + ")").c_str()));
 		(void)!(system((applyUserString(new string(" xhost +SI:localuser:razerInput"))->c_str())));
 		run();
 	}
