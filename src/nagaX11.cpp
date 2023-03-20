@@ -536,6 +536,7 @@ int main(const int argc, const char *const argv[])
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+			(void)!(system("/usr/local/bin/Naga_Linux/nagaPathExport.sh"));
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
 			else

@@ -67,10 +67,10 @@ echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf > /de
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
-sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) ALL" || printf "\nrazerInput ALL=($USER) ALL\n" | sudo EDITOR='tee -a' visudo > /dev/null
+sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) NOPASSWD:ALL" || printf "\nrazerInput ALL=(%s) NOPASSWD:ALL\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
 grep -qF 'xhost +SI:localuser:razerInput' ~/.profile || printf "\nxhost +SI:localuser:razerInput\n" >> ~/.profile
-sudo touch /home/razerInput/.profile && grep -qxF "export PATH=\`sudo -u $USER echo \$PATH\`" /home/razerInput/.profile || echo "export PATH=\`sudo -u $USER echo \$PATH\`" | sudo tee -a /home/razerInput/.profile > /dev/null
-sudo -u razerInput bash -c "export PATH=$PATH"
+sudo printf '#!/bin/sh\nexport PATH=$(sudo -u %s echo $PATH)' "$USER" | sudo tee /usr/local/bin/Naga_Linux/nagaPathExport.sh > /dev/null
+sudo chmod 755 /usr/local/bin/Naga_Linux/nagaPathExport.sh
 xhost +SI:localuser:razerInput
 
 sudo systemctl enable naga
