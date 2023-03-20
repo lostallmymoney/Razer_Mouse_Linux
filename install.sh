@@ -59,7 +59,6 @@ sudo usermod -a -G razerInputGroup razerInput > /dev/null
 #sudo usermod -a -G "$USER" razerInput > /dev/null
 sudo chown -R razerInput:razerInputGroup /home/razerInput
 
-grep -qxF 'xhost +SI:localuser:razerInput' ~/.profile || echo 'xhost +SI:localuser:razerInput' >> ~/.profile
 
 xhost +SI:localuser:razerInput
 
@@ -80,8 +79,10 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
 sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) NOPASSWD:ALL" || printf "\nrazerInput ALL=(%s) NOPASSWD:ALL\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
-#sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
+sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
 
+grep -qxF 'xhost +SI:localuser:razerInput' ~/.profile || echo 'xhost +SI:localuser:razerInput' >> ~/.profile
+grep -qxF 'sudo systemctl start naga' ~/.profile || echo 'sudo systemctl start naga' >> ~/.profile
 
 sudo systemctl enable naga
 sudo systemctl start naga
