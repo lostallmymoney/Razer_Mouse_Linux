@@ -599,12 +599,15 @@ int main(const int argc, const char *const argv[])
 			if (argc > 2 && strstr(argv[2], "debug") != NULL)
 			{
 				clog << "Starting naga debug, logs :" << endl;
-				usleep(70000);
+				usleep(100000);
 				(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 				NagaDaemon();
 			}
 			else
+			{
+				usleep(100000);
 				(void)!(system("sudo systemctl start naga"));
+			}
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{
