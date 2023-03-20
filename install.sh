@@ -59,6 +59,10 @@ sudo usermod -a -G razerInputGroup razerInput > /dev/null
 #sudo usermod -a -G "$USER" razerInput > /dev/null
 sudo chown -R razerInput:razerInputGroup /home/razerInput
 
+grep -qxF 'xhost +SI:localuser:razerInput' ~/.profile || echo 'xhost +SI:localuser:razerInput' >> ~/.profile
+
+xhost +SI:localuser:razerInput
+
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' > /tmp/80-naga.rules
 
 sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules

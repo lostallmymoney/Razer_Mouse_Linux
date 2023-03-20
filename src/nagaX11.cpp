@@ -461,7 +461,6 @@ private:
 public:
 	NagaDaemon(const string mapConfig = "defaultConfig")
 	{
-		(void)!(system((applyUserString(new string(" xhost +SI:localuser:razerInput"))->c_str())));
 		// modulable device files list
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic-event-mouse");								 // NAGA EPIC
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-event-mouse");						 // NAGA EPIC DOCK
