@@ -5,7 +5,7 @@ sudo sh src/nagaKillroot.sh
 
 sudo echo "Installing requirements..."
 
-sudo apt install libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
+sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
 
 echo "Checking requirements..."
 
