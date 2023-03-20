@@ -22,11 +22,11 @@ typedef pair<const char *const, FakeKey *const> CharAndFakeKey;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static vector<CharAndFakeKey *> *const fakeKeyFollowUps = new vector<CharAndFakeKey *>();
 static int fakeKeyFollowCount = 0;
-string userString = "";
+string userString = "", userID = "";
 
 const string *applyUserString(string *c)
 {
-	return new string("sudo -u " + userString + " bash -c \"" + *c + "\"");
+	return new string("sudo -Hiu " + userString + " DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/" + userID + "/bus bash -c '" + *c + "'");
 }
 
 const void fetchUserString()
@@ -39,6 +39,15 @@ const void fetchUserString()
 								  { return std::isspace(c); }),
 				   line.end()); // nuke all whitespaces
 		userString = line;
+		if (getline(file, line))
+		{
+			line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char c)
+									  { return std::isspace(c); }),
+					   line.end()); // nuke all whitespaces
+			userID = line;
+		}
+		else
+			exit(1);
 	}
 	else
 		exit(1);
@@ -265,7 +274,7 @@ private:
 		currentConfigPtr = &macroEventsKeyMaps[currentConfigName];
 		if (!silent)
 		{
-			(void)!(system(applyUserString(new string("notify-send -t 200 New config : '" + *configName + "'"))->c_str()));
+			(void)!(system((applyUserString(new string("notify-send \"Profile : " + currentConfigName + "\"")))->c_str()));
 		}
 	}
 
@@ -452,6 +461,7 @@ private:
 public:
 	NagaDaemon(const string mapConfig = "defaultConfig")
 	{
+		(void)!(system((applyUserString(new string(" xhost +SI:localuser:razerInput"))->c_str())));
 		// modulable device files list
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic-event-mouse");								 // NAGA EPIC
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-event-mouse");						 // NAGA EPIC DOCK
@@ -535,8 +545,9 @@ public:
 		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(&mapConfig); // Initialize config
 
-		(void)!(system(("export PATH=$("+ *applyUserString(new string("printf '%%s' $PATH")) + ")").c_str()));
-		(void)!(system((applyUserString(new string(" xhost +SI:localuser:razerInput"))->c_str())));
+		(void)!(system(("export PATH=$(" + *applyUserString(new string("printf '%s' $PATH")) + ")").c_str()));
+		(void)!(system(("export DISPLAY=$(" + *applyUserString(new string("printf '%s' $DISPLAY")) + ")").c_str()));
+		//(void)!seteuid(stoi(userID));
 		run();
 	}
 };

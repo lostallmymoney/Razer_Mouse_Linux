@@ -19,6 +19,9 @@ configEnd
 
 config=defaultConfig2
 1 - key=XF86AudioMute
+3 - run=gnome-terminal
+3 - sleep=1000
+3 - run=gnome-terminal
 4 - run=gnome-terminal
 4 - sleep=1000
 4 - run=gnome-terminal

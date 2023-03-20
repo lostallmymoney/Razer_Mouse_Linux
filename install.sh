@@ -51,12 +51,13 @@ sudo mkdir -p "$_dir"
 sudo cp -r -n -v "keyMap.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"
 
-printf "%s" "$USER" | sudo tee /home/razerInput/.naga/user.txt > /dev/null
+printf "%s\n%s" "$USER" "$(id -u "$USER")"| sudo tee /home/razerInput/.naga/user.txt > /dev/null
 
 sudo groupadd -f razerInputGroup
 sudo bash -c "useradd razerInput > /dev/null 2>&1"
-sudo usermod -aG razerInputGroup razerInput > /dev/null
-sudo usermod -s /sbin/nologin razerInput > /dev/null
+sudo usermod -a -G razerInputGroup razerInput > /dev/null
+#sudo usermod -a -G "$USER" razerInput > /dev/null
+sudo chown -R razerInput:razerInputGroup /home/razerInput
 
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' > /tmp/80-naga.rules
 
@@ -67,13 +68,15 @@ sudo mkdir -p /etc/systemd/system/naga.service.d
 sudo cp -f src/naga.conf /etc/systemd/system/naga.service.d/
 echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf > /dev/null
 
+sudo chown -R razerInput:razerInputGroup /home/razerInput/
+
 
 #udev reload so no need to reboot
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
-sudo cat /etc/sudoers | grep -qxF "%razerInputGroup ALL=($USER) NOPASSWD:ALL" || printf "\n%%razerInputGroup ALL=(%s) NOPASSWD:ALL\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
-sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
+sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) NOPASSWD:ALL" || printf "\nrazerInput ALL=(%s) NOPASSWD:ALL\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
+#sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo > /dev/null
 
 
 sudo systemctl enable naga

@@ -1,9 +1,11 @@
 [Unit]
 Description=Custom key bindings for the side panel of razer mouses.
-After=graphical.target
+After=default.target
 
 [Service]
+Type=simple
 ExecStart=/usr/local/bin/naga serviceHelper
+TimeoutStartSec=20
 User=razerInput
 
 [Install]
