@@ -27,7 +27,7 @@ string userString = "", userID = "";
 
 const string *applyUserString(string c)
 {
-	return new string("sudo -Hiu " + userString + " DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/" + userID + "/bus bash -c '" + c + "'");
+	return new string("sudo -Hiu " + userString + " bash -c '" + c + "'");
 }
 
 const void fetchUserString()
@@ -535,7 +535,8 @@ public:
 
 		(void)!(system(("export PATH=$(" + *applyUserString("printf '%s' $PATH") + ")").c_str()));
 		(void)!(system(("export DISPLAY=$(" + *applyUserString("printf '%s' $DISPLAY") + ")").c_str()));
-		//(void)!seteuid(stoi(userID));
+		(void)!(system(("export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/" + userID + "/bus").c_str()));
+		(void)!seteuid(stoi(userID));
 		run();
 	}
 };
