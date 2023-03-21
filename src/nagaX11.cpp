@@ -12,21 +12,22 @@
 #include <unistd.h>
 #include <linux/input.h>
 #include <thread>
+#include <iomanip>
 #include <mutex>
 #include <map>
 #include <sstream>
 using namespace std;
 
 typedef pair<const char *const, const char *const> CharAndChar;
-typedef pair<const char *const, FakeKey *const> CharAndFakeKey;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
-static vector<CharAndFakeKey *> *const fakeKeyFollowUps = new vector<CharAndFakeKey *>();
+static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
 static int fakeKeyFollowCount = 0;
+map<string, string> notifySendMap;
 string userString = "", userID = "";
 
-const string *applyUserString(string *c)
+const string *const applyUserString(string c)
 {
-	return new string("sudo -Hiu " + userString + " DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/" + userID + "/bus bash -c '" + *c + "'");
+	return new string("sudo -Hiu " + userString + " DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/" + userID + "/bus bash -c '" + c + "'");
 }
 
 const void fetchUserString()
@@ -35,14 +36,14 @@ const void fetchUserString()
 	string line;
 	if (getline(file, line))
 	{
-		line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char c)
-								  { return std::isspace(c); }),
+		line.erase(remove_if(line.begin(), line.end(), [](unsigned char c)
+							 { return isspace(c); }),
 				   line.end()); // nuke all whitespaces
 		userString = line;
 		if (getline(file, line))
 		{
-			line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char c)
-									  { return std::isspace(c); }),
+			line.erase(remove_if(line.begin(), line.end(), [](unsigned char c)
+								 { return isspace(c); }),
 					   line.end()); // nuke all whitespaces
 			userID = line;
 		}
@@ -72,8 +73,6 @@ public:
 	}
 };
 
-typedef pair<string, configKey *> stringAndConfigKey;
-
 class MacroEvent
 {
 private:
@@ -84,12 +83,12 @@ public:
 	const configKey *const KeyType() const { return keyType; }
 	const string *const Content() const { return content; }
 
-	MacroEvent(const configKey *tkeyType, const string *tcontent) : keyType(tkeyType), content(new string(*tcontent))
+	MacroEvent(const configKey *const tkeyType, const string *const tcontent) : keyType(tkeyType), content(new string(*tcontent))
 	{
 	}
 };
 
-typedef vector<MacroEvent *> MacroEventVector;
+typedef vector<MacroEvent> MacroEventVector;
 
 class configSwitchScheduler
 {
@@ -123,10 +122,8 @@ public:
 	const void scheduleReMap(const string *reMapString)
 	{
 		scheduledReMapString = *reMapString;
-		scheduledReMap = true;
-		aWindowConfigActive = false;
-		temporaryWindowConfigName = "";
-		backupConfigName = "";
+		scheduledReMap = true, aWindowConfigActive = false;
+		temporaryWindowConfigName = backupConfigName = "";
 	}
 	const void scheduleWindowReMap(const string *reMapString)
 	{
@@ -134,10 +131,8 @@ public:
 		{
 			backupConfigName = scheduledReMapString;
 		}
-		scheduledReMapString = *reMapString;
-		temporaryWindowConfigName = *reMapString;
-		scheduledReMap = true;
-		aWindowConfigActive = true;
+		scheduledReMapString = temporaryWindowConfigName = *reMapString;
+		scheduledReMap = aWindowConfigActive = true;
 	}
 	const void unScheduleReMap()
 	{
@@ -160,12 +155,12 @@ private:
 	const int size = sizeof(struct input_event) * 64;
 	vector<CharAndChar> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
-	map<int, std::map<bool, MacroEventVector>> *currentConfigPtr;
+	map<int, map<bool, MacroEventVector>> *currentConfigPtr;
 
 	void initConf()
 	{
 		string commandContent;
-		map<int, std::map<bool, MacroEventVector>> *iteratedConfig;
+		map<int, map<bool, MacroEventVector>> *iteratedConfig;
 		bool isIteratingConfig = false;
 
 		ifstream in(conf_file.c_str(), ios::in);
@@ -189,19 +184,19 @@ private:
 				else
 				{
 					int pos = commandContent.find('=');
-					string *commandType = new string(commandContent.substr(0, pos));							   // commandType = numbers + command type
-					commandContent.erase(0, pos + 1);															   // commandContent = command content
-					commandType->erase(remove(commandType->begin(), commandType->end(), ' '), commandType->end()); // Erase spaces inside 1st part of the line
-					pos = commandType->find("-");
-					const string *const buttonNumber = new string(commandType->substr(0, pos)); // Isolate button number
-					commandType = new string(commandType->substr(pos + 1));						// Isolate command type
-					for (char &c : *commandType)
+					string commandType = commandContent.substr(0, pos);										   // commandType = numbers + command type
+					commandContent.erase(0, pos + 1);														   // commandContent = command content
+					commandType.erase(remove(commandType.begin(), commandType.end(), ' '), commandType.end()); // Erase spaces inside 1st part of the line
+					pos = commandType.find("-");
+					const string buttonNumber = commandType.substr(0, pos); // Isolate button number
+					commandType = commandType.substr(pos + 1);				// Isolate command type
+					for (char &c : commandType)
 						c = tolower(c);
 
 					int buttonNumberInt;
 					try
 					{
-						buttonNumberInt = stoi(*buttonNumber);
+						buttonNumberInt = stoi(buttonNumber);
 					}
 					catch (...)
 					{
@@ -211,36 +206,36 @@ private:
 
 					map<bool, MacroEventVector> *iteratedButtonConfig = &(*iteratedConfig)[buttonNumberInt];
 
-					if (configKeysMap.contains(*commandType))
+					if (configKeysMap.contains(commandType))
 					{ // filter out bad types
-						if (*configKeysMap[*commandType]->Prefix() != "")
-							commandContent = *configKeysMap[*commandType]->Prefix() + commandContent;
+						if (!configKeysMap[commandType]->Prefix()->empty())
+							commandContent = *configKeysMap[commandType]->Prefix() + commandContent;
 
-						if (configKeysMap[*commandType]->InternalFunction() == executeNow)
-							(*iteratedButtonConfig)[configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], applyUserString(&commandContent)));
+						if (configKeysMap[commandType]->InternalFunction() == executeNow)
+							(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(MacroEvent(&configKeysMap[commandType], applyUserString(commandContent)));
 						else
-							(*iteratedButtonConfig)[configKeysMap[*commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[*commandType], &commandContent));
+							(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(MacroEvent(&configKeysMap[commandType], &commandContent));
 						// Encode and store mapping v3
 					}
-					else if (*commandType == "key")
+					else if (commandType == "key")
 					{
 						if (commandContent.size() == 1)
 						{
-							commandContent = hexChar(commandContent[0]);
+							commandContent = hexChar(commandContent.front());
 						}
-						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
+						string commandContent2 = *configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent;
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], applyUserString(&commandContent)));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], applyUserString(commandContent2)));
+						(*iteratedButtonConfig)[true].emplace_back(MacroEvent(configKeysMap["keypressonpress"], applyUserString(commandContent)));
+						(*iteratedButtonConfig)[false].emplace_back(MacroEvent(configKeysMap["keyreleaseonrelease"], applyUserString(commandContent2)));
 					}
-					else if (*commandType == "specialkey")
+					else if (commandType == "specialkey")
 					{
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["specialpressonpress"], &commandContent));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["specialreleaseonrelease"], &commandContent));
+						(*iteratedButtonConfig)[true].emplace_back(MacroEvent(configKeysMap["specialpressonpress"], &commandContent));
+						(*iteratedButtonConfig)[false].emplace_back(MacroEvent(configKeysMap["specialreleaseonrelease"], &commandContent));
 					}
 					else
 					{
-						clog << "Discarding : " << *commandType << "=" << commandContent << endl;
+						clog << "Discarding : " << commandType << "=" << commandContent << endl;
 					}
 				}
 			}
@@ -250,12 +245,14 @@ private:
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				configSwitcher->configWindowsNamesVector.emplace_back(new string(commandContent));
+				notifySendMap.emplace(commandContent, new string (*applyUserString("notify-send \"Profile : " + commandContent + "\"")));
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
+				notifySendMap.emplace(commandContent, new string (*applyUserString("notify-send \"Profile : " + commandContent + "\"")));
 			}
 		}
 		in.close();
@@ -274,14 +271,14 @@ private:
 		currentConfigPtr = &macroEventsKeyMaps[currentConfigName];
 		if (!silent)
 		{
-			(void)!(system((applyUserString(new string("notify-send \"Profile : " + currentConfigName + "\"")))->c_str()));
+			int err = (system(notifySendMap[currentConfigName].c_str()));
 		}
 	}
 
 	string hexChar(const char a)
 	{
-		stringstream hexedChar;
-		hexedChar << "0x00" << hex << (int)(a);
+		ostringstream hexedChar;
+		hexedChar << "0x" << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(a);
 		return hexedChar.str();
 	}
 
@@ -291,14 +288,15 @@ private:
 
 	void checkForWindowConfig()
 	{
-		char *c = getActiveWindow();
-		clog << "WindowNameLog : " << c << endl;
-		if (*configSwitcher->temporaryWindowName() == "" || strcmp(c, configSwitcher->temporaryWindowName()->c_str()) != 0)
+		char * currentFolder = getActiveWindow();
+		clog << "WindowNameLog : " << currentFolder << endl;
+		auto tempWindowName = configSwitcher->temporaryWindowName();
+		if (tempWindowName->empty()  || strcmp(currentFolder, tempWindowName->c_str()) == 0)
 		{
 			bool found = false;
-			for (string *configWindowName : (*configSwitcher).configWindowsNamesVector)
+			for (string *configWindowName : configSwitcher->configWindowsNamesVector)
 			{
-				if (strcmp(c, configWindowName->c_str()) == 0)
+				if (string(currentFolder) == *configWindowName)
 				{
 					lock_guard<mutex> guard(configSwitcherMutex);
 					configSwitcher->scheduleWindowReMap(configWindowName);
@@ -343,18 +341,7 @@ private:
 				{ // Key event (press or release)
 					switch (ev11->code)
 					{
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-					case 10:
-					case 11:
-					case 12:
-					case 13:
+					case 2 ... 13:
 						checkForWindowConfig();
 						thread(runActions, &(*currentConfigPtr)[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
@@ -369,8 +356,7 @@ private:
 				{ // Only extra buttons
 					switch (ev11->code)
 					{
-					case 275:
-					case 276:
+					case 275 ... 276:
 						checkForWindowConfig();
 						thread(runActions, &(*currentConfigPtr)[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
@@ -381,7 +367,7 @@ private:
 	}
 
 	// Functions that can be given to configKeys
-	const static void writeStringNow(const string *macroContent)
+	const static void writeStringNow(const string *const macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
@@ -393,17 +379,16 @@ private:
 		}
 		XFlush(aKeyFaker->xdpy);
 		XCloseDisplay(aKeyFaker->xdpy);
-		deleteFakeKey(aKeyFaker);
 	}
 
 	const static void specialPressNow(const string *const macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
-		clog << "Pressing " << (*macroContent)[0] << endl;
-		fakekey_press(aKeyFaker, (const unsigned char *)&(*macroContent)[0], 8, 0);
+		const char *const keyCodeChar = &(*macroContent)[0];
+		fakekey_press(aKeyFaker, reinterpret_cast<const unsigned char *>(keyCodeChar), 8, 0);
 		XFlush(aKeyFaker->xdpy);
-		fakeKeyFollowUps->emplace_back(new CharAndFakeKey(&(*macroContent)[0], aKeyFaker));
+		fakeKeyFollowUps->emplace(keyCodeChar, aKeyFaker);
 		fakeKeyFollowCount++;
 	}
 
@@ -411,21 +396,19 @@ private:
 	{
 		if (fakeKeyFollowCount > 0)
 		{
-			lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-			for (int vectorId = fakeKeyFollowUps->size() - 1; vectorId >= 0; vectorId--)
+			for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
 			{
-				CharAndFakeKey *const aKeyFollowUp = (*fakeKeyFollowUps)[vectorId];
-				if (*get<0>(*aKeyFollowUp) == (*macroContent)[0])
+				if (*aKeyFollowUpPair->first == (*macroContent)[0])
 				{
-					FakeKey *const aKeyFaker = get<1>(*aKeyFollowUp);
+					lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
+					FakeKey *const aKeyFaker = aKeyFollowUpPair->second;
 					fakekey_release(aKeyFaker);
 					XFlush(aKeyFaker->xdpy);
 					XCloseDisplay(aKeyFaker->xdpy);
-					fakeKeyFollowUps->erase(fakeKeyFollowUps->begin() + vectorId);
 					fakeKeyFollowCount--;
-					deleteFakeKey(aKeyFaker);
+					fakeKeyFollowUps->erase(aKeyFollowUpPair);
+					break;
 				}
-				delete aKeyFollowUp;
 			}
 		}
 		else
@@ -445,17 +428,21 @@ private:
 
 	const static void executeNow(const string *const macroContent)
 	{
-		clog << "Content " << macroContent->c_str() << endl;
-		(void)!(system(macroContent->c_str()));
+		int err = (system(macroContent->c_str()));
 	}
 	// end of configKeys functions
 
 	static void runActions(MacroEventVector *const relativeMacroEventsPointer)
 	{
-		for (MacroEvent *const macroEventPointer : *relativeMacroEventsPointer)
+		for (auto macroEventPointer : *relativeMacroEventsPointer)
 		{ // run all the events at Key
-			macroEventPointer->KeyType()->runInternal(macroEventPointer->Content());
+			macroEventPointer.KeyType()->runInternal(macroEventPointer.Content());
 		}
+	}
+
+	void emplaceConfigKey(const std::string &key, bool onKeyPressed, auto functionPtr, const std::string &arg = "")
+	{
+		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, arg));
 	}
 
 public:
@@ -509,44 +496,41 @@ public:
 #define ONKEYPRESSED true
 #define ONKEYRELEASED false
 
-		configKeysMap.insert(stringAndConfigKey("chmap", new configKey(ONKEYPRESSED, chmapNow))); // change keymap
-		configKeysMap.insert(stringAndConfigKey("chmaprelease", new configKey(ONKEYRELEASED, chmapNow)));
+		emplaceConfigKey("chmap", ONKEYPRESSED, chmapNow);
+		emplaceConfigKey("chmaprelease", ONKEYRELEASED, chmapNow);
+		emplaceConfigKey("sleep", ONKEYPRESSED, sleepNow);
+		emplaceConfigKey("sleeprelease", ONKEYRELEASED, sleepNow);
 
-		configKeysMap.insert(stringAndConfigKey("sleep", new configKey(ONKEYPRESSED, sleepNow)));
-		configKeysMap.insert(stringAndConfigKey("sleeprelease", new configKey(ONKEYRELEASED, sleepNow)));
+		emplaceConfigKey("run", ONKEYPRESSED, executeNow, "setsid ");
+		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
+		emplaceConfigKey("runrelease", ONKEYRELEASED, executeNow, "setsid ");
+		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
 
-		configKeysMap.insert(stringAndConfigKey("run", new configKey(ONKEYPRESSED, executeNow, "setsid ")));
-		configKeysMap.insert(stringAndConfigKey("run2", new configKey(ONKEYPRESSED, executeNow)));
+		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeNow, "setsid xdotool keydown --window getactivewindow ");
+		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keydown --window getactivewindow ");
 
-		configKeysMap.insert(stringAndConfigKey("runrelease", new configKey(ONKEYRELEASED, executeNow, "setsid ")));
-		configKeysMap.insert(stringAndConfigKey("runrelease2", new configKey(ONKEYRELEASED, executeNow)));
+		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeNow, "setsid xdotool keyup --window getactivewindow ");
+		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keyup --window getactivewindow ");
 
-		configKeysMap.insert(stringAndConfigKey("keypressonpress", new configKey(ONKEYPRESSED, executeNow, "setsid xdotool keydown --window getactivewindow ")));
-		configKeysMap.insert(stringAndConfigKey("keypressonrelease", new configKey(ONKEYRELEASED, executeNow, "setsid xdotool keydown --window getactivewindow ")));
+		emplaceConfigKey("keyclick", ONKEYPRESSED, executeNow, "setsid xdotool key --window getactivewindow ");
+		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeNow, "setsid xdotool key --window getactivewindow ");
 
-		configKeysMap.insert(stringAndConfigKey("keyreleaseonpress", new configKey(ONKEYPRESSED, executeNow, "setsid xdotool keyup --window getactivewindow ")));
-		configKeysMap.insert(stringAndConfigKey("keyreleaseonrelease", new configKey(ONKEYRELEASED, executeNow, "setsid xdotool keyup --window getactivewindow ")));
+		emplaceConfigKey("string", ONKEYPRESSED, writeStringNow);
+		emplaceConfigKey("stringrelease", ONKEYRELEASED, writeStringNow);
 
-		configKeysMap.insert(stringAndConfigKey("keyclick", new configKey(ONKEYPRESSED, executeNow, "setsid xdotool key --window getactivewindow ")));
-		configKeysMap.insert(stringAndConfigKey("keyclickrelease", new configKey(ONKEYRELEASED, executeNow, "setsid xdotool key --window getactivewindow ")));
+		emplaceConfigKey("specialpressonpress", ONKEYPRESSED, specialPressNow);
+		emplaceConfigKey("specialpressonrelease", ONKEYRELEASED, specialPressNow);
 
-		configKeysMap.insert(stringAndConfigKey("string", new configKey(ONKEYPRESSED, writeStringNow)));
-		configKeysMap.insert(stringAndConfigKey("stringrelease", new configKey(ONKEYRELEASED, writeStringNow)));
-
-		configKeysMap.insert(stringAndConfigKey("specialpressonpress", new configKey(ONKEYPRESSED, specialPressNow)));
-		configKeysMap.insert(stringAndConfigKey("specialpressonrelease", new configKey(ONKEYRELEASED, specialPressNow)));
-
-		configKeysMap.insert(stringAndConfigKey("specialreleaseonpress", new configKey(ONKEYPRESSED, specialReleaseNow)));
-		configKeysMap.insert(stringAndConfigKey("specialreleaseonrelease", new configKey(ONKEYRELEASED, specialReleaseNow)));
+		emplaceConfigKey("specialreleaseonpress", ONKEYPRESSED, specialReleaseNow);
+		emplaceConfigKey("specialreleaseonrelease", ONKEYRELEASED, specialReleaseNow);
 
 		initConf();
 
 		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(&mapConfig); // Initialize config
 
-		(void)!(system(("export PATH=$(" + *applyUserString(new string("printf '%s' $PATH")) + ")").c_str()));
-		(void)!(system(("export DISPLAY=$(" + *applyUserString(new string("printf '%s' $DISPLAY")) + ")").c_str()));
-		//(void)!seteuid(stoi(userID));
+		int err = (system(("export PATH=$(" + *applyUserString("printf '%s' $PATH") + ")").c_str()));
+		int err2 = (system(("export DISPLAY=$(" + *applyUserString("printf '%s' $DISPLAY") + ")").c_str()));
 		run();
 	}
 };
@@ -554,7 +538,7 @@ public:
 void stopD()
 {
 	clog << "Stopping possible naga daemon" << endl;
-	(void)!(system(("/usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
+	int err = (system(("/usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
 };
 
 // arguments manage
@@ -564,7 +548,7 @@ int main(const int argc, const char *const argv[])
 	{
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
-			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+			int err = (system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
 			else
@@ -576,19 +560,19 @@ int main(const int argc, const char *const argv[])
 			{
 				if (strstr(argv[2], "start") != NULL)
 				{
-					(void)!(system("sudo systemctl start naga"));
+					int err = (system("sudo systemctl start naga"));
 				}
 				else if (strstr(argv[2], "stop") != NULL)
 				{
-					(void)!(system("sudo systemctl stop naga"));
+					int err = (system("sudo systemctl stop naga"));
 				}
 				else if (strstr(argv[2], "disable") != NULL)
 				{
-					(void)!(system("sudo systemctl disable naga"));
+					int err = (system("sudo systemctl disable naga"));
 				}
 				else if (strstr(argv[2], "enable") != NULL)
 				{
-					(void)!(system("sudo systemctl enable naga"));
+					int err = (system("sudo systemctl enable naga"));
 				}
 			}
 		}
@@ -600,13 +584,13 @@ int main(const int argc, const char *const argv[])
 			{
 				clog << "Starting naga debug, logs :" << endl;
 				usleep(100000);
-				(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+				int err = (system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 				NagaDaemon();
 			}
 			else
 			{
 				usleep(100000);
-				(void)!(system("sudo systemctl start naga"));
+				int err = (system("sudo systemctl start naga"));
 			}
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
@@ -616,11 +600,11 @@ int main(const int argc, const char *const argv[])
 		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
 		{
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
-			(void)!(system("sudo bash -c \"naga stop && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && systemctl start naga\""));
+			int err = (system("sudo bash -c \"naga stop && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && systemctl start naga\""));
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
-			(void)!(system("sudo bash -c \"nano /home/razerInput/.naga/keyMap.txt && systemctl restart naga\""));
+			int err = (system("sudo bash -c \"nano /home/razerInput/.naga/keyMap.txt && systemctl restart naga\""));
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
 		{
@@ -633,7 +617,7 @@ int main(const int argc, const char *const argv[])
 			}
 			else
 			{
-				(void)!(system("/usr/local/bin/Naga_Linux/nagaUninstall.sh"));
+				int err = (system("/usr/local/bin/Naga_Linux/nagaUninstall.sh"));
 			}
 		}
 	}

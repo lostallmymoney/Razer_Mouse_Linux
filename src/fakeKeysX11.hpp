@@ -13,13 +13,11 @@ struct FakeKey
 	int min_keycode, max_keycode, n_keysyms_per_keycode, held_keycode, held_state_flags, alt_mod_index;
 	KeySym *keysyms;
 	KeyCode modifier_table[N_MODIFIER_INDEXES];
-};
 
-static void deleteFakeKey(FakeKey *aKeyFaker)
-{
-	XFree(aKeyFaker->keysyms);
-	free(aKeyFaker);
-}
+	 ~FakeKey() {
+        XFree(keysyms);
+    }
+};
 
 static int utf8_to_ucs4(const unsigned char *src_orig, unsigned int *dst, int len)
 {

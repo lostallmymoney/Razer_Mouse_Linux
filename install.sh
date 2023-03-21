@@ -53,13 +53,12 @@ sudo chown -R "root:root" "$_dir"
 printf "%s\n%s" "$USER" "$(id -u "$USER")"| sudo tee /home/razerInput/.naga/user.txt > /dev/null
 
 sudo groupadd -f razerInputGroup
-sudo bash -c "useradd razerInput > /dev/null 2>&1"
-sudo usermod -a -G razerInputGroup razerInput > /dev/null
-#sudo usermod -a -G "$USER" razerInput > /dev/null
+sudo bash -c "useradd razerInput --system --shell /usr/sbin/nologin" > /dev/null 2>&1
+sudo bash -c "usermod -a -G razerInputGroup razerInput" > /dev/null
 sudo chown -R razerInput:razerInputGroup /home/razerInput
 
 
-xhost +SI:localuser:razerInput
+xhost +SI:localuser:razerInput  > /dev/null
 
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' > /tmp/80-naga.rules
 
