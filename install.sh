@@ -5,7 +5,7 @@ if [ "$(id -u)" = "0" ]; then
     exit 1
 fi
 
-sudo sh src/nagaKillroot.sh
+sudo sh src/nagaKillroot.sh > /dev/null
 
 sudo echo "Installing requirements..."
 
