@@ -29,6 +29,7 @@ if [ ! -f ./naga ]; then
 fi
 
 echo "Copying files..."
+
 sudo mv naga /usr/local/bin/
 sudo chmod 755 /usr/local/bin/naga
 
@@ -53,12 +54,11 @@ sudo chown -R "root:root" "$_dir"
 printf "%s\n%s" "$USER" "$(id -u "$USER")"| sudo tee /home/razerInput/.naga/user.txt > /dev/null
 
 sudo groupadd -f razerInputGroup
-sudo bash -c "useradd razerInput --system --shell /usr/sbin/nologin" > /dev/null 2>&1
-sudo bash -c "usermod -a -G razerInputGroup razerInput" > /dev/null
+sudo bash -c "useradd razerInput > /dev/null 2>&1"
+sudo usermod -a -G razerInputGroup razerInput > /dev/null
 sudo chown -R razerInput:razerInputGroup /home/razerInput
 
-
-xhost +SI:localuser:razerInput  > /dev/null
+xhost +SI:localuser:razerInput
 
 echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' > /tmp/80-naga.rules
 
@@ -71,8 +71,6 @@ echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf > /de
 
 sudo chown -R razerInput:razerInputGroup /home/razerInput/
 
-
-#udev reload so no need to reboot
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
