@@ -4,6 +4,7 @@ After=default.target
 
 [Service]
 Type=simple
+EnvironmentFile=/home/razerInput/.naga/envSetup
 ExecStart=/usr/local/bin/naga serviceHelper
 TimeoutStartSec=20
 User=razerInput

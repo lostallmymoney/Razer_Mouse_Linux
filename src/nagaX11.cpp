@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <mutex>
 #include <map>
+#include <unordered_map>
 #include <sstream>
 using namespace std;
 
@@ -24,10 +25,11 @@ static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<
 static int fakeKeyFollowCount = 0;
 map<string, string *> notifySendMap;
 string userString = "", userID = "";
+char **envp;
 
 const string *applyUserString(string c)
 {
-	return new string("sudo -Hiu " + userString + " bash -c '" + c + "'");
+	return new string("sudo -EHu " + userString + " bash -c '" + c + "'");
 }
 
 const void fetchUserString()
@@ -58,7 +60,7 @@ const void fetchUserString()
 class configKey
 {
 private:
-	const string *const prefix;
+	const string *const prefix, *const suffix;
 	const bool onKeyPressed;
 	const void (*const internalFunction)(const string *const c);
 
@@ -66,9 +68,10 @@ public:
 	const bool IsOnKeyPressed() const { return onKeyPressed; }
 	const void runInternal(const string *const content) const { internalFunction(content); }
 	const string *const Prefix() const { return prefix; }
+	const string *const Suffix() const { return suffix; }
 	const void (*InternalFunction() const)(const string *const) { return internalFunction; }
 
-	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "", const string tsuffix = "") : suffix(new string(tsuffix)), prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -170,7 +173,7 @@ private:
 			exit(1);
 		}
 
-		for (int readingLine = 1; getline(in, commandContent); readingLine++)
+		while (getline(in, commandContent))
 		{
 			if (commandContent[0] == '#' || commandContent.find_first_not_of(' ') == string::npos)
 				continue; // Ignore comments, empty lines
@@ -202,7 +205,7 @@ private:
 					}
 					catch (...)
 					{
-						clog << "At config line " << readingLine << ": expected a number" << endl;
+						clog << "CONFIG ERROR : " << commandContent << endl;
 						exit(1);
 					}
 
@@ -210,8 +213,10 @@ private:
 
 					if (configKeysMap.contains(commandType))
 					{ // filter out bad types
-						if (*configKeysMap[commandType]->Prefix() != "")
+						if (!configKeysMap[commandType]->Prefix()->empty())
 							commandContent = *configKeysMap[commandType]->Prefix() + commandContent;
+						if (!configKeysMap[commandType]->Suffix()->empty())
+							commandContent = commandContent + *configKeysMap[commandType]->Suffix();
 
 						if (configKeysMap[commandType]->InternalFunction() == executeNow)
 							(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], applyUserString(commandContent)));
@@ -225,8 +230,8 @@ private:
 						{
 							commandContent = hexChar(commandContent[0]);
 						}
-						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
-						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
+						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent + *configKeysMap["keyreleaseonrelease"]->Suffix());
+						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent + *configKeysMap["keypressonpress"]->Suffix();
 						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], applyUserString(commandContent)));
 						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], applyUserString(*commandContent2)));
 					}
@@ -444,9 +449,9 @@ private:
 		}
 	}
 
-	void emplaceConfigKey(const std::string &key, bool onKeyPressed, auto functionPtr, const std::string &arg = "")
+	void emplaceConfigKey(const std::string &key, bool onKeyPressed, auto functionPtr, const std::string &prefix = "", const std::string &suffix = "")
 	{
-		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, arg));
+		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, prefix, suffix));
 	}
 
 public:
@@ -502,22 +507,27 @@ public:
 
 		emplaceConfigKey("chmap", ONKEYPRESSED, chmapNow);
 		emplaceConfigKey("chmaprelease", ONKEYRELEASED, chmapNow);
+
 		emplaceConfigKey("sleep", ONKEYPRESSED, sleepNow);
 		emplaceConfigKey("sleeprelease", ONKEYRELEASED, sleepNow);
 
-		emplaceConfigKey("run", ONKEYPRESSED, executeNow, "setsid ");
+		emplaceConfigKey("run", ONKEYPRESSED, executeNow, "", "&");
 		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
-		emplaceConfigKey("runrelease", ONKEYRELEASED, executeNow, "setsid ");
+
+		emplaceConfigKey("runrelease", ONKEYRELEASED, executeNow, "", "&");
 		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
 
-		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeNow, "setsid xdotool keydown --window getactivewindow ");
-		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keydown --window getactivewindow ");
+		emplaceConfigKey("launch", ONKEYRELEASED, executeNow, "gtk-launch ", "&");
+		emplaceConfigKey("launch2", ONKEYRELEASED, executeNow, "gtk-launch ");
 
-		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeNow, "setsid xdotool keyup --window getactivewindow ");
-		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keyup --window getactivewindow ");
+		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeNow, "xdotool keydown --window getactivewindow ", "&");
+		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeNow, "xdotool keydown --window getactivewindow ", "&");
 
-		emplaceConfigKey("keyclick", ONKEYPRESSED, executeNow, "setsid xdotool key --window getactivewindow ");
-		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeNow, "setsid xdotool key --window getactivewindow ");
+		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeNow, "xdotool keyup --window getactivewindow ", "&");
+		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeNow, "xdotool keyup --window getactivewindow ", "&");
+
+		emplaceConfigKey("keyclick", ONKEYPRESSED, executeNow, "xdotool key --window getactivewindow ", "&");
+		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeNow, "xdotool key --window getactivewindow ", "&");
 
 		emplaceConfigKey("string", ONKEYPRESSED, writeStringNow);
 		emplaceConfigKey("stringrelease", ONKEYRELEASED, writeStringNow);
@@ -533,10 +543,6 @@ public:
 		configSwitcher->scheduleReMap(&mapConfig);
 		loadConf(&mapConfig); // Initialize config
 
-		(void)!(system(("export PATH=$(" + *applyUserString("printf '%s' $PATH") + ")").c_str()));
-		(void)!(system(("export DISPLAY=$(" + *applyUserString("printf '%s' $DISPLAY") + ")").c_str()));
-		(void)!(system(("export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/" + userID + "/bus").c_str()));
-		(void)!seteuid(stoi(userID));
 		run();
 	}
 };
@@ -548,12 +554,13 @@ void stopD()
 };
 
 // arguments manage
-int main(const int argc, const char *const argv[])
+int main(const int argc, const char *const argv[], char **envpI)
 {
 	if (argc > 1)
 	{
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
+			envp = envpI;
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
@@ -591,6 +598,7 @@ int main(const int argc, const char *const argv[])
 				clog << "Starting naga debug, logs :" << endl;
 				usleep(100000);
 				(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+				envp = envpI;
 				NagaDaemon();
 			}
 			else
