@@ -70,8 +70,10 @@ sudo bash -c "useradd razerInput > /dev/null 2>&1"
 sudo usermod -a -G razerInputGroup razerInput >/dev/null
 
 xhost +SI:localuser:razerInput
-sudo setfacl -R -d -m g:razerInputGroup:rwx ~ >/dev/null
-sudo setfacl -R -d -m g:razerInputGroup:rwx /run/user/$UID >/dev/null
+sudo setfacl -R -m g:razerInputGroup:rwx ~ >/dev/null
+sudo setfacl -d -m g:razerInputGroup:rwx ~ >/dev/null
+sudo setfacl -R -m g:razerInputGroup:rwx /run/user/$UID >/dev/null
+sudo setfacl -d -m g:razerInputGroup:rwx /run/user/$UID >/dev/null
 
 env | sudo tee /home/razerInput/.naga/envSetup >/dev/null
 
@@ -82,7 +84,9 @@ sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules
 sudo cp -f src/naga.service /etc/systemd/system/
 sudo mkdir -p /etc/systemd/system/naga.service.d
 sudo cp -f src/naga.conf /etc/systemd/system/naga.service.d/
-echo "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf >/dev/null
+printf "%s\n" "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf >/dev/null
+printf "WorkingDirectory=/home/%s/\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf >/dev/null
+
 
 sudo udevadm control --reload-rules && sudo udevadm trigger
 

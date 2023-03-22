@@ -343,6 +343,10 @@ private:
 
 			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
 			{
+				if (ev1[0].value == ' '){
+					writeStringNow(new string("A SPACE DETECTED"));
+				}
+
 				if (read(side_btn_fd, ev1, size) == -1)
 					exit(2);
 				if (ev1[0].value != ' ' && ev11->type == EV_KEY)
@@ -360,7 +364,7 @@ private:
 			{
 				if (read(extra_btn_fd, ev1, size) == -1)
 					exit(2);
-				if (ev11->type == 1)
+				if (ev11->type == EV_KEY)
 				{ // Only extra buttons
 					switch (ev11->code)
 					{
