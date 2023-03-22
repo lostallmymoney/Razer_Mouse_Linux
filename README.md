@@ -9,6 +9,12 @@ Now with app auto profiles !
 
 Or run sh install.sh from the directory to install.
 
+## UBUNTU FLAVORS :
+Please add the corresponding repos for xdotool and his dependency : 
+	https://packages.ubuntu.com/search?keywords=xdotool
+	https://packages.ubuntu.com/search?keywords=libxdo3&searchon=names
+	(Click on your version and add the line to /etc/apt/sources.list, then you can run the script.)
+
 
 ## COMMANDS :
 
