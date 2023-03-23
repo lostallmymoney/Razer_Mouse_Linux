@@ -20,14 +20,14 @@ Please add the corresponding repos for xdotool and his dependency :
 ## COMMANDS :
 
 	`naga start` 					//Starts a daemon.	
-	`naga edit` 					//Edits naga config, then restart service.
+	`naga edit` 					//Edits naga config, then restart service (you can also specify editor : naga edit vim).
 	`naga debug` 					//Shows logs in realt time.
 	`naga stop`					//Stops the daemon.
 	`naga fix`					//Restarts usb services.
 	`naga uninstall` 				//Uninstalls the daemon tool.
 	`naga` 						//Gives help.
     More :
-	`naga serviceHelper $CONFIG`				//For the services or manual change of configs (you need to disable services and setup the udev rule for your $USER)
+	`naga serviceHelper $CONFIG`			//For the services or manual change of configs (you need to disable services and setup the udev rule for your $USER)
 
 
 If there is an error about config files just copy it to your $HOME/.naga/
