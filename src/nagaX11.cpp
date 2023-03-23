@@ -15,47 +15,15 @@
 #include <iomanip>
 #include <mutex>
 #include <map>
-#include <unordered_map>
 #include <sstream>
 using namespace std;
 
 typedef pair<const char *const, const char *const> CharAndChar;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
+const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
 static int fakeKeyFollowCount = 0;
 map<string, string *> notifySendMap;
-string userString = "", userID = "";
-char **envp;
-
-const string *applyUserString(string c)
-{
-	return new string("sudo -EHu " + userString + " bash -c '" + c + "'");
-}
-
-const void fetchUserString()
-{
-	ifstream file("/home/razerInput/.naga/user.txt");
-	string line;
-	if (getline(file, line))
-	{
-		line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char c)
-								  { return std::isspace(c); }),
-				   line.end()); // nuke all whitespaces
-		userString = line;
-		if (getline(file, line))
-		{
-			line.erase(std::remove_if(line.begin(), line.end(), [](unsigned char c)
-									  { return std::isspace(c); }),
-					   line.end()); // nuke all whitespaces
-			userID = line;
-		}
-		else
-			exit(1);
-	}
-	else
-		exit(1);
-	file.close();
-}
 
 class configKey
 {
@@ -90,8 +58,6 @@ public:
 	{
 	}
 };
-
-typedef vector<MacroEvent *> MacroEventVector;
 
 class configSwitchScheduler
 {
@@ -148,22 +114,25 @@ static configSwitchScheduler *const configSwitcher = new configSwitchScheduler()
 class NagaDaemon
 {
 private:
-	const string conf_file = "/home/razerInput/.naga/keyMap.txt";
-
 	map<string, configKey *const> configKeysMap;
-	map<string, map<int, map<bool, MacroEventVector>>> macroEventsKeyMaps;
+	map<string, map<int, map<bool, vector<MacroEvent *>>>> macroEventsKeyMaps;
 
 	string currentConfigName;
 	struct input_event ev1[64];
-	const int size = sizeof(struct input_event) * 64;
+	const int size = sizeof(ev1);
 	vector<CharAndChar> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
-	map<int, std::map<bool, MacroEventVector>> *currentConfigPtr;
+	map<int, std::map<bool, vector<MacroEvent *>>> *currentConfigPtr;
+
+	const string *applyBashCommand(string c)
+	{
+		return new string("bash -c '" + c + "'");
+	}
 
 	void initConf()
 	{
 		string commandContent;
-		map<int, std::map<bool, MacroEventVector>> *iteratedConfig;
+		map<int, std::map<bool, vector<MacroEvent *>>> *iteratedConfig;
 		bool isIteratingConfig = false;
 
 		ifstream in(conf_file.c_str(), ios::in);
@@ -209,19 +178,19 @@ private:
 						exit(1);
 					}
 
-					map<bool, MacroEventVector> *iteratedButtonConfig = &(*iteratedConfig)[buttonNumberInt];
+					map<bool, vector<MacroEvent *>> *iteratedButtonConfig = &(*iteratedConfig)[buttonNumberInt];
 
 					if (configKeysMap.contains(commandType))
 					{ // filter out bad types
+
+						if (commandType == "run" || commandType == "run2") // This makes you able to run complete bash inside run
+							commandContent = *applyBashCommand(commandContent);
 						if (!configKeysMap[commandType]->Prefix()->empty())
 							commandContent = *configKeysMap[commandType]->Prefix() + commandContent;
 						if (!configKeysMap[commandType]->Suffix()->empty())
 							commandContent = commandContent + *configKeysMap[commandType]->Suffix();
 
-						if (configKeysMap[commandType]->InternalFunction() == executeNow)
-							(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], applyUserString(commandContent)));
-						else
-							(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], &commandContent));
+						(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], &commandContent));
 						// Encode and store mapping v3
 					}
 					else if (commandType == "key")
@@ -232,8 +201,8 @@ private:
 						}
 						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent + *configKeysMap["keyreleaseonrelease"]->Suffix());
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent + *configKeysMap["keypressonpress"]->Suffix();
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], applyUserString(commandContent)));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], applyUserString(*commandContent2)));
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
 					}
 					else if (commandType == "specialkey")
 					{
@@ -252,14 +221,14 @@ private:
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				configSwitcher->configWindowsNamesVector.emplace_back(new string(commandContent));
-				notifySendMap.emplace(commandContent, new string(*applyUserString("notify-send \"Profile : " + commandContent + "\"")));
+				notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
-				notifySendMap.emplace(commandContent, new string(*applyUserString("notify-send \"Profile : " + commandContent + "\"")));
+				notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
 			}
 		}
 		in.close();
@@ -343,7 +312,8 @@ private:
 
 			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
 			{
-				if (ev1[0].value == ' '){
+				if (ev1[0].value == ' ')
+				{
 					writeStringNow(new string("A SPACE DETECTED"));
 				}
 
@@ -445,7 +415,7 @@ private:
 	}
 	// end of configKeys functions
 
-	static void runActions(MacroEventVector *const relativeMacroEventsPointer)
+	static void runActions(vector<MacroEvent *> *const relativeMacroEventsPointer)
 	{
 		for (MacroEvent *const macroEventPointer : *relativeMacroEventsPointer)
 		{ // run all the events at Key
@@ -475,7 +445,7 @@ public:
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");	 // NAGA Left Handed
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse");		 // NAGA PRO WIRELESS
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
-		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE ~ ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
+		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
 		for (CharAndChar &device : devices)
 		{ // Setup check
@@ -505,7 +475,6 @@ public:
 		}
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
-		fetchUserString();
 #define ONKEYPRESSED true
 #define ONKEYRELEASED false
 
@@ -515,23 +484,23 @@ public:
 		emplaceConfigKey("sleep", ONKEYPRESSED, sleepNow);
 		emplaceConfigKey("sleeprelease", ONKEYRELEASED, sleepNow);
 
-		emplaceConfigKey("run", ONKEYPRESSED, executeNow, "", "&");
+		emplaceConfigKey("run", ONKEYPRESSED, executeNow, "setsid ", "&");
 		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
 
-		emplaceConfigKey("runrelease", ONKEYRELEASED, executeNow, "", "&");
+		emplaceConfigKey("runrelease", ONKEYRELEASED, executeNow, "setsid ", "&");
 		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
 
-		emplaceConfigKey("launch", ONKEYRELEASED, executeNow, "gtk-launch ", "&");
+		emplaceConfigKey("launch", ONKEYRELEASED, executeNow, "setsid gtk-launch ", "&");
 		emplaceConfigKey("launch2", ONKEYRELEASED, executeNow, "gtk-launch ");
 
-		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeNow, "xdotool keydown --window getactivewindow ", "&");
-		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeNow, "xdotool keydown --window getactivewindow ", "&");
+		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeNow, "setsid xdotool keydown --window getactivewindow ", "&");
+		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keydown --window getactivewindow ", "&");
 
-		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeNow, "xdotool keyup --window getactivewindow ", "&");
-		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeNow, "xdotool keyup --window getactivewindow ", "&");
+		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeNow, "setsid xdotool keyup --window getactivewindow ", "&");
+		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keyup --window getactivewindow ", "&");
 
-		emplaceConfigKey("keyclick", ONKEYPRESSED, executeNow, "xdotool key --window getactivewindow ", "&");
-		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeNow, "xdotool key --window getactivewindow ", "&");
+		emplaceConfigKey("keyclick", ONKEYPRESSED, executeNow, "setsid xdotool key --window getactivewindow ", "&");
+		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeNow, "setsid xdotool key --window getactivewindow ", "&");
 
 		emplaceConfigKey("string", ONKEYPRESSED, writeStringNow);
 		emplaceConfigKey("stringrelease", ONKEYRELEASED, writeStringNow);
@@ -558,13 +527,12 @@ void stopD()
 };
 
 // arguments manage
-int main(const int argc, const char *const argv[], char **envpI)
+int main(const int argc, const char *const argv[])
 {
 	if (argc > 1)
 	{
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
-			envp = envpI;
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
 			if (argc > 2)
 				NagaDaemon(string(argv[2]).c_str());
@@ -602,7 +570,6 @@ int main(const int argc, const char *const argv[], char **envpI)
 				clog << "Starting naga debug, logs :" << endl;
 				usleep(100000);
 				(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-				envp = envpI;
 				NagaDaemon();
 			}
 			else
@@ -622,7 +589,7 @@ int main(const int argc, const char *const argv[], char **envpI)
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
-			(void)!(system("sudo bash -c \"nano /home/razerInput/.naga/keyMap.txt && systemctl restart naga\""));
+			(void)!(system(("sudo bash -c \"nano " + conf_file + " && systemctl restart naga\"").c_str()));
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
 		{
