@@ -564,11 +564,11 @@ int main(const int argc, const char *const argv[])
 		{
 			if (argc > 2)
 			{
-				(void)!(system(("sudo bash -c \"" + string(argv[2]) + " " + conf_file + " && systemctl restart naga\"").c_str()));
+				(void)!(system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; " + string(argv[2]) + " " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str()));
 			}
 			else
 			{
-				(void)!(system(("sudo bash -c \"nano " + conf_file + " && sudo systemctl restart naga\"").c_str()));
+				(void)!(system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str()));
 			}
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
