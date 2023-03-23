@@ -5,5 +5,4 @@ echo "Deleting files"
 sudo rm -f /usr/local/bin/naga
 sudo rm -f /etc/udev/rules.d/80-naga.rules
 sudo rm -f /etc/systemd/system/naga.service
-sudo rm -rf /etc/systemd/system/naga.service.d
 sudo setsid rm -rf /usr/local/bin/Naga_Linux/
