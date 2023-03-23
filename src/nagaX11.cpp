@@ -312,14 +312,9 @@ private:
 
 			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
 			{
-				if (ev1[0].value == ' ')
-				{
-					writeStringNow(new string("A SPACE DETECTED"));
-				}
-
 				if (read(side_btn_fd, ev1, size) == -1)
 					exit(2);
-				if (ev1[0].value != ' ' && ev11->type == EV_KEY)
+				if (ev11->type == EV_KEY)
 				{ // Key event (press or release)
 					switch (ev11->code)
 					{
@@ -553,7 +548,8 @@ int main(const int argc, const char *const argv[])
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{
-			stopD();
+			clog << "Stopping possible naga daemon" << endl;
+			(void)!(system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
 		}
 		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
 		{
