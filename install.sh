@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$(id -u)" = "0" ]; then
-    echo "This script must not be run as root"
+    echo "This script must not be executed as root"
     exit 1
 fi
 

@@ -533,50 +533,23 @@ int main(const int argc, const char *const argv[])
 	{
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
+			stopD();
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-			if (argc > 2)
-				NagaDaemon(string(argv[2]).c_str());
+			if (argc > 2 && !string(argv[2]).empty())
+				NagaDaemon(string(argv[2]).c_str()); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else
 				NagaDaemon();
-		}
-		else if (strstr(argv[1], "service") != NULL)
-		{
-			if (argc > 2)
-			{
-				if (strstr(argv[2], "start") != NULL)
-				{
-					(void)!(system("sudo systemctl start naga"));
-				}
-				else if (strstr(argv[2], "stop") != NULL)
-				{
-					(void)!(system("sudo systemctl stop naga"));
-				}
-				else if (strstr(argv[2], "disable") != NULL)
-				{
-					(void)!(system("sudo systemctl disable naga"));
-				}
-				else if (strstr(argv[2], "enable") != NULL)
-				{
-					(void)!(system("sudo systemctl enable naga"));
-				}
-			}
 		}
 		else if (strstr(argv[1], "start") != NULL)
 		{
-			stopD();
 			clog << "Starting naga daemon as service, naga debug to see logs..." << endl;
-			if (argc > 2 && strstr(argv[2], "debug") != NULL)
-			{
-				clog << "Starting naga debug, logs :" << endl;
-				usleep(100000);
-				(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-				NagaDaemon();
-			}
-			else
-			{
-				usleep(100000);
-				(void)!(system("sudo systemctl start naga"));
-			}
+			usleep(100000);
+			(void)!(system("sudo systemctl start naga"));
+		}
+		else if (strstr(argv[1], "debug") != NULL)
+		{
+			clog << "Starting naga debug, logs :" << endl;
+			(void)!(system("journalctl -fu naga"));
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{
@@ -585,11 +558,18 @@ int main(const int argc, const char *const argv[])
 		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
 		{
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
-			(void)!(system("sudo bash -c \"naga stop && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && systemctl start naga\""));
+			(void)!(system("sudo bash -c \"naga stop && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\""));
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
-			(void)!(system(("sudo bash -c \"nano " + conf_file + " && systemctl restart naga\"").c_str()));
+			if (argc > 2)
+			{
+				(void)!(system(("sudo bash -c \"" + string(argv[2]) + " " + conf_file + " && systemctl restart naga\"").c_str()));
+			}
+			else
+			{
+				(void)!(system(("sudo bash -c \"nano " + conf_file + " && sudo systemctl restart naga\"").c_str()));
+			}
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
 		{
@@ -608,7 +588,7 @@ int main(const int argc, const char *const argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  start debug     Shows log.\n  repair         For dead keypad.\n  uninstall      Uninstalls the daemon.\n  There's also naga service (start | stop | disable | enable)" << endl;
+		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  debug		 Shows log.\n  repair         For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
 	}
 	return 0;
 }

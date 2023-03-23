@@ -21,19 +21,18 @@ Please add the corresponding repos for xdotool and his dependency :
 
 	`naga start` 					//Starts a daemon.	
 	`naga edit` 					//Edits naga config, then restart service.
+	`naga debug` 					//Shows logs in realt time.
 	`naga stop`					//Stops the daemon.
 	`naga fix`					//Restarts usb services.
-	`naga serviceHelper`				//For the services.
 	`naga uninstall` 				//Uninstalls the daemon tool.
 	`naga` 						//Gives help.
-	There's also naga service (start | stop | disable | enable)
+    More :
+	`naga serviceHelper $CONFIG`				//For the services or manual change of configs (you need to disable services and setup the udev rule for your $USER)
 
 
-If there is an error about config files just copy it to your /home/.naga/
+If there is an error about config files just copy it to your $HOME/.naga/
 
-Run in root if there is an error accessing the device.
-
-Map razer naga devices keys with the config file : `keyMap.txt` under `$HOME/.naga/`
+Map razer naga devices keys easily with the command `naga edit`.
 
 ## REQUIRES : libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
 	If you are running something else than ubuntu and it's not compiling theses are the packages to find.
@@ -50,25 +49,18 @@ Probably works with :
 - Razer Pro Wireless (thanks to Stibax)
 
 Works for sure with :
-- Razer Naga 2014 (Debian)
+- Razer Naga 2014 (Ubuntu)
 
-This tool doesn't modify any files except `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules` and `/usr/local/bin/(naga && nagaXinputStart.sh)`, so deleting the files deletes the tool.
-
-Make sure to add the users to the group razer with the command `sudo gpasswd -a "$(whoami)" razer` if you create a new user.
-
-CAUTION, in this alpha version the run option wont work for text environment commands, like for example `top`.
-As an alpha version, there might be bugs.
+This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.
+It also adds two lines to your ~/.profile for persistance, along with one line to the sudoer's file, which lets you run `sudo systemctl start naga` from within your .profile.
 
 ## CONFIGURATION
 The configuration file `keyMap.txt` has the following syntax
-
     `config=<configName>` set the name of the following config. The initial loaded config be `defaultConfig` unless specified as argument.
-
     `<keynumber> - <option>=<command>`
-
     `<keynumber>` is a number between 1-14 representing the 12 keys of the naga's keypad + two on the top of the naga.
-
     `<option>` determines what will be applied to `<command>`. The possible choices are:
+
 - `chmap`: Changes the keymap for another config inside `keymap.txt` in `~/.naga`.
 - `champRelease`: Changes the keymap on key release.
 - `sleep` and `sleepRelease`: Sleeps.
@@ -116,9 +108,7 @@ To reload the config run the command :
 
 which will restart the daemon
 
-If ran as root you should edit the file in /root/.naga.
-
-!!!!!!!!!!!!!!
+!!!!!!!!!!!!
 If the `$HOME/.naga/keyMap.txt` file is missing the daemon won't start (the program will NOT autocreate this file, the install.sh script will copy an example file though).
 
 For a key multiple actions may be defined. They will then be executed sequentially at the key press.
@@ -152,15 +142,11 @@ Edit `src/naga.cpp` to adapt the installation to another device, using different
 Run `sh install.sh` .
 This will compile the source and copy the necessary files (see `install.sh` for more info).
 It will prompt you for your password, as it uses sudo to copy some files.
-The config files are copied to all the users (even root) homes.
 
 ## Autorun
 
-Since autorun is a bit complicated for all the distros you can simply add nagastart.desktop or a script executing naga start to your startup folder/configuration.
-(Might have to run chmod +x on the .desktop)
-
-If you ever were to login as root then unlog and log as another user the daemon might ask you for your password to kill the rooted daemon. If the device still doesn't work after root access, unplugging and replugging the device then starting the daemon will surely work.
-
+Now works with systemctl services !
+Also adds 2 lines to your .profile and a line to the sudoer's file to make sure you are always able to start the daemon on relogin.
 
 #### In depth
 
