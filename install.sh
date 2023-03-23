@@ -59,47 +59,31 @@ sudo chmod 755 /usr/local/bin/Naga_Linux/nagaKillroot.sh
 sudo cp -f ./src/nagaUninstall.sh /usr/local/bin/Naga_Linux/
 sudo chmod 755 /usr/local/bin/Naga_Linux/nagaUninstall.sh
 
-_dir="/home/razerInput/.naga"
-sudo mkdir -p "$_dir"
+_dir="/home/$USER/.naga"
+mkdir -p "$_dir"
 sudo cp -r -n -v "keyMap.txt" "$_dir"
-sudo chown -R "root:root" "$_dir"
-printf "%s\n%s" "$USER" "$(id -u "$USER")" | sudo tee /home/razerInput/.naga/user.txt >/dev/null
+sudo chown -R "root:root" "$_dir"/keyMap.txt
 
 sudo groupadd -f razerInputGroup
-sudo bash -c "useradd razerInput > /dev/null 2>&1"
-sudo usermod -a -G razerInputGroup razerInput >/dev/null
 
-xhost +SI:localuser:razerInput
-sudo setfacl -R -m g:razerInputGroup:rwx ~ >/dev/null
-sudo setfacl -d -m g:razerInputGroup:rwx ~ >/dev/null
-sudo setfacl -R -m g:razerInputGroup:rwx /run/user/$UID >/dev/null
-sudo setfacl -d -m g:razerInputGroup:rwx /run/user/$UID >/dev/null
-
-env | sudo tee /home/razerInput/.naga/envSetup >/dev/null
-
-echo 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' >/tmp/80-naga.rules
-
-sudo mv /tmp/80-naga.rules /etc/udev/rules.d/80-naga.rules
+printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' | sudo tee /etc/udev/rules.d/80-naga.rules > /dev/null
 
 sudo cp -f src/naga.service /etc/systemd/system/
-sudo mkdir -p /etc/systemd/system/naga.service.d
-sudo cp -f src/naga.conf /etc/systemd/system/naga.service.d/
-printf "%s\n" "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf >/dev/null
-printf "WorkingDirectory=/home/%s/\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service.d/naga.conf >/dev/null
+
+env | tee ~/.naga/envSetup >/dev/null
+grep -qF 'env | tee ~/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | tee ~/.naga/envSetup > /dev/null' | tee -a ~/.profile > /dev/null
+grep -qF 'sudo systemctl start naga' ~/.profile || printf '\n%s\n' 'sudo systemctl start naga > /dev/null' | tee -a ~/.profile > /dev/null
+
+printf "Environment=DISPLAY=%s\n" "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
+printf "User=%s\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
+printf "EnvironmentFile=/home/%s/.naga/envSetup\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
 
 
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
-sudo cat /etc/sudoers | grep -qxF "razerInput ALL=($USER) NOPASSWD:ALL" || printf "\nrazerInput ALL=(%s) NOPASSWD:ALL\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
 sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
-sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/usr/bin/tee /home/razerInput/.naga/envSetup" || printf "\n%s ALL=(ALL) NOPASSWD:/usr/bin/tee /home/razerInput/.naga/envSetup\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
 
-grep -qF 'xhost +SI:localuser:razerInput' ~/.profile || printf '\n%s\n' 'xhost +SI:localuser:razerInput > /dev/null' | tee -a ~/.profile
-grep -qF 'sudo systemctl start naga' ~/.profile || printf '\n%s\n' 'sudo systemctl start naga > /dev/null' | tee -a ~/.profile
-grep -qF 'env | sudo tee /home/razerInput/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | sudo tee /home/razerInput/.naga/envSetup > /dev/null' | tee -a ~/.profile
-
-sudo chown -R razerInput:razerInputGroup /home/razerInput
 
 sudo systemctl enable naga
 sudo systemctl start naga

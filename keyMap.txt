@@ -1,9 +1,9 @@
 config=defaultConfig
 1 - keyClick=XF86AudioMute
-2 - run=firefox
+2 - specialKey=;
 3 - string=hello@hotmail.com
 4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then spotify; fi
-5 - run=x-terminal-emulator
+5 - run=gnome-terminal
 6 - specialPressOnPress=È
 6 - specialReleaseOnRelease=È
 7 - key=XF86AudioLowerVolume
@@ -19,23 +19,29 @@ configEnd
 
 config=defaultConfig2
 1 - key=XF86AudioMute
-3 - run=x-terminal-emulator
+3 - run=gnome-terminal
 3 - sleep=1000
-3 - run=x-terminal-emulator
+3 - run=gnome-terminal
+4 - run=gnome-terminal
+4 - sleep=1000
+4 - run=gnome-terminal
+5 - runRelease=gnome-terminal
+5 - sleeprelease=1000
+5 - runRelease=gnome-terminal
 7 - key=XF86AudioLowerVolume
 8 - key=XF86AudioPlay
 9 - key=XF86AudioRaiseVolume
 10 - keyClick=XF86AudioPrev
 11 - chmap=defaultConfig
 12 - keyClick=XF86AudioNext
-13 - run=x-terminal-emulator
-14 - run=x-terminal-emulator
+13 - run=gnome-terminal
+14 - run=gnome-terminal
 configEnd
 
 configWindow=Spotify
 1 - key=XF86AudioMute
 3 - string=spotify@music.com
-5 - runRelease=x-terminal-emulator
+5 - runRelease=gnome-terminal
 7 - key=XF86AudioLowerVolume
 8 - key=XF86AudioPlay
 9 - key=XF86AudioRaiseVolume
@@ -50,7 +56,7 @@ configWindow=Gnome-terminal
 1 - key=XF86AudioMute
 3 - string=gnome@terminal.com
 4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then spotify; fi
-5 - run=x-terminal-emulator
+5 - run=gnome-terminal
 6 - specialPressOnPress=È
 6 - specialReleaseOnRelease=È
 7 - key=XF86AudioLowerVolume
