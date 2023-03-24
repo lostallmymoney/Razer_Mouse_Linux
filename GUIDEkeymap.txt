@@ -21,8 +21,6 @@ config=defaultConfig
 #runRelease runs on release
 5 - runRelease=gnome-terminal
 
-
-
 #key will do a press on pressing and release on releasing (works on any character even spaces)
 12 - key=t
 
@@ -31,9 +29,8 @@ config=defaultConfig
 11 - stringrelease= you suck
 
 #use special, specialRelease, specialPressOnPress, specialPressOnRelease, specialReleaseOnPress or specialReleaseOnRelease
-#to write special characters
+#to write special characters (only on X11)
 7 - string=georges
-7 - special=@
 7 - string=hotmail.com
 
 #keyClick presses and release the key instantly

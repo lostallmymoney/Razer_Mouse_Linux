@@ -1,0 +1,53 @@
+config=defaultConfig
+1 - keyClick=mute
+2 - run=firefox
+3 - string=hello@hotmail.com
+4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then spotify; fi
+5 - run=x-terminal-emulator
+6 - key=T
+7 - key=volumedown
+8 - chmap=defaultConfig2
+9 - key=volumeup
+10 - keyClick=previoussong
+11 - key=playpause
+12 - keyClick=nextsong
+configEnd
+
+
+config=defaultConfig2
+1 - key=mute
+3 - run=x-terminal-emulator
+3 - sleep=1000
+3 - run=x-terminal-emulator
+7 - key=volumedown
+8 - key=playpause
+9 - key=volumeup
+10 - keyClick=previoussong
+11 - chmap=defaultConfig
+12 - keyClick=nextsong
+configEnd
+
+configWindow=Spotify
+1 - key=mute
+3 - string=spotify@music.com
+5 - runRelease=x-terminal-emulator
+7 - key=volumedown
+8 - key=playpause
+9 - key=volumeup
+10 - keyClick=previoussong
+11 - key=playpause
+12 - keyClick=nextsong
+configEnd
+
+configWindow=gnome-terminal-server
+1 - key=mute
+3 - string=gnome@terminal.com
+4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then spotify; fi
+5 - run=x-terminal-emulator
+7 - key=volumedown
+8 - key=playpause
+9 - key=volumeup
+10 - keyClick=previoussong
+11 - key=playpause
+12 - keyClick=nextsong
+configEnd
