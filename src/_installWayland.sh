@@ -21,8 +21,8 @@ if [ ! -f ./src/nagaWayland ]; then
     exit 1; exit 1; exit 1
 fi
 
-sudo chmod 755 /usr/local/bin/nagaWayland
 sudo mv ./src/nagaWayland /usr/local/bin/
+sudo chmod 755 /usr/local/bin/nagaWayland
 
 echo "Installing dotool :"
 

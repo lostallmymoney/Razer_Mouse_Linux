@@ -38,8 +38,8 @@ if [ ! -f ./src/nagaX11 ]; then
     exit 1
 fi
 
-sudo chmod 755 /usr/local/bin/nagaX11
 sudo mv ./src/nagaX11 /usr/local/bin/
+sudo chmod 755 /usr/local/bin/nagaX11
 
 
 _dir="/home/$USER/.naga"
