@@ -329,7 +329,7 @@ private:
 			{
 				if (read(extra_btn_fd, ev1, size) == -1)
 					exit(2);
-				if (ev11->type == EV_KEY)
+				if (ev1[0].value != ' ' && ev11->type == EV_KEY)
 				{ // Only extra buttons
 					switch (ev11->code)
 					{
@@ -408,6 +408,10 @@ private:
 	{
 		(void)!(system(macroContent->c_str()));
 	}
+	const static void executeThreadNow(const string *const macroContent)
+	{
+		thread(executeNow, macroContent).detach();
+	}
 	// end of configKeys functions
 
 	static void runActions(vector<MacroEvent *> *const relativeMacroEventsPointer)
@@ -479,23 +483,23 @@ public:
 		emplaceConfigKey("sleep", ONKEYPRESSED, sleepNow);
 		emplaceConfigKey("sleeprelease", ONKEYRELEASED, sleepNow);
 
-		emplaceConfigKey("run", ONKEYPRESSED, executeNow, "setsid ", "&");
+		emplaceConfigKey("run", ONKEYPRESSED, executeThreadNow);
 		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
 
-		emplaceConfigKey("runrelease", ONKEYRELEASED, executeNow, "setsid ", "&");
+		emplaceConfigKey("runrelease", ONKEYRELEASED, executeThreadNow);
 		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
 
-		emplaceConfigKey("launch", ONKEYRELEASED, executeNow, "setsid gtk-launch ", "&");
+		emplaceConfigKey("launch", ONKEYRELEASED, executeThreadNow, "gtk-launch ");
 		emplaceConfigKey("launch2", ONKEYRELEASED, executeNow, "gtk-launch ");
 
-		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeNow, "setsid xdotool keydown --window getactivewindow ", "&");
-		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keydown --window getactivewindow ", "&");
+		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeThreadNow, "xdotool keydown --window getactivewindow ");
+		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeThreadNow, "xdotool keydown --window getactivewindow ");
 
-		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeNow, "setsid xdotool keyup --window getactivewindow ", "&");
-		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeNow, "setsid xdotool keyup --window getactivewindow ", "&");
+		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeThreadNow, "xdotool keyup --window getactivewindow ");
+		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeThreadNow, "xdotool keyup --window getactivewindow ");
 
-		emplaceConfigKey("keyclick", ONKEYPRESSED, executeNow, "setsid xdotool key --window getactivewindow ", "&");
-		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeNow, "setsid xdotool key --window getactivewindow ", "&");
+		emplaceConfigKey("keyclick", ONKEYPRESSED, executeThreadNow, "xdotool key --window getactivewindow ");
+		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeThreadNow, "xdotool key --window getactivewindow ");
 
 		emplaceConfigKey("string", ONKEYPRESSED, writeStringNow);
 		emplaceConfigKey("stringrelease", ONKEYRELEASED, writeStringNow);

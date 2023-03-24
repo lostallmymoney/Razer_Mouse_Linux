@@ -341,7 +341,7 @@ private:
 			{
 				if (read(side_btn_fd, ev1, size) == -1)
 					exit(2);
-				if (ev11->type == EV_KEY)
+				if (ev1[0].value != ' ' && ev11->type == EV_KEY)
 				{ // Key event (press or release)
 					switch (ev11->code)
 					{
@@ -386,6 +386,10 @@ private:
 	const static void executeNow(const string *const macroContent)
 	{
 		(void)!(system(macroContent->c_str()));
+	}
+	const static void executeThreadNow(const string *const macroContent)
+	{
+		thread(executeNow, macroContent).detach();
 	}
 	// end of configKeys functions
 
@@ -459,26 +463,26 @@ public:
 		emplaceConfigKey("sleep", ONKEYPRESSED, sleepNow);
 		emplaceConfigKey("sleeprelease", ONKEYRELEASED, sleepNow);
 
-		emplaceConfigKey("run", ONKEYPRESSED, executeNow, "setsid ", "&");
+		emplaceConfigKey("run", ONKEYPRESSED, executeThreadNow);
 		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
 
-		emplaceConfigKey("runrelease", ONKEYRELEASED, executeNow, "setsid ", "&");
+		emplaceConfigKey("runrelease", ONKEYRELEASED, executeThreadNow);
 		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
 
-		emplaceConfigKey("launch", ONKEYRELEASED, executeNow, "setsid gtk-launch ", "&");
+		emplaceConfigKey("launch", ONKEYRELEASED, executeThreadNow, "gtk-launch ");
 		emplaceConfigKey("launch2", ONKEYRELEASED, executeNow, "gtk-launch ");
 
-		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeNow, "echo keydown ", " | dotoolc &");
-		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeNow, "echo keydown ", " | dotoolc &");
+		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeThreadNow, "echo keydown ", " | dotoolc");
+		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeThreadNow, "echo keydown ", " | dotoolc");
 
-		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeNow, "echo keyup ", " | dotoolc &");
-		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeNow, "echo keyup ", " | dotoolc &");
+		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeThreadNow, "echo keyup ", " | dotoolc");
+		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeThreadNow, "echo keyup ", " | dotoolc");
 
-		emplaceConfigKey("keyclick", ONKEYPRESSED, executeNow, "echo key ", " | dotoolc &");
-		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeNow, "echo key ", " | dotoolc &");
+		emplaceConfigKey("keyclick", ONKEYPRESSED, executeThreadNow, "echo key ", " | dotoolc");
+		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeThreadNow, "echo key ", " | dotoolc");
 
-		emplaceConfigKey("string", ONKEYPRESSED, executeNow, "echo type ", " | dotoolc &");
-		emplaceConfigKey("stringrelease", ONKEYRELEASED, executeNow, "echo type ", " | dotoolc &");
+		emplaceConfigKey("string", ONKEYPRESSED, executeThreadNow, "echo type ", " | dotoolc");
+		emplaceConfigKey("stringrelease", ONKEYRELEASED, executeThreadNow, "echo type ", " | dotoolc");
 
 		initConf();
 
