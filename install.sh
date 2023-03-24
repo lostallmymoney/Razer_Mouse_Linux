@@ -29,10 +29,9 @@ printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="6
 
 LOGINTYPE=$(loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type)
 if [ "$LOGINTYPE" = "Type=wayland" ]; then
-	./src/_installWayland.sh
-	echo "Wayland"
+	sh ./src/_installWayland.sh
 else
-	./src/_installX11.sh
+	sh ./src/_installX11.sh
 fi
 
 if [ "$LOGINTYPE" = "Type=wayland" ]; then
@@ -40,7 +39,7 @@ if [ "$LOGINTYPE" = "Type=wayland" ]; then
 		read -p "Naga for Wayland is currently installing, do you want to install for X11 too ? (recommended) y/n" yn
 		case $yn in
 		[Yy]*)
-			./src/_installX11.sh
+			sh ./src/_installX11.sh
 			break
 			;;
 		[Nn]*) break ;;
@@ -52,7 +51,7 @@ else
 		read -p "Naga for X11 is currently installing, do you want to install for Wayland too ? (recommended) y/n" yn
 		case $yn in
 		[Yy]*)
-			./src/_installWayland.sh
+			sh ./src/_installWayland.sh
 			break
 			;;
 		[Nn]*) break ;;
