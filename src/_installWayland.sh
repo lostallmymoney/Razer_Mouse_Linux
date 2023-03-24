@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl
+sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev
 
 echo "Checking requirements..."
 
@@ -27,12 +27,17 @@ sudo mv ./src/nagaWayland /usr/local/bin/
 echo "Installing dotool :"
 
 wget https://git.sr.ht/~geb/dotool/archive/90184107489abb7a440bf1f8df9b123acc8f9628.tar.gz -O dotool.tar.gz
-tar -xf dotool.tar.gz
-cd dotool-90184107489abb7a440bf1f8df9b123acc8f9628
+tar -xf dotool.tar.gz  > /dev/null
+mv -f dotool-90184107489abb7a440bf1f8df9b123acc8f9628 dotool  > /dev/null
+cd dotool
 sudo sh install.sh > /dev/null
-cd .. > /dev/null
-rm -rdf dotool-90184107489abb7a440bf1f8df9b123acc8f9628
-rm  -f dotool.tar.gz
+cd ..
+#rm -rdf dotool
+rm  -f dotool.tar.gz  > /dev/null
+
+
+cp -rf ./src/window-calls-extended@hseliger.eu ~/.local/share/gnome-shell/extensions
+gnome-extensions enable window-calls-extended@hseliger.eu
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"

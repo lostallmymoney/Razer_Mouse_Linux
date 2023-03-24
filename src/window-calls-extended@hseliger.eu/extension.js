@@ -29,15 +29,6 @@ const { Gio } = imports.gi;
 const MR_DBUS_IFACE = `
 <node>
     <interface name="org.gnome.Shell.Extensions.WindowsExt">
-        <method name="List">
-            <arg type="s" direction="out" name="win"/>
-        </method>
-        <method name="FocusTitle">
-            <arg type="s" direction="out" />
-        </method>
-        <method name="FocusPID">
-            <arg type="s" direction="out" />
-        </method>
         <method name="FocusClass">
             <arg type="s" direction="out" />
         </method>
@@ -55,34 +46,6 @@ class Extension {
         this._dbus.unexport();
         delete this._dbus;
     }
-    List() {
-        let win = global.get_window_actors()
-            .map(a => a.meta_window)
-            .map(w => ({ class: w.get_wm_class(), pid: w.get_pid(), id: w.get_id(), maximized: w.get_maximized(), focus: w.has_focus(), title: w.get_title() }));
-        return JSON.stringify(win);
-    }
-    FocusTitle() {
-        let win = global.get_window_actors()
-            .map(a => a.meta_window)
-            .map(w => ({ focus: w.has_focus(), title: w.get_title() }));
-        for (let [_ignore , aWindow] of win.entries()) {
-            let [focus,theTitle] = Object.entries(aWindow);
-            if (focus[1] == true )
-                return theTitle[1];
-        }
-        return "";
-    }
-    FocusPID() {
-        let win = global.get_window_actors()
-            .map(a => a.meta_window)
-            .map(w => ({ focus: w.has_focus(), pid: w.get_pid() }));
-            for (let [_ignore , aWindow] of win.entries()) {
-                let [focus,thePID] = Object.entries(aWindow);
-                if (focus[1] == true )
-                    return ""+thePID[1]; // Turn number into string
-            }
-            return "";
-        }
     FocusClass() {
         let win = global.get_window_actors()
             .map(a => a.meta_window)

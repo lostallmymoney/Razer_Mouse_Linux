@@ -37,7 +37,7 @@ fi
 
 if [ "$LOGINTYPE" = "Type=wayland" ]; then
 	while true; do
-		read -p "Naga for Wayland was installed, do you want to install for X11 too ? (recommended) y/n" yn
+		read -p "Naga for Wayland is currently installing, do you want to install for X11 too ? (recommended) y/n" yn
 		case $yn in
 		[Yy]*)
 			./src/_installX11.sh
@@ -49,7 +49,7 @@ if [ "$LOGINTYPE" = "Type=wayland" ]; then
 	done
 else
 	while true; do
-		read -p "Naga for X11 was installed, do you want to install for Wayland too ? (recommended) y/n" yn
+		read -p "Naga for X11 is currently installing, do you want to install for Wayland too ? (recommended) y/n" yn
 		case $yn in
 		[Yy]*)
 			./src/_installWayland.sh
@@ -76,10 +76,6 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
 sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
-
-
-cp -rf ./src/window-calls-extended@hseliger.eu ~/.local/share/gnome-shell/extensions
-gnome-extensions enable window-calls-extended@hseliger.eu
 
 
 sudo cp -f src/naga.service /etc/systemd/system/
