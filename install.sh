@@ -77,24 +77,6 @@ sleep 0.5
 sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
 
 
-sudo cp -f src/naga.service /etc/systemd/system/
-
-env | tee ~/.naga/envSetup >/dev/null
-grep -qF 'env | tee ~/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | tee ~/.naga/envSetup > /dev/null' | tee -a ~/.profile > /dev/null
-grep -qF 'sudo systemctl start naga' ~/.profile || printf '\n%s\n' 'sudo systemctl start naga > /dev/null' | tee -a ~/.profile > /dev/null
-
-printf "Environment=DISPLAY=%s\n" "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
-printf "User=%s\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
-printf "EnvironmentFile=/home/%s/.naga/envSetup\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
-printf "WorkingDirectory=%s\n" "~" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
-
-
-sudo udevadm control --reload-rules && sudo udevadm trigger
-
-sleep 0.5
-sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
-
-
 sudo systemctl enable naga
 sudo systemctl start naga
 
