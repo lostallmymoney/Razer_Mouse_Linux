@@ -1,5 +1,6 @@
 # Razer Mouse Linux
 ..also can accept other devices by adding the files. Contact me to add devices.
+
 Currently supporting X11 AND WAYLAND.(Ubuntu & flavors & anything you can install the dependencies on)
 
 Now with app auto profiles !
