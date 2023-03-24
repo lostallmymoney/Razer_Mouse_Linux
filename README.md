@@ -1,5 +1,6 @@
 # Razer Mouse Linux
-..also can accept other devices by adding the files. Contact me to add devices. Currently supporting X11 AND WAYLAND.
+..also can accept other devices by adding the files. Contact me to add devices.
+Currently supporting X11 AND WAYLAND.(Ubuntu & flavors & anything you can install the dependencies on)
 
 Now with app auto profiles !
 
@@ -34,7 +35,8 @@ If there is an error about config files just copy it to your $HOME/.naga/
 
 Map razer naga devices keys easily with the command `naga edit`.
 
-## REQUIRES : libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
+## REQUIRES :	X11 : `libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps`
+		Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev`
 	If you are running something else than ubuntu and it's not compiling theses are the packages to find.
 
 Probably works with :
