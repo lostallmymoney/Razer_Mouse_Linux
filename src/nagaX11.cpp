@@ -18,12 +18,11 @@
 #include <sstream>
 using namespace std;
 
-typedef pair<const char *const, const char *const> CharAndChar;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
-const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
+static const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
 static int fakeKeyFollowCount = 0;
-map<string, string *> notifySendMap;
+static map<const string,const string *> notifySendMap;
 
 class configKey
 {
@@ -44,70 +43,84 @@ public:
 	}
 };
 
-class MacroEvent
-{
-private:
-	const configKey *const keyType;
-	const string *const content;
+typedef const pair<const configKey *, const string *> MacroEvent;
 
-public:
-	const configKey *const KeyType() const { return keyType; }
-	const string *const Content() const { return content; }
-
-	MacroEvent(const configKey *tkeyType, const string *tcontent) : keyType(tkeyType), content(new string(*tcontent))
-	{
-	}
-};
+static map<string, map<int, map<bool, vector<MacroEvent *>>>> macroEventsKeyMaps;
 
 class configSwitchScheduler
 {
 private:
 	bool scheduledReMap = false, aWindowConfigActive = false;
-	const string * temporaryWindowConfigName = NULL;
-	const string * backupConfigName = NULL;
-	const string * scheduledReMapString = NULL;
+	const string *temporaryWindowConfigName = NULL;
+	const string *backupConfigName = NULL;
+	const string *scheduledReMapString = NULL;
+	const string *currentConfigName = NULL;
 
 public:
-	vector<string *> configWindowsNamesVector;
+	vector<const string *> configWindowsNamesVector;
+	map<int, std::map<bool, vector<MacroEvent *>>> *currentConfigPtr;
 
-	const string *RemapString()
+	void loadConf(bool silent = false)
 	{
-		return scheduledReMapString;
+		if (!macroEventsKeyMaps.contains(*scheduledReMapString))
+		{
+			clog << "Undefined profile : " << *scheduledReMapString << endl;
+			return;
+		}
+
+		scheduledReMap = false;
+		currentConfigName = scheduledReMapString;
+
+		currentConfigPtr = &macroEventsKeyMaps[*scheduledReMapString];
+		if (!silent)
+		{
+			(void)!(system(notifySendMap[*scheduledReMapString]->c_str()));
+		}
 	}
-	const string *temporaryWindowName()
+	void checkForWindowConfig()
 	{
-		return temporaryWindowConfigName;
+		char *currentAppTitle = getActiveWindow();
+		clog << "WindowNameLog : " << currentAppTitle << endl;
+		if (!aWindowConfigActive || strcmp(currentAppTitle, temporaryWindowConfigName->c_str()) != 0)
+		{
+			bool found = false;
+			for (const string *configWindowName : configWindowsNamesVector)
+			{
+				if (strcmp(currentAppTitle, configWindowName->c_str()) == 0)
+				{
+					if (!aWindowConfigActive)
+					{
+						backupConfigName = scheduledReMapString;
+					}
+					scheduledReMapString = temporaryWindowConfigName = configWindowName;
+					scheduledReMap = aWindowConfigActive = true;
+					loadConf(true); // change config for macroEvents[ii]->Content()
+					found = true;
+					break;
+				}
+			}
+			if (!found && aWindowConfigActive)
+			{
+				scheduledReMapString = backupConfigName;
+				scheduledReMap = true, aWindowConfigActive = false;
+				temporaryWindowConfigName = backupConfigName = NULL;
+				loadConf(true); // change config for macroEvents[ii]->Content()
+			}
+		}
 	}
-	const string *getBackupConfigName()
+	void isRemapScheduledCheck()
 	{
-		return backupConfigName;
-	}
-	bool isAWindowConfigActive()
-	{
-		return aWindowConfigActive;
-	}
-	bool isRemapScheduled()
-	{
-		return scheduledReMap;
+		if (scheduledReMap)
+		{
+			loadConf(); // change config for macroEvents[ii]->Content()
+		}
 	}
 	void scheduleReMap(const string *const reMapString)
 	{
+		lock_guard<mutex> guard(configSwitcherMutex);
 		scheduledReMapString = reMapString;
 		scheduledReMap = true, aWindowConfigActive = false;
 		temporaryWindowConfigName = backupConfigName = NULL;
-	}
-	void scheduleWindowReMap(const string *reMapString)
-	{
-		if (!aWindowConfigActive)
-		{
-			backupConfigName = scheduledReMapString;
-		}
-		scheduledReMapString = temporaryWindowConfigName = reMapString;
-		scheduledReMap = aWindowConfigActive = true;
-	}
-	void unScheduleReMap()
-	{
-		scheduledReMap = false;
 	}
 };
 
@@ -117,14 +130,11 @@ class NagaDaemon
 {
 private:
 	map<string, configKey *const> configKeysMap;
-	map<string, map<int, map<bool, vector<MacroEvent *>>>> macroEventsKeyMaps;
 
-	string currentConfigName;
 	struct input_event ev1[64];
 	const int size = sizeof(ev1);
-	vector<CharAndChar> devices;
+	vector<pair<const char *const, const char *const>> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
-	map<int, std::map<bool, vector<MacroEvent *>>> *currentConfigPtr;
 
 	const string *applyBashCommand(string c)
 	{
@@ -192,7 +202,7 @@ private:
 						if (!configKeysMap[commandType]->Suffix()->empty())
 							commandContent = commandContent + *configKeysMap[commandType]->Suffix();
 
-						(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], &commandContent));
+						(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], new string(commandContent)));
 						// Encode and store mapping v3
 					}
 					else if (commandType == "key")
@@ -203,13 +213,13 @@ private:
 						}
 						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent + *configKeysMap["keyreleaseonrelease"]->Suffix());
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent + *configKeysMap["keypressonpress"]->Suffix();
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], &commandContent));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], commandContent2));
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], new string(commandContent)));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], new string(*commandContent2)));
 					}
 					else if (commandType == "specialkey")
 					{
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["specialpressonpress"], &commandContent));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["specialreleaseonrelease"], &commandContent));
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["specialpressonpress"], new string(commandContent)));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["specialreleaseonrelease"], new string(commandContent)));
 					}
 					else
 					{
@@ -235,24 +245,6 @@ private:
 		}
 		in.close();
 	}
-
-	void loadConf(const string *const configName, const bool silent = false)
-	{
-		if (!macroEventsKeyMaps.contains(*configName))
-		{
-			clog << "Undefined profile : " << configName << endl;
-			return;
-		}
-		configSwitcher->unScheduleReMap();
-
-		currentConfigName = *configName;
-		currentConfigPtr = &macroEventsKeyMaps[currentConfigName];
-		if (!silent)
-		{
-			(void)!(system(notifySendMap[currentConfigName]->c_str()));
-		}
-	}
-
 	string hexChar(const char a)
 	{
 		ostringstream hexedChar;
@@ -264,32 +256,6 @@ private:
 	input_event *ev11;
 	fd_set readset;
 
-	void checkForWindowConfig()
-	{
-		char *currentAppTitle = getActiveWindow();
-		clog << "WindowNameLog : " << currentAppTitle << endl;
-		if (!configSwitcher->isAWindowConfigActive() || strcmp(currentAppTitle, configSwitcher->temporaryWindowName()->c_str()) != 0)
-		{
-			bool found = false;
-			for (string *configWindowName : configSwitcher->configWindowsNamesVector)
-			{
-				if (strcmp(currentAppTitle, configWindowName->c_str()) == 0)
-				{
-					lock_guard<mutex> guard(configSwitcherMutex);
-					configSwitcher->scheduleWindowReMap(configWindowName);
-					loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
-					found = true;
-				}
-			}
-			if (!found && configSwitcher->isAWindowConfigActive())
-			{
-				lock_guard<mutex> guard(configSwitcherMutex);
-				configSwitcher->scheduleReMap(configSwitcher->getBackupConfigName());
-				loadConf(configSwitcher->RemapString(), true); // change config for macroEvents[ii]->Content()
-			}
-		}
-	}
-
 	void run()
 	{
 		if (areSideBtnEnabled)
@@ -297,11 +263,7 @@ private:
 		ev11 = &ev1[1];
 		while (1)
 		{
-			if (configSwitcher->isRemapScheduled())
-			{
-				lock_guard<mutex> guard(configSwitcherMutex); // remap
-				loadConf(configSwitcher->RemapString());	  // change config for macroEvents[ii]->Content()
-			}
+			configSwitcher->isRemapScheduledCheck();
 
 			FD_ZERO(&readset);
 			if (areSideBtnEnabled)
@@ -320,8 +282,8 @@ private:
 					switch (ev11->code)
 					{
 					case 2 ... 13:
-						checkForWindowConfig();
-						thread(runActions, &(*currentConfigPtr)[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
+						configSwitcher->checkForWindowConfig();
+						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
 				}
@@ -335,8 +297,8 @@ private:
 					switch (ev11->code)
 					{
 					case 275 ... 276:
-						checkForWindowConfig();
-						thread(runActions, &(*currentConfigPtr)[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
+						configSwitcher->checkForWindowConfig();
+						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}
@@ -396,7 +358,6 @@ private:
 
 	const static void chmapNow(const string *const macroContent)
 	{
-		lock_guard<mutex> guard(configSwitcherMutex);
 		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
 	}
 
@@ -419,7 +380,7 @@ private:
 	{
 		for (MacroEvent *const macroEventPointer : *relativeMacroEventsPointer)
 		{ // run all the events at Key
-			macroEventPointer->KeyType()->runInternal(macroEventPointer->Content());
+			macroEventPointer->first->runInternal(macroEventPointer->second);
 		}
 	}
 
@@ -447,7 +408,7 @@ public:
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
-		for (CharAndChar &device : devices)
+		for (pair<const char *const, const char *const> &device : devices)
 		{ // Setup check
 			side_btn_fd = open(device.first, O_RDONLY), extra_btn_fd = open(device.second, O_RDONLY);
 			if (side_btn_fd != -1 || extra_btn_fd != -1)
@@ -514,7 +475,7 @@ public:
 		initConf();
 
 		configSwitcher->scheduleReMap(&mapConfig);
-		loadConf(&mapConfig); // Initialize config
+		configSwitcher->loadConf(); // Initialize config
 
 		run();
 	}
