@@ -27,7 +27,7 @@ static map<const string,const string *> notifySendMap;
 class configKey
 {
 private:
-	const string *const prefix, *const suffix;
+	const string *const prefix;
 	const bool onKeyPressed;
 	const void (*const internalFunction)(const string *const c);
 
@@ -35,10 +35,9 @@ public:
 	const bool IsOnKeyPressed() const { return onKeyPressed; }
 	const void runInternal(const string *const content) const { internalFunction(content); }
 	const string *const Prefix() const { return prefix; }
-	const string *const Suffix() const { return suffix; }
 	const void (*InternalFunction() const)(const string *const) { return internalFunction; }
 
-	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "", const string tsuffix = "") : suffix(new string(tsuffix)), prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -136,11 +135,6 @@ private:
 	vector<pair<const char *const, const char *const>> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
 
-	const string *applyBashCommand(string c)
-	{
-		return new string("bash -c '" + c + "'");
-	}
-
 	void initConf()
 	{
 		string commandContent;
@@ -194,13 +188,8 @@ private:
 
 					if (configKeysMap.contains(commandType))
 					{ // filter out bad types
-
-						if (commandType == "run" || commandType == "run2") // This makes you able to run complete bash inside run
-							commandContent = *applyBashCommand(commandContent);
 						if (!configKeysMap[commandType]->Prefix()->empty())
 							commandContent = *configKeysMap[commandType]->Prefix() + commandContent;
-						if (!configKeysMap[commandType]->Suffix()->empty())
-							commandContent = commandContent + *configKeysMap[commandType]->Suffix();
 
 						(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], new string(commandContent)));
 						// Encode and store mapping v3
@@ -211,8 +200,8 @@ private:
 						{
 							commandContent = hexChar(commandContent[0]);
 						}
-						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent + *configKeysMap["keyreleaseonrelease"]->Suffix());
-						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent + *configKeysMap["keypressonpress"]->Suffix();
+						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
+						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
 						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], new string(commandContent)));
 						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], new string(*commandContent2)));
 					}
@@ -384,9 +373,9 @@ private:
 		}
 	}
 
-	void emplaceConfigKey(const std::string &key, bool onKeyPressed, auto functionPtr, const std::string &prefix = "", const std::string &suffix = "")
+	void emplaceConfigKey(const std::string &key, bool onKeyPressed, auto functionPtr, const std::string &prefix = "")
 	{
-		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, prefix, suffix));
+		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, prefix));
 	}
 
 public:
