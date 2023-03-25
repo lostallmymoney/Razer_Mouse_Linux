@@ -107,47 +107,49 @@ class configSwitchScheduler
 {
 private:
 	bool scheduledReMap = false, aWindowConfigActive = false;
-	string scheduledReMapString = "", temporaryWindowConfigName = "", backupConfigName = "";
+	const string * temporaryWindowConfigName = NULL;
+	const string * backupConfigName = NULL;
+	const string * scheduledReMapString = NULL;
 
 public:
 	vector<string *> configWindowsNamesVector;
 
-	const string *RemapString() const
+	const string *RemapString()
 	{
-		return &scheduledReMapString;
+		return scheduledReMapString;
 	}
-	const string *temporaryWindowName() const
+	const string *temporaryWindowName()
 	{
-		return &temporaryWindowConfigName;
+		return temporaryWindowConfigName;
 	}
-	const string *getBackupConfigName() const
+	const string *getBackupConfigName()
 	{
-		return &backupConfigName;
+		return backupConfigName;
 	}
-	const bool isAWindowConfigActive() const
+	bool isAWindowConfigActive()
 	{
 		return aWindowConfigActive;
 	}
-	const bool isRemapScheduled() const
+	bool isRemapScheduled()
 	{
 		return scheduledReMap;
 	}
-	const void scheduleReMap(const string *reMapString)
+	void scheduleReMap(const string *const reMapString)
 	{
-		scheduledReMapString = *reMapString;
+		scheduledReMapString = reMapString;
 		scheduledReMap = true, aWindowConfigActive = false;
-		temporaryWindowConfigName = backupConfigName = "";
+		temporaryWindowConfigName = backupConfigName = NULL;
 	}
-	const void scheduleWindowReMap(const string *reMapString)
+	void scheduleWindowReMap(const string *reMapString)
 	{
 		if (!aWindowConfigActive)
 		{
 			backupConfigName = scheduledReMapString;
 		}
-		scheduledReMapString = temporaryWindowConfigName = *reMapString;
+		scheduledReMapString = temporaryWindowConfigName = reMapString;
 		scheduledReMap = aWindowConfigActive = true;
 	}
-	const void unScheduleReMap()
+	void unScheduleReMap()
 	{
 		scheduledReMap = false;
 	}
@@ -293,8 +295,7 @@ private:
 	void checkForWindowConfig()
 	{
 		const string currentAppTitle = getTitle();
-		const string *const tempWindowName = configSwitcher->temporaryWindowName();
-		if (tempWindowName->empty() || currentAppTitle != *tempWindowName)
+		if (!configSwitcher->isAWindowConfigActive()  || currentAppTitle != *configSwitcher->temporaryWindowName())
 		{
 			bool found = false;
 			for (string *configWindowName : configSwitcher->configWindowsNamesVector)

@@ -63,47 +63,49 @@ class configSwitchScheduler
 {
 private:
 	bool scheduledReMap = false, aWindowConfigActive = false;
-	string scheduledReMapString = "", temporaryWindowConfigName = "", backupConfigName = "";
+	const string * temporaryWindowConfigName = NULL;
+	const string * backupConfigName = NULL;
+	const string * scheduledReMapString = NULL;
 
 public:
 	vector<string *> configWindowsNamesVector;
 
-	const string *RemapString() const
+	const string *RemapString()
 	{
-		return &scheduledReMapString;
+		return scheduledReMapString;
 	}
-	const string *temporaryWindowName() const
+	const string *temporaryWindowName()
 	{
-		return &temporaryWindowConfigName;
+		return temporaryWindowConfigName;
 	}
-	const string *getBackupConfigName() const
+	const string *getBackupConfigName()
 	{
-		return &backupConfigName;
+		return backupConfigName;
 	}
-	const bool isAWindowConfigActive() const
+	bool isAWindowConfigActive()
 	{
 		return aWindowConfigActive;
 	}
-	const bool isRemapScheduled() const
+	bool isRemapScheduled()
 	{
 		return scheduledReMap;
 	}
-	const void scheduleReMap(const string *reMapString)
+	void scheduleReMap(const string *const reMapString)
 	{
-		scheduledReMapString = *reMapString;
+		scheduledReMapString = reMapString;
 		scheduledReMap = true, aWindowConfigActive = false;
-		temporaryWindowConfigName = backupConfigName = "";
+		temporaryWindowConfigName = backupConfigName = NULL;
 	}
-	const void scheduleWindowReMap(const string *reMapString)
+	void scheduleWindowReMap(const string *reMapString)
 	{
 		if (!aWindowConfigActive)
 		{
 			backupConfigName = scheduledReMapString;
 		}
-		scheduledReMapString = temporaryWindowConfigName = *reMapString;
+		scheduledReMapString = temporaryWindowConfigName = reMapString;
 		scheduledReMap = aWindowConfigActive = true;
 	}
-	const void unScheduleReMap()
+	void unScheduleReMap()
 	{
 		scheduledReMap = false;
 	}
@@ -264,15 +266,14 @@ private:
 
 	void checkForWindowConfig()
 	{
-		char *currentFolder = getActiveWindow();
-		clog << "WindowNameLog : " << currentFolder << endl;
-		const string *const tempWindowName = configSwitcher->temporaryWindowName();
-		if (tempWindowName->empty() || strcmp(currentFolder, tempWindowName->c_str()) != 0)
+		char *currentAppTitle = getActiveWindow();
+		clog << "WindowNameLog : " << currentAppTitle << endl;
+		if (!configSwitcher->isAWindowConfigActive() || strcmp(currentAppTitle, configSwitcher->temporaryWindowName()->c_str()) != 0)
 		{
 			bool found = false;
 			for (string *configWindowName : configSwitcher->configWindowsNamesVector)
 			{
-				if (strcmp(currentFolder, configWindowName->c_str()) == 0)
+				if (strcmp(currentAppTitle, configWindowName->c_str()) == 0)
 				{
 					lock_guard<mutex> guard(configSwitcherMutex);
 					configSwitcher->scheduleWindowReMap(configWindowName);

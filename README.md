@@ -5,8 +5,7 @@ Currently supporting X11 AND WAYLAND.(Ubuntu & flavors & anything you can instal
 
 Now with app auto profiles !
 
-## INSTALL :
-In one command :
+!!! ONE LINE INSTALL !!! :
 
 `sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip -o Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`
 
@@ -37,8 +36,7 @@ If there is an error about config files just copy it to your $HOME/.naga/
 
 Map razer naga devices keys easily with the command `naga edit`.
 
-## REQUIRES :	
-                X11 : `libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps`
+## REQUIRES :	X11 : `libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps`
 		Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev`
 	If you are running something else than ubuntu and it's not compiling theses are the packages to find.
 
