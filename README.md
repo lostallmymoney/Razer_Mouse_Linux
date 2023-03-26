@@ -42,23 +42,6 @@ Map razer naga devices keys easily with the command `naga edit`.
 		Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev`
 	If you are running something else than ubuntu and it's not compiling theses are the packages to find.
 
-Probably works with :
-- Razer Naga Epic Chroma in CentOS 7
-- Razer Naga Epic (pre-2014 version) in Ubuntu 14.04, 15.04, 15.10
-- Razer Naga (RZ01-0028) (thanks to khornem) in Ubuntu 14.04
-- Razer Naga Molten (thanks to noobxgockel) in Linux Mint 17.02
-- Razer Chroma (thanks to felipeacsi) in Manjaro
-- Razer Naga 2012 (RZ01-0058) (thanks to mrlinuxfish, brianfreytag) in Arch Linux, Ubuntu 16.04
-- Razer Naga Chroma (thanks to ipsod) in Linux Mint KDE 18.1
-- Razer Naga Trinity (thanks to haringsrob and ws141)
-- Razer Pro Wireless (thanks to Stibax)
-
-Works for sure with :
-- Razer Naga 2014 (Ubuntu)
-
-This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.
-It also adds two lines to your ~/.profile for persistance, along with one line to the sudoer's file, which lets you run `sudo systemctl start naga` from within your .profile.
-
 ## CONFIGURATION
 The configuration file `keyMap.txt` has the following syntax
     `config=<configName>` set the name of the following config. The initial loaded config be `defaultConfig` unless specified as argument.
@@ -107,7 +90,6 @@ You may have as many configs as you want in the keyMap.txt file, just make sure 
 [Link for Keys](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h)
 
 
-
 ### NOTES
 
 To reload the config run the command :
@@ -139,6 +121,24 @@ An example `keyMap.txt` configuration file is the following:
 If you want to dig more into configuration, you might find these tools useful: `xinput`, `evtest`
 
 Any non existing functionality can be created through the "run" option.
+
+
+Probably works with :
+- Razer Naga Epic Chroma in CentOS 7
+- Razer Naga Epic (pre-2014 version) in Ubuntu 14.04, 15.04, 15.10
+- Razer Naga (RZ01-0028) (thanks to khornem) in Ubuntu 14.04
+- Razer Naga Molten (thanks to noobxgockel) in Linux Mint 17.02
+- Razer Chroma (thanks to felipeacsi) in Manjaro
+- Razer Naga 2012 (RZ01-0058) (thanks to mrlinuxfish, brianfreytag) in Arch Linux, Ubuntu 16.04
+- Razer Naga Chroma (thanks to ipsod) in Linux Mint KDE 18.1
+- Razer Naga Trinity (thanks to haringsrob and ws141)
+- Razer Pro Wireless (thanks to Stibax)
+
+Works for sure with :
+- Razer Naga 2014 (Ubuntu)
+
+This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.
+It also adds two lines to your ~/.profile for persistance, along with one line to the sudoer's file, which lets you run `sudo systemctl start naga` from within your .profile.
 
 ## INSTALLATION
 
