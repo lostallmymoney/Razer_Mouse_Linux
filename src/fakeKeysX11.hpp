@@ -243,6 +243,7 @@ int fakekey_press(FakeKey *fk, const unsigned char *utf8_char_in, int len_bytes,
 	if (ucs4_out > 0x00ff)				  /* < 0xff assume Latin-1 1:1 mapping */
 		ucs4_out = ucs4_out | 0x01000000; /* This gives us the magic X keysym */
 
+
 	return fakekey_press_keysym(fk, (KeySym)ucs4_out, flags);
 }
 

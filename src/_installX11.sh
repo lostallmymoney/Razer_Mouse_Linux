@@ -7,7 +7,7 @@ fi
 
 sudo echo "Installing requirements..."
 
-sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
+sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps libglib2.0-dev
 
 echo "Checking requirements..."
 

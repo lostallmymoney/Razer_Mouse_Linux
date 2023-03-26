@@ -90,7 +90,6 @@ public:
 
 typedef const pair<const configKey *const, const string *const> MacroEvent;
 
-
 static map<string, map<int, map<bool, vector<MacroEvent *>>>> macroEventsKeyMaps;
 
 class configSwitchScheduler
@@ -279,7 +278,6 @@ private:
 	input_event *ev11;
 	fd_set readset;
 
-
 	void run()
 	{
 		if (areSideBtnEnabled)
@@ -342,7 +340,32 @@ private:
 	{
 		usleep(stoul(*macroContent) * 1000); // microseconds make me dizzy in keymap.txt
 	}
+	const static void runAndWrite(const string *const macroContent)
+	{
+		string result;
+		unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
+		if (!pipe)
+		{
+			throw runtime_error("runAndWrite Failed !");
+		}
 
+		size_t bufferSize = 1024;
+		char *buffer = (char *)malloc(bufferSize);
+
+		size_t bytesRead = 0;
+		while ((bytesRead = fread(buffer, 1, bufferSize, pipe.get())) > 0)
+		{
+			result.append(buffer, bytesRead);
+		}
+
+		free(buffer);
+		(void)!system(("echo keydown " + result + " | dotoolc").c_str());
+	}
+	const static void runAndWriteThread(const string *const macroContent)
+	{
+		thread(runAndWrite, macroContent).detach();
+	}
+	
 	const static void executeNow(const string *const macroContent)
 	{
 		(void)!(system(macroContent->c_str()));
@@ -424,6 +447,9 @@ public:
 
 		emplaceConfigKey("run", ONKEYPRESSED, executeThreadNow);
 		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
+
+		emplaceConfigKey("runandwrite", ONKEYPRESSED, runAndWriteThread);
+		emplaceConfigKey("runandwrite2", ONKEYPRESSED, runAndWrite);
 
 		emplaceConfigKey("runrelease", ONKEYRELEASED, executeThreadNow);
 		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);

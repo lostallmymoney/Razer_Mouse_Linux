@@ -22,7 +22,7 @@ static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
 static int fakeKeyFollowCount = 0;
-static map<const string,const string *> notifySendMap;
+static map<const string, const string *> notifySendMap;
 
 class configKey
 {
@@ -57,7 +57,7 @@ private:
 
 public:
 	vector<const string *> configWindowsNamesVector;
-	map<int, std::map<bool, vector<MacroEvent *>>> *currentConfigPtr;
+	map<int, map<bool, vector<MacroEvent *>>> *currentConfigPtr;
 
 	void loadConf(bool silent = false)
 	{
@@ -138,7 +138,7 @@ private:
 	void initConf()
 	{
 		string commandContent;
-		map<int, std::map<bool, vector<MacroEvent *>>> *iteratedConfig;
+		map<int, map<bool, vector<MacroEvent *>>> *iteratedConfig;
 		bool isIteratingConfig = false;
 
 		ifstream in(conf_file.c_str(), ios::in);
@@ -302,7 +302,11 @@ private:
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
 		for (const char &c : *macroContent)
 		{
-			fakekey_press(aKeyFaker, reinterpret_cast<const unsigned char *>(&c), 8, 0);
+			if(c=='\n'){
+				fakekey_press_keysym(aKeyFaker, XK_Return, 0);
+			}else
+				fakekey_press(aKeyFaker, reinterpret_cast<const unsigned char *>(&c), 8, 0);
+		
 			fakekey_release(aKeyFaker);
 		}
 		XFlush(aKeyFaker->xdpy);
@@ -354,6 +358,31 @@ private:
 	{
 		usleep(stoul(*macroContent) * 1000); // microseconds make me dizzy in keymap.txt
 	}
+	const static void runAndWrite(const string *const macroContent)
+	{
+		string result;
+		unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
+		if (!pipe)
+		{
+			throw runtime_error("runAndWrite Failed !");
+		}
+
+		size_t bufferSize = 1024;
+		char *buffer = (char *)malloc(bufferSize);
+
+		size_t bytesRead = 0;
+		while ((bytesRead = fread(buffer, 1, bufferSize, pipe.get())) > 0)
+		{
+			result.append(buffer, bytesRead);
+		}
+
+		free(buffer);
+		writeStringNow(&result);
+	}
+	const static void runAndWriteThread(const string *const macroContent)
+	{
+		thread(runAndWrite, macroContent).detach();
+	}
 
 	const static void executeNow(const string *const macroContent)
 	{
@@ -373,7 +402,7 @@ private:
 		}
 	}
 
-	void emplaceConfigKey(const std::string &key, bool onKeyPressed, auto functionPtr, const std::string &prefix = "")
+	void emplaceConfigKey(const string &key, bool onKeyPressed, auto functionPtr, const string &prefix = "")
 	{
 		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, prefix));
 	}
@@ -436,6 +465,9 @@ public:
 
 		emplaceConfigKey("run", ONKEYPRESSED, executeThreadNow);
 		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
+
+		emplaceConfigKey("runandwrite", ONKEYPRESSED, runAndWriteThread);
+		emplaceConfigKey("runandwrite2", ONKEYPRESSED, runAndWrite);
 
 		emplaceConfigKey("runrelease", ONKEYRELEASED, executeThreadNow);
 		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
