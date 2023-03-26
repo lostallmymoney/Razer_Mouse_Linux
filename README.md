@@ -77,10 +77,12 @@ The configuration file `keyMap.txt` has the following syntax
 - `keyReleaseOnRelease`: The xdotool key is released when the key is released.			
 - `keyPressOnRelease`: The xdotool key is pressed when the key is released.
 - `keyReleaseOnPress`: The xdotool key is released when the key is pressed. There seems to be a list of keys on https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h but you need to remove **XK_** and they're not all there so google them if you want to be sure.
-- `run`: Runs the command `<command>` on key press with setsid before the command.
-- `run2`: Runs the command without setsid (locks the macro events list until the command is complete).
-- `runRelease`: Runs a bash command when the button is released .
-- `runRelease2`: Runs the command without setsid when button released (locks the macro events list until the command is complete).
+- `run`: Runs the command `<command>` on key press.
+- `run2`: Runs the command synchronously
+- `runRelease`: Runs the command.
+- `runRelease2`: Runs the command synchronously.
+- `runAndWrite`: Runs the command `<command>` and starts writing all of it's output, including newlines to the screen!
+- `runAndWrite2`: Same as runAndWrite, synchronously.
 - `setWorkspace`: Runs `<command>` in **xdotool set_desktop <command>** .
 - `mousePosition`: Runs `<command>` in **xdotool mousemove <command>** .
 - `keyClick` : Presses a key once when button pressed
