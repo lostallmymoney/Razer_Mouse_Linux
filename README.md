@@ -6,8 +6,7 @@ Currently supporting X11 AND WAYLAND.(Ubuntu & flavors & anything you can instal
 Now with app auto profiles !
 
 ## INSTALL :
-In one command :
-
+In one command :     
 `sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip -o Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`
 
 Or run sh install.sh from the directory to install.
@@ -38,10 +37,8 @@ If there is an error about config files just copy it to your $HOME/.naga/
 Map razer naga devices keys easily with the command `naga edit`.
 
 ## REQUIRES :	
-X11 : `libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps`
-
-Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev`
-
+X11 : `libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps`    
+Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev`    
 If you are running something else than ubuntu and it's not compiling theses are the packages to find.
 
 ## CONFIGURATION
@@ -79,14 +76,10 @@ The configuration file `keyMap.txt` has the following syntax
 - `specialReleaseOnPress` : 1 char
 - `specialReleaseOnRelease` : 1 char
 
-`<command>` is what is going to be used based on the option.
-
-To test any `<command>` run it in the command cited above.
-
-`configEnd` Marks the end of a config.
-
-For a mouseclick run `xdotool click <command>` (Can put numbers from 1 to 9 and options such as *--window etc).
-
+`<command>` is what is going to be used based on the option.    
+To test any `<command>` run it in the command cited above.    
+`configEnd` Marks the end of a config.   
+For a mouseclick run `xdotool click <command>` (Can put numbers from 1 to 9 and options such as *--window etc).   
 You may have as many configs as you want in the keyMap.txt file, just make sure to give them different names and include defaultConfig.
 
 [Link for Keys](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h)
@@ -94,16 +87,13 @@ You may have as many configs as you want in the keyMap.txt file, just make sure 
 
 ### NOTES
 
-To reload the config run the command :
-	naga start
-
-which will restart the daemon
-
-!!!!!!!!!!!!
-If the `$HOME/.naga/keyMap.txt` file is missing the daemon won't start (the program will NOT autocreate this file, the install.sh script will copy an example file though).
-
-For a key multiple actions may be defined. They will then be executed sequentially at the key press.
-
+To reload the config run the command :     
+	naga start   
+which will restart the daemon    
+!!!!!!!!!!!!    
+If the `$HOME/.naga/keyMap.txt` file is missing the daemon won't start      
+(the program will NOT autocreate this file, the install.sh script will copy an example file though).      
+For a key multiple actions may be defined. They will then be executed sequentially at the key press.     
 An example `keyMap.txt` configuration file is the following:
 
     #Comments should be accepted
@@ -120,8 +110,7 @@ An example `keyMap.txt` configuration file is the following:
     #etc
     configEnd
 
-If you want to dig more into configuration, you might find these tools useful: `xinput`, `evtest`
-
+If you want to dig more into configuration, you might find these tools useful: `xinput`, `evtest`     
 Any non existing functionality can be created through the "run" option.
 
 
@@ -139,22 +128,24 @@ Probably works with :
 Works for sure with :
 - Razer Naga 2014 (Ubuntu)
 
-This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.
+This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.     
 It also adds two lines to your ~/.profile for persistance, along with one line to the sudoer's file, which lets you run `sudo systemctl start naga` from within your .profile.
 
 ## INSTALLATION
 
 Dependencies : `xdotool`, `xinput` and `g++`
 
-Edit `src/naga.cpp` to adapt the installation to another device, using different inputs and/or different key codes than the Naga Epic, 2014, Molten or Chroma. For Example, Epic Chroma is compatible with Epic (they have the same buttons), so you would only have to add an additional line to the devices vector.
+Edit `src/naga.cpp` to adapt the installation to another device, using different inputs and/or different key codes than   
+the Naga Epic, 2014, Molten or Chroma. For Example, Epic Chroma is compatible with Epic (they have the same buttons),   
+so you would only have to add an additional line to the devices vector.
 
-Run `sh install.sh` .
-This will compile the source and copy the necessary files (see `install.sh` for more info).
-It will prompt you for your password, as it uses sudo to copy some files.
+Run `sh install.sh` .    
+This will compile the source and copy the necessary files (see `install.sh` for more info).   
+It will prompt you for your password, as it uses sudo to copy some files.   
 
 ## Autorun
 
-Now works with systemctl services !
+Now works with systemctl services !    
 Also adds 2 lines to your .profile and a line to the sudoer's file to make sure you are always able to start the daemon on relogin.
 
 #### In depth
