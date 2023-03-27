@@ -21,8 +21,6 @@ using namespace std;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
-static int fakeKeyFollowCount = 0;
-static map<const string, const string *> notifySendMap;
 
 class configKey
 {
@@ -58,6 +56,7 @@ private:
 public:
 	vector<const string *> configWindowsNamesVector;
 	map<int, map<bool, vector<MacroEvent *>>> *currentConfigPtr;
+	map<const string, const string *> notifySendMap;
 
 	void loadConf(bool silent = false)
 	{
@@ -80,6 +79,7 @@ public:
 	{
 		char *currentAppTitle = getActiveWindow();
 		clog << "WindowNameLog : " << currentAppTitle << endl;
+		lock_guard<mutex> guard(configSwitcherMutex);
 		if (!aWindowConfigActive || strcmp(currentAppTitle, temporaryWindowConfigName->c_str()) != 0)
 		{
 			bool found = false;
@@ -109,6 +109,7 @@ public:
 	}
 	void isRemapScheduledCheck()
 	{
+		lock_guard<mutex> guard(configSwitcherMutex);
 		if (scheduledReMap)
 		{
 			loadConf(); // change config for macroEvents[ii]->Content()
@@ -176,7 +177,7 @@ private:
 					int buttonNumberInt;
 					try
 					{
-						buttonNumberInt = stoi(*buttonNumber);
+						buttonNumberInt = stoi(*buttonNumber) + 1; //+1 here so no need to do it at runtime
 					}
 					catch (...)
 					{
@@ -198,7 +199,9 @@ private:
 					{
 						if (commandContent.size() == 1)
 						{
-							commandContent = hexChar(commandContent[0]);
+							ostringstream hexedChar;
+							hexedChar << "0x" << setfill('0') << setw(2) << hex << static_cast<int>(commandContent[0]);
+							commandContent = hexedChar.str();
 						}
 						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
 						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
@@ -222,23 +225,17 @@ private:
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				configSwitcher->configWindowsNamesVector.emplace_back(new string(commandContent));
-				notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
+				configSwitcher->notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
-				notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
+				configSwitcher->notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
 			}
 		}
 		in.close();
-	}
-	string hexChar(const char a)
-	{
-		ostringstream hexedChar;
-		hexedChar << "0x" << setfill('0') << setw(2) << hex << static_cast<int>(a);
-		return hexedChar.str();
 	}
 
 	int side_btn_fd, extra_btn_fd;
@@ -272,7 +269,7 @@ private:
 					{
 					case 2 ... 13:
 						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
+						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
 				}
@@ -287,7 +284,7 @@ private:
 					{
 					case 275 ... 276:
 						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
+						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code - 261][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}
@@ -302,18 +299,19 @@ private:
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
 		for (const char &c : *macroContent)
 		{
-			if(c=='\n'){
+			if (c == '\n')
+			{
 				fakekey_press_keysym(aKeyFaker, XK_Return, 0);
-			}else
+			}
+			else
 				fakekey_press(aKeyFaker, reinterpret_cast<const unsigned char *>(&c), 8, 0);
-		
+
 			fakekey_release(aKeyFaker);
 		}
 		XFlush(aKeyFaker->xdpy);
 		XCloseDisplay(aKeyFaker->xdpy);
 		delete aKeyFaker;
 	}
-
 	const static void specialPressNow(const string *const macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
@@ -322,33 +320,25 @@ private:
 		fakekey_press(aKeyFaker, reinterpret_cast<const unsigned char *>(keyCodeChar), 8, 0);
 		XFlush(aKeyFaker->xdpy);
 		fakeKeyFollowUps->emplace(keyCodeChar, aKeyFaker);
-		fakeKeyFollowCount++;
 	}
-
 	const static void specialReleaseNow(const string *const macroContent)
 	{
-		if (fakeKeyFollowCount > 0)
+		for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
 		{
-			for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
+			if (*aKeyFollowUpPair->first == (*macroContent)[0])
 			{
-				if (*aKeyFollowUpPair->first == (*macroContent)[0])
-				{
-					lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-					FakeKey *const aKeyFaker = aKeyFollowUpPair->second;
-					fakekey_release(aKeyFaker);
-					XFlush(aKeyFaker->xdpy);
-					XCloseDisplay(aKeyFaker->xdpy);
-					fakeKeyFollowCount--;
-					fakeKeyFollowUps->erase(aKeyFollowUpPair);
-					delete aKeyFaker;
-					break;
-				}
+				lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
+				FakeKey *const aKeyFaker = aKeyFollowUpPair->second;
+				fakekey_release(aKeyFaker);
+				XFlush(aKeyFaker->xdpy);
+				XCloseDisplay(aKeyFaker->xdpy);
+				fakeKeyFollowUps->erase(aKeyFollowUpPair);
+				delete aKeyFaker;
+				return;
 			}
 		}
-		else
-			clog << "No candidate for key release" << endl;
+		clog << "No candidate for key release" << endl;
 	}
-
 	const static void chmapNow(const string *const macroContent)
 	{
 		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
@@ -366,24 +356,20 @@ private:
 		{
 			throw runtime_error("runAndWrite Failed !");
 		}
-
 		size_t bufferSize = 1024;
 		char *buffer = (char *)malloc(bufferSize);
-
 		size_t bytesRead = 0;
 		while ((bytesRead = fread(buffer, 1, bufferSize, pipe.get())) > 0)
 		{
-			result.append(buffer, bytesRead);
+			string chunk(buffer, bytesRead);
+			writeStringNow(&chunk);
 		}
-
 		free(buffer);
-		writeStringNow(&result);
 	}
 	const static void runAndWriteThread(const string *const macroContent)
 	{
 		thread(runAndWrite, macroContent).detach();
 	}
-
 	const static void executeNow(const string *const macroContent)
 	{
 		(void)!(system(macroContent->c_str()));

@@ -20,7 +20,6 @@ using namespace std;
 
 static mutex configSwitcherMutex;
 const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";
-map<string, string *> notifySendMap;
 
 const char *DB_INTERFACE = "org.gnome.Shell.Extensions.WindowsExt";
 const char *DB_DESTINATION = "org.gnome.Shell";
@@ -104,6 +103,7 @@ private:
 public:
 	vector<const string *> configWindowsNamesVector;
 	map<int, std::map<bool, vector<MacroEvent *>>> *currentConfigPtr;
+	map<string, string *> notifySendMap;
 
 	void loadConf(bool silent = false)
 	{
@@ -126,6 +126,7 @@ public:
 	{
 		const string currentAppTitle = getTitle();
 		clog << "WindowNameLog : " << currentAppTitle << endl;
+		lock_guard<mutex> guard(configSwitcherMutex);
 		if (!aWindowConfigActive || currentAppTitle != *temporaryWindowConfigName)
 		{
 			bool found = false;
@@ -155,6 +156,7 @@ public:
 	}
 	void isRemapScheduledCheck()
 	{
+		lock_guard<mutex> guard(configSwitcherMutex);
 		if (scheduledReMap)
 		{
 			loadConf(); // change config for macroEvents[ii]->Content()
@@ -224,7 +226,7 @@ private:
 					int buttonNumberInt;
 					try
 					{
-						buttonNumberInt = stoi(*buttonNumber);
+						buttonNumberInt = stoi(*buttonNumber) + 1; //+1 here so no need to do it at runtime
 					}
 					catch (...)
 					{
@@ -261,14 +263,14 @@ private:
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				configSwitcher->configWindowsNamesVector.emplace_back(new string(commandContent));
-				notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
+				configSwitcher->notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
-				notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
+				configSwitcher->notifySendMap.emplace(commandContent, new string("notify-send \"Profile : " + commandContent + "\""));
 			}
 		}
 		in.close();
@@ -305,7 +307,7 @@ private:
 					{
 					case 2 ... 13:
 						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*currentConfigPtr)[ev11->code - 1][ev11->value == 1]).detach(); // real key number = ev11->code - 1
+						thread(runActions, &(*currentConfigPtr)[ev11->code][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
 				}
@@ -320,7 +322,7 @@ private:
 					{
 					case 275 ... 276:
 						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*currentConfigPtr)[ev11->code - 262][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
+						thread(runActions, &(*currentConfigPtr)[ev11->code - 261][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}
@@ -355,17 +357,16 @@ private:
 		size_t bytesRead = 0;
 		while ((bytesRead = fread(buffer, 1, bufferSize, pipe.get())) > 0)
 		{
-			result.append(buffer, bytesRead);
+			string chunk(buffer, bytesRead);
+			(void)!system(("echo keydown " + chunk + " | dotoolc").c_str());
 		}
-
 		free(buffer);
-		(void)!system(("echo keydown " + result + " | dotoolc").c_str());
 	}
 	const static void runAndWriteThread(const string *const macroContent)
 	{
 		thread(runAndWrite, macroContent).detach();
 	}
-	
+
 	const static void executeNow(const string *const macroContent)
 	{
 		(void)!(system(macroContent->c_str()));
