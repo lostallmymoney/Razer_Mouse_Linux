@@ -22,7 +22,7 @@ Works for sure with :
 ## COMMANDS :
 
 	`naga start` 				//Starts a daemon.	
-	`naga edit $EDITOR` 			//Edits naga config, then restart service if edited.     
+	`naga edit ($EDITOR)` 			//Edits naga config, then restart service if edited.     
 							(you can also specify editor : naga edit vim)
 	`naga debug` 				//Shows logs in realt time.
 	`naga stop`				//Stops the daemon.
@@ -30,7 +30,7 @@ Works for sure with :
 	`naga uninstall` 			//Uninstalls the daemon tool.
 	`naga` 					//Gives help.
     More :
-	`naga serviceHelper $CONFIG`		//For the services or manual change of configs.      
+	`naga serviceHelper ($CONFIG)`		//For the services or manual change of configs.      
 							(need to disable service & add udev rule for $USER)        
 Map razer naga devices keys easily with the command `naga edit`.     
 ## UBUNTU FLAVORS :
