@@ -21,17 +21,17 @@ Works for sure with :
 - Razer Naga 2014 (Ubuntu)   
 ## COMMANDS :
 
-	`naga start` 					//Starts a daemon.	
-	`naga edit` 					//Edits naga config, then restart service if edited.     
-								(you can also specify editor : naga edit vim)
-	`naga debug` 					//Shows logs in realt time.
-	`naga stop`					//Stops the daemon.
-	`naga fix`					//Restarts usb services.
-	`naga uninstall` 				//Uninstalls the daemon tool.
-	`naga` 						//Gives help.
+	`naga start` 				//Starts a daemon.	
+	`naga edit` 				//Edits naga config, then restart service if edited.     
+							(you can also specify editor : naga edit vim)
+	`naga debug` 				//Shows logs in realt time.
+	`naga stop`				//Stops the daemon.
+	`naga fix`				//Restarts usb services.
+	`naga uninstall` 			//Uninstalls the daemon tool.
+	`naga` 					//Gives help.
     More :
-	`naga serviceHelper $CONFIG`			//For the services or manual change of configs.      
-								(need to disable service & add udev rule for $USER)        
+	`naga serviceHelper $CONFIG`		//For the services or manual change of configs.      
+							(need to disable service & add udev rule for $USER)        
 Map razer naga devices keys easily with the command `naga edit`.     
 ## UBUNTU FLAVORS :
 Please add the corresponding repos for xdotool and his dependency :     
