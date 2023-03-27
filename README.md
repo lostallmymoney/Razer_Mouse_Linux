@@ -1,26 +1,38 @@
 # Razer Mouse Linux     
 ..also can accept other devices by adding the files. Contact me to add devices.     
 Currently supporting X11 AND WAYLAND.(Ubuntu & flavors & anything you can install the dependencies on)     
-Now with app auto profiles !     
+Now with app auto profiles !   
 ## INSTALL :
 In one command :     
 `sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip -o Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`     
 Or run sh install.sh from the directory to install.     
+## SUPPORTS :     
+Probably works with :
+- Razer Naga Epic Chroma in CentOS 7
+- Razer Naga Epic (pre-2014 version) in Ubuntu 14.04, 15.04, 15.10
+- Razer Naga (RZ01-0028) (thanks to khornem) in Ubuntu 14.04
+- Razer Naga Molten (thanks to noobxgockel) in Linux Mint 17.02
+- Razer Chroma (thanks to felipeacsi) in Manjaro
+- Razer Naga 2012 (RZ01-0058) (thanks to mrlinuxfish, brianfreytag) in Arch Linux, Ubuntu 16.04
+- Razer Naga Chroma (thanks to ipsod) in Linux Mint KDE 18.1
+- Razer Naga Trinity (thanks to haringsrob and ws141)
+- Razer Pro Wireless (thanks to Stibax)
+Works for sure with :
+- Razer Naga 2014 (Ubuntu)   
 ## COMMANDS :
 
 	`naga start` 					//Starts a daemon.	
-	`naga edit` 					//Edits naga config, then restart service (you can also specify editor : naga edit vim).
+	`naga edit` 					//Edits naga config, then restart service if edited.     
+								(you can also specify editor : naga edit vim)
 	`naga debug` 					//Shows logs in realt time.
 	`naga stop`					//Stops the daemon.
 	`naga fix`					//Restarts usb services.
 	`naga uninstall` 				//Uninstalls the daemon tool.
 	`naga` 						//Gives help.
     More :
-	`naga serviceHelper $CONFIG`			//For the services or manual change of configs      
-								(you need to disable services and setup the udev rule for your $USER)
-   
+	`naga serviceHelper $CONFIG`			//For the services or manual change of configs.      
+								(need to disable service & add udev rule for $USER)        
 Map razer naga devices keys easily with the command `naga edit`.     
-
 ## UBUNTU FLAVORS :
 Please add the corresponding repos for xdotool and his dependency :     
 	https://packages.ubuntu.com/search?keywords=xdotool     
@@ -40,11 +52,11 @@ You can also edit `src/naga.cpp` to adapt the installation to another device, us
 the Naga Epic, 2014, Molten or Chroma. For Example, Epic Chroma is compatible with Epic (they have the same buttons),   
 so you would only have to add an additional line to the devices vector.
  
-## Autorun     
+## AUTORUN :     
 Now works with systemctl services !    
 Also adds 2 lines to your .profile and a line to the sudoer's file to make sure you are always able to start the daemon on relogin.     
 
-## CONFIGURATION
+## CONFIGURATION :
 The configuration file `keyMap.txt` has the following syntax
     `config=<configName>` set the name of the following config. The initial loaded config be `defaultConfig` unless specified as argument.
     `<keynumber> - <option>=<command>`
@@ -87,7 +99,7 @@ You may have as many configs as you want in the keyMap.txt file, just make sure 
 
 [Link for Keys](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h)
 
-### NOTES     
+### NOTES :     
 To reload the config run the command :     
 	naga start   
 which will restart the daemon    
@@ -110,29 +122,8 @@ An example `keyMap.txt` configuration file is the following:
     #etc
     configEnd     
 If you are trying to disable a button's original input, you might want to test with xinput or evtest.     
-Any non existing functionality can be created through the "run" option.     
-
-Probably works with :
-- Razer Naga Epic Chroma in CentOS 7
-- Razer Naga Epic (pre-2014 version) in Ubuntu 14.04, 15.04, 15.10
-- Razer Naga (RZ01-0028) (thanks to khornem) in Ubuntu 14.04
-- Razer Naga Molten (thanks to noobxgockel) in Linux Mint 17.02
-- Razer Chroma (thanks to felipeacsi) in Manjaro
-- Razer Naga 2012 (RZ01-0058) (thanks to mrlinuxfish, brianfreytag) in Arch Linux, Ubuntu 16.04
-- Razer Naga Chroma (thanks to ipsod) in Linux Mint KDE 18.1
-- Razer Naga Trinity (thanks to haringsrob and ws141)
-- Razer Pro Wireless (thanks to Stibax)
-
-Works for sure with :
-- Razer Naga 2014 (Ubuntu)
-
-This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.     
-It also adds two lines to your ~/.profile for persistance, along with one line to the sudoer's file, which lets you run `sudo systemctl start naga` from within your .profile.
-
-
-#### In depth
-
-
+Any non existing functionality can be created through the "run" option.       
+#### In depth :
 1) In order to get rid of the original bindings it disables the keypad using xinput as follows:      
     $ xinput set-int-prop [id] "Device Enabled" 8 0     
 where [id] is the id number of the keypad returned by $ xinput.     
@@ -140,7 +131,8 @@ where [id] is the id number of the keypad returned by $ xinput.
     $ xinput set-button-map [id2] 1 2 3 4 5 6 7 11 10 8 9 13 14 15      
 where [id2] is the id number of the pointer device returned by `xinput`   
 In the case of naga 2014 you also have to check which of those two has more than 7 numbers by typing `xinput get-button-map [id2]`.     
-Although this seems to be unnecessary in some systems (i.e CentOS 7)
-
-## UNINSTALLATION     
+Although this seems to be unnecessary in some systems (i.e CentOS 7)     
+This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.     
+It also adds two lines to your ~/.profile for persistance, along with one line to the sudoer's file, which lets you run `sudo systemctl start naga` from within your .profile.     
+## UNINSTALLATION :     
 To uninstall run `naga uninstall` .
