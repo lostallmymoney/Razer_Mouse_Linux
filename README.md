@@ -22,7 +22,7 @@ Works for sure with :
 ## COMMANDS :
 
 	`naga start` 				//Starts a daemon.	
-	`naga edit` 				//Edits naga config, then restart service if edited.     
+	`naga edit $EDITOR` 				//Edits naga config, then restart service if edited.     
 							(you can also specify editor : naga edit vim)
 	`naga debug` 				//Shows logs in realt time.
 	`naga stop`				//Stops the daemon.
