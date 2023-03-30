@@ -4,7 +4,7 @@ Currently supporting X11 AND WAYLAND.(Ubuntu & flavors & anything you can instal
 Now with app auto profiles !   
 ## INSTALL :
 In one command :     
-`sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip -o Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`     
+`sudo apt install unzip wget -y && wget https://github.com/lostallmymoney/Razer_Mouse_Linux/archive/refs/heads/master.zip -O Razer_Mouse_Linux.zip && unzip -o Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`     
 Or run sh install.sh from the directory to install.     
 ## SUPPORTS :     
 Probably works with :
