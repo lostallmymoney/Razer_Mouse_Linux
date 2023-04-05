@@ -65,6 +65,7 @@ The configuration file `keyMap.txt` has the following syntax
 
 - `chmap`: Changes the keymap for another config inside `keymap.txt` in `~/.naga`.
 - `champRelease`: Changes the keymap on key release.
+- `unlockChmap`: Unlocks the config for a windowConfig that has been changed to another config (can also simply chmap back to the windowConfig).
 - `sleep` and `sleepRelease`: Sleeps.
 - `string` and `stringRelease`: Writes a string. This doesn't use xdotool so xdotool keys won't work.
 - `xdotoolType` and `xdotoolTypeRelease`: Types a string using xdotool (fallback option).
