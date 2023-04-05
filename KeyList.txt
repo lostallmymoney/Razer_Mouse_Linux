@@ -1,5 +1,5 @@
 	#X11
-		"escape": uinput.KeyEsc,
+	"escape": uinput.KeyEsc,
 	"minus": uinput.KeyMinus,
 	"equal": uinput.KeyEqual,
 	"backspace": uinput.KeyBackspace,

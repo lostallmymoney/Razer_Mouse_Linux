@@ -2,7 +2,7 @@ config=defaultConfig
 1 - keyClick=XF86AudioMute
 2 - run=firefox
 3 - string=hello@hotmail.com
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then spotify; fi
+4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu cc bash -c "spotify&"; fi
 5 - run=x-terminal-emulator
 6 - specialPressOnPress=È
 6 - specialReleaseOnRelease=È
@@ -15,7 +15,6 @@ config=defaultConfig
 13 - key=XF86AudioPrev
 14 - key=XF86AudioNext
 configEnd
-
 
 config=defaultConfig2
 1 - key=XF86AudioMute
@@ -49,12 +48,29 @@ configEnd
 configWindow=Gnome-terminal
 1 - key=XF86AudioMute
 3 - string=gnome@terminal.com
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then spotify; fi
+4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu cc bash -c "spotify&"; fi
 5 - run=x-terminal-emulator
-6 - specialPressOnPress=È
-6 - specialReleaseOnRelease=È
+6 - specialPressOnPress=`
+6 - specialReleaseOnRelease=`
 7 - key=XF86AudioLowerVolume
-8 - key=XF86AudioPlay
+8 - chmap=Gnome-terminal-Chmap
+9 - key=XF86AudioRaiseVolume
+10 - keyClick=XF86AudioPrev
+11 - key=XF86AudioPlay
+12 - keyClick=XF86AudioNext
+13 - key=XF86AudioPrev
+14 - key=XF86AudioNext
+configEnd
+
+config=Gnome-terminal-Chmap
+1 - key=XF86AudioMute
+3 - string=gnome@terminal.com Alternative
+4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu cc bash -c "spotify&"; fi
+5 - run=x-terminal-emulator
+6 - specialPressOnPress=|
+6 - specialReleaseOnRelease=|
+7 - key=XF86AudioLowerVolume
+8 - unlockChmap=Gnome-terminal
 9 - key=XF86AudioRaiseVolume
 10 - keyClick=XF86AudioPrev
 11 - key=XF86AudioPlay
