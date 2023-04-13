@@ -22,6 +22,9 @@
 // Based on the initial version by ickyicky (https://github.com/ickyicky),
 // extended by a few methods to provide the focused window's title, window class, and pid.
 
+
+// Notice : github.com/lostallmymoney, I, stripped the extention of what wasn't needed for github.com/lostallmymoney/Razer_Mouse_Linux
+
 /* exported init */
 
 const { Gio } = imports.gi;
