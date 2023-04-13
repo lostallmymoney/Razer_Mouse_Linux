@@ -1,0 +1,11 @@
+{
+  "description": "Add new dbus call for windows to get windows Class.",
+  "name": "WindowGetTitle",
+  "shell-version": [
+    "41",
+    "42",
+    "43"
+  ],
+  "uuid": "windowTitlesWayland@lostallmymoney.rev",
+  "version": 3
+}
