@@ -36,8 +36,8 @@ cd ..
 rm  -f dotool.tar.gz  > /dev/null
 
 
-cp -rf ./src/windowTitlesWayland@lostallmymoney.rev ~/.local/share/gnome-shell/extensions
-gnome-extensions enable windowTitlesWayland@lostallmymoney.rev
+cp -rf ./src/window-calls-extended@hseliger.eu ~/.local/share/gnome-shell/extensions
+gnome-extensions enable window-calls-extended@hseliger.eu
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
