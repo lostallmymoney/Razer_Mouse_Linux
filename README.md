@@ -33,8 +33,9 @@ Works for sure with :
 	`naga serviceHelper ($CONFIG)`		//For the services or manual change of configs.      
 							(need to disable service & add udev rule for $USER)        
 Map razer naga devices keys easily with the command `naga edit`.     
-## UBUNTU FLAVORS :
-Please add the corresponding repos for xdotool and his dependency :     
+## UBUNTU FLAVORS :    
+Try installing first and if it doesn't work     
+please add the corresponding repos for xdotool and his dependency :     
 	https://packages.ubuntu.com/search?keywords=xdotool     
 	https://packages.ubuntu.com/search?keywords=libxdo3&searchon=names     
 	(Click on your version and add the line to /etc/apt/sources.list, then you can run the script.)     
