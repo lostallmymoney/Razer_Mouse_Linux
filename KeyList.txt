@@ -1,327 +1,327 @@
 	#X11
 	XF86XK_ModeLock
-XF86XK_MonBrightnessUp
-XF86XK_MonBrightnessDown
-XF86XK_KbdLightOnOff
-XF86XK_KbdBrightnessUp
-XF86XK_KbdBrightnessDown
-XF86XK_MonBrightnessCycle
-XF86XK_Standby
-XF86XK_AudioLowerVolume
-XF86XK_AudioMute
-XF86XK_AudioRaiseVolume
-XF86XK_AudioPlay
-XF86XK_AudioStop
-XF86XK_AudioPrev
-XF86XK_AudioNext
-XF86XK_HomePage
-XF86XK_Mail
-XF86XK_Start
-XF86XK_Search
-XF86XK_AudioRecord
-XF86XK_Calculator
-XF86XK_Memo
-XF86XK_ToDoList
-XF86XK_Calendar
-XF86XK_PowerDown
-XF86XK_ContrastAdjust
-XF86XK_RockerUp
-XF86XK_RockerDown
-XF86XK_RockerEnter
-XF86XK_Back
-XF86XK_Forward
-XF86XK_Stop
-XF86XK_Refresh
-XF86XK_PowerOff
-XF86XK_WakeUp
-XF86XK_Eject
-XF86XK_ScreenSaver
-XF86XK_WWW
-XF86XK_Sleep
-XF86XK_Favorites
-XF86XK_AudioPause
-XF86XK_AudioMedia
-XF86XK_MyComputer
-XF86XK_VendorHome
-XF86XK_LightBulb
-XF86XK_Shop
-XF86XK_History
-XF86XK_OpenURL
-XF86XK_AddFavorite
-XF86XK_HotLinks
-XF86XK_BrightnessAdjust
-XF86XK_Finance
-XF86XK_Community
-XF86XK_AudioRewind
-XF86XK_BackForward
-XF86XK_Launch0
-XF86XK_Launch1
-XF86XK_Launch2
-XF86XK_Launch3
-XF86XK_Launch4
-XF86XK_Launch5
-XF86XK_Launch6
-XF86XK_Launch7
-XF86XK_Launch8
-XF86XK_Launch9
-XF86XK_LaunchA
-XF86XK_LaunchB
-XF86XK_LaunchC
-XF86XK_LaunchD
-XF86XK_LaunchE
-XF86XK_LaunchF
-XF86XK_ApplicationLeft
-XF86XK_ApplicationRight
-XF86XK_Book
-XF86XK_CD
-XF86XK_Calculater
-XF86XK_Clear
-XF86XK_Close
-XF86XK_Copy
-XF86XK_Cut
-XF86XK_Display
-XF86XK_DOS
-XF86XK_Documents
-XF86XK_Excel
-XF86XK_Explorer
-XF86XK_Game
-XF86XK_Go
-XF86XK_iTouch
-XF86XK_LogOff
-XF86XK_Market
-XF86XK_Meeting
-XF86XK_MenuKB
-XF86XK_MenuPB
-XF86XK_MySites
-XF86XK_New
-XF86XK_News
-XF86XK_OfficeHome
-XF86XK_Open
-XF86XK_Option
-XF86XK_Paste
-XF86XK_Phone
-XF86XK_Q
-XF86XK_Reply
-XF86XK_Reload
-XF86XK_RotateWindows
-XF86XK_RotationPB
-XF86XK_RotationKB
-XF86XK_Save
-XF86XK_ScrollUp
-XF86XK_ScrollDown
-XF86XK_ScrollClick
-XF86XK_Send
-XF86XK_Spell
-XF86XK_SplitScreen
-XF86XK_Support
-XF86XK_TaskPane
-XF86XK_Terminal
-XF86XK_Tools
-XF86XK_Travel
-XF86XK_UserPB
-XF86XK_User1KB
-XF86XK_User2KB
-XF86XK_Video
-XF86XK_WheelButton
-XF86XK_Word
-XF86XK_Xfer
-XF86XK_ZoomIn
-XF86XK_ZoomOut
-XF86XK_Away
-XF86XK_Messenger
-XF86XK_WebCam
-XF86XK_MailForward
-XF86XK_Pictures
-XF86XK_Music
-XF86XK_Battery
-XF86XK_Bluetooth
-XF86XK_WLAN
-XF86XK_UWB
-XF86XK_AudioForward
-XF86XK_AudioRepeat
-XF86XK_AudioRandomPlay
-XF86XK_Subtitle
-XF86XK_AudioCycleTrack
-XF86XK_CycleAngle
-XF86XK_FrameBack
-XF86XK_FrameForward
-XF86XK_Time
-XF86XK_Select
-XF86XK_View
-XF86XK_TopMenu
-XF86XK_Red
-XF86XK_Green
-XF86XK_Yellow
-XF86XK_Blue
-XF86XK_Suspend
-XF86XK_Hibernate
-XF86XK_TouchpadToggle
-XF86XK_TouchpadOn
-XF86XK_TouchpadOff
-XF86XK_AudioMicMute
-XF86XK_Keyboard
-XF86XK_WWAN
-XF86XK_RFKill
-XF86XK_AudioPreset
-XF86XK_RotationLockToggle
-XF86XK_FullScreen
-XF86XK_Switch_VT_1
-XF86XK_Switch_VT_2
-XF86XK_Switch_VT_3
-XF86XK_Switch_VT_4
-XF86XK_Switch_VT_5
-XF86XK_Switch_VT_6
-XF86XK_Switch_VT_7
-XF86XK_Switch_VT_8
-XF86XK_Switch_VT_9
-XF86XK_Switch_VT_10
-XF86XK_Switch_VT_11
-XF86XK_Switch_VT_12
-XF86XK_Ungrab
-XF86XK_ClearGrab
-XF86XK_Next_VMode
-XF86XK_Prev_VMode
-XF86XK_LogWindowTree
-XF86XK_LogGrabInfo
-XF86XK_BrightnessAuto
-XF86XK_DisplayOff
-XF86XK_Info
-XF86XK_AspectRatio
-XF86XK_DVD
-XF86XK_Audio
-XF86XK_ChannelUp
-XF86XK_ChannelDown
-XF86XK_Break
-XF86XK_VideoPhone
-XF86XK_ZoomReset
-XF86XK_Editor
-XF86XK_GraphicsEditor
-XF86XK_Presentation
-XF86XK_Database
-XF86XK_Voicemail
-XF86XK_Addressbook
-XF86XK_DisplayToggle
-XF86XK_SpellCheck
-XF86XK_ContextMenu
-XF86XK_MediaRepeat
-XF86XK_10ChannelsUp
-XF86XK_10ChannelsDown
-XF86XK_Images
-XF86XK_NotificationCenter
-XF86XK_PickupPhone
-XF86XK_HangupPhone
-XF86XK_Fn
-XF86XK_Fn_Esc
-XF86XK_FnRightShift
-XF86XK_Numeric0
-XF86XK_Numeric1
-XF86XK_Numeric2
-XF86XK_Numeric3
-XF86XK_Numeric4
-XF86XK_Numeric5
-XF86XK_Numeric6
-XF86XK_Numeric7
-XF86XK_Numeric8
-XF86XK_Numeric9
-XF86XK_NumericStar
-XF86XK_NumericPound
-XF86XK_NumericA
-XF86XK_NumericB
-XF86XK_NumericC
-XF86XK_NumericD
-XF86XK_CameraFocus
-XF86XK_WPSButton
-XF86XK_CameraZoomIn
-XF86XK_CameraZoomOut
-XF86XK_CameraUp
-XF86XK_CameraDown
-XF86XK_CameraLeft
-XF86XK_CameraRight
-XF86XK_AttendantOn
-XF86XK_AttendantOff
-XF86XK_AttendantToggle
-XF86XK_LightsToggle
-XF86XK_ALSToggle
-XF86XK_Buttonconfig
-XF86XK_Taskmanager
-XF86XK_Journal
-XF86XK_ControlPanel
-XF86XK_AppSelect
-XF86XK_Screensaver
-XF86XK_VoiceCommand
-XF86XK_Assistant
-XF86XK_EmojiPicker
-XF86XK_Dictate
-XF86XK_BrightnessMin
-XF86XK_BrightnessMax
-XF86XK_KbdInputAssistPrev
-XF86XK_KbdInputAssistNext
-XF86XK_KbdInputAssistPrevgroup
-XF86XK_KbdInputAssistNextgroup
-XF86XK_KbdInputAssistAccept
-XF86XK_KbdInputAssistCancel
-XF86XK_RightUp
-XF86XK_RightDown
-XF86XK_LeftUp
-XF86XK_LeftDown
-XF86XK_RootMenu
-XF86XK_MediaTopMenu
-XF86XK_Numeric11
-XF86XK_Numeric12
-XF86XK_AudioDesc
-XF86XK_3DMode
-XF86XK_NextFavorite
-XF86XK_StopRecord
-XF86XK_PauseRecord
-XF86XK_VOD
-XF86XK_Unmute
-XF86XK_FastReverse
-XF86XK_SlowReverse
-XF86XK_Data
-XF86XK_OnScreenKeyboard
-XF86XK_PrivacyScreenToggle
-XF86XK_SelectiveScreenshot
-XF86XK_Macro1
-XF86XK_Macro2
-XF86XK_Macro3
-XF86XK_Macro4
-XF86XK_Macro5
-XF86XK_Macro6
-XF86XK_Macro7
-XF86XK_Macro8
-XF86XK_Macro9
-XF86XK_Macro10
-XF86XK_Macro11
-XF86XK_Macro12
-XF86XK_Macro13
-XF86XK_Macro14
-XF86XK_Macro15
-XF86XK_Macro16
-XF86XK_Macro17
-XF86XK_Macro18
-XF86XK_Macro19
-XF86XK_Macro20
-XF86XK_Macro21
-XF86XK_Macro22
-XF86XK_Macro23
-XF86XK_Macro24
-XF86XK_Macro25
-XF86XK_Macro26
-XF86XK_Macro27
-XF86XK_Macro28
-XF86XK_Macro29
-XF86XK_Macro30
-XF86XK_MacroRecordStart
-XF86XK_MacroRecordStop
-XF86XK_MacroPresetCycle
-XF86XK_MacroPreset1
-XF86XK_MacroPreset2
-XF86XK_MacroPreset3
-XF86XK_KbdLcdMenu1
-XF86XK_KbdLcdMenu2
-XF86XK_KbdLcdMenu3
-XF86XK_KbdLcdMenu4
-XF86XK_KbdLcdMenu5
+	XF86XK_MonBrightnessUp
+	XF86XK_MonBrightnessDown
+	XF86XK_KbdLightOnOff
+	XF86XK_KbdBrightnessUp
+	XF86XK_KbdBrightnessDown
+	XF86XK_MonBrightnessCycle
+	XF86XK_Standby
+	XF86XK_AudioLowerVolume
+	XF86XK_AudioMute
+	XF86XK_AudioRaiseVolume
+	XF86XK_AudioPlay
+	XF86XK_AudioStop
+	XF86XK_AudioPrev
+	XF86XK_AudioNext
+	XF86XK_HomePage
+	XF86XK_Mail
+	XF86XK_Start
+	XF86XK_Search
+	XF86XK_AudioRecord
+	XF86XK_Calculator
+	XF86XK_Memo
+	XF86XK_ToDoList
+	XF86XK_Calendar
+	XF86XK_PowerDown
+	XF86XK_ContrastAdjust
+	XF86XK_RockerUp
+	XF86XK_RockerDown
+	XF86XK_RockerEnter
+	XF86XK_Back
+	XF86XK_Forward
+	XF86XK_Stop
+	XF86XK_Refresh
+	XF86XK_PowerOff
+	XF86XK_WakeUp
+	XF86XK_Eject
+	XF86XK_ScreenSaver
+	XF86XK_WWW
+	XF86XK_Sleep
+	XF86XK_Favorites
+	XF86XK_AudioPause
+	XF86XK_AudioMedia
+	XF86XK_MyComputer
+	XF86XK_VendorHome
+	XF86XK_LightBulb
+	XF86XK_Shop
+	XF86XK_History
+	XF86XK_OpenURL
+	XF86XK_AddFavorite
+	XF86XK_HotLinks
+	XF86XK_BrightnessAdjust
+	XF86XK_Finance
+	XF86XK_Community
+	XF86XK_AudioRewind
+	XF86XK_BackForward
+	XF86XK_Launch0
+	XF86XK_Launch1
+	XF86XK_Launch2
+	XF86XK_Launch3
+	XF86XK_Launch4
+	XF86XK_Launch5
+	XF86XK_Launch6
+	XF86XK_Launch7
+	XF86XK_Launch8
+	XF86XK_Launch9
+	XF86XK_LaunchA
+	XF86XK_LaunchB
+	XF86XK_LaunchC
+	XF86XK_LaunchD
+	XF86XK_LaunchE
+	XF86XK_LaunchF
+	XF86XK_ApplicationLeft
+	XF86XK_ApplicationRight
+	XF86XK_Book
+	XF86XK_CD
+	XF86XK_Calculater
+	XF86XK_Clear
+	XF86XK_Close
+	XF86XK_Copy
+	XF86XK_Cut
+	XF86XK_Display
+	XF86XK_DOS
+	XF86XK_Documents
+	XF86XK_Excel
+	XF86XK_Explorer
+	XF86XK_Game
+	XF86XK_Go
+	XF86XK_iTouch
+	XF86XK_LogOff
+	XF86XK_Market
+	XF86XK_Meeting
+	XF86XK_MenuKB
+	XF86XK_MenuPB
+	XF86XK_MySites
+	XF86XK_New
+	XF86XK_News
+	XF86XK_OfficeHome
+	XF86XK_Open
+	XF86XK_Option
+	XF86XK_Paste
+	XF86XK_Phone
+	XF86XK_Q
+	XF86XK_Reply
+	XF86XK_Reload
+	XF86XK_RotateWindows
+	XF86XK_RotationPB
+	XF86XK_RotationKB
+	XF86XK_Save
+	XF86XK_ScrollUp
+	XF86XK_ScrollDown
+	XF86XK_ScrollClick
+	XF86XK_Send
+	XF86XK_Spell
+	XF86XK_SplitScreen
+	XF86XK_Support
+	XF86XK_TaskPane
+	XF86XK_Terminal
+	XF86XK_Tools
+	XF86XK_Travel
+	XF86XK_UserPB
+	XF86XK_User1KB
+	XF86XK_User2KB
+	XF86XK_Video
+	XF86XK_WheelButton
+	XF86XK_Word
+	XF86XK_Xfer
+	XF86XK_ZoomIn
+	XF86XK_ZoomOut
+	XF86XK_Away
+	XF86XK_Messenger
+	XF86XK_WebCam
+	XF86XK_MailForward
+	XF86XK_Pictures
+	XF86XK_Music
+	XF86XK_Battery
+	XF86XK_Bluetooth
+	XF86XK_WLAN
+	XF86XK_UWB
+	XF86XK_AudioForward
+	XF86XK_AudioRepeat
+	XF86XK_AudioRandomPlay
+	XF86XK_Subtitle
+	XF86XK_AudioCycleTrack
+	XF86XK_CycleAngle
+	XF86XK_FrameBack
+	XF86XK_FrameForward
+	XF86XK_Time
+	XF86XK_Select
+	XF86XK_View
+	XF86XK_TopMenu
+	XF86XK_Red
+	XF86XK_Green
+	XF86XK_Yellow
+	XF86XK_Blue
+	XF86XK_Suspend
+	XF86XK_Hibernate
+	XF86XK_TouchpadToggle
+	XF86XK_TouchpadOn
+	XF86XK_TouchpadOff
+	XF86XK_AudioMicMute
+	XF86XK_Keyboard
+	XF86XK_WWAN
+	XF86XK_RFKill
+	XF86XK_AudioPreset
+	XF86XK_RotationLockToggle
+	XF86XK_FullScreen
+	XF86XK_Switch_VT_1
+	XF86XK_Switch_VT_2
+	XF86XK_Switch_VT_3
+	XF86XK_Switch_VT_4
+	XF86XK_Switch_VT_5
+	XF86XK_Switch_VT_6
+	XF86XK_Switch_VT_7
+	XF86XK_Switch_VT_8
+	XF86XK_Switch_VT_9
+	XF86XK_Switch_VT_10
+	XF86XK_Switch_VT_11
+	XF86XK_Switch_VT_12
+	XF86XK_Ungrab
+	XF86XK_ClearGrab
+	XF86XK_Next_VMode
+	XF86XK_Prev_VMode
+	XF86XK_LogWindowTree
+	XF86XK_LogGrabInfo
+	XF86XK_BrightnessAuto
+	XF86XK_DisplayOff
+	XF86XK_Info
+	XF86XK_AspectRatio
+	XF86XK_DVD
+	XF86XK_Audio
+	XF86XK_ChannelUp
+	XF86XK_ChannelDown
+	XF86XK_Break
+	XF86XK_VideoPhone
+	XF86XK_ZoomReset
+	XF86XK_Editor
+	XF86XK_GraphicsEditor
+	XF86XK_Presentation
+	XF86XK_Database
+	XF86XK_Voicemail
+	XF86XK_Addressbook
+	XF86XK_DisplayToggle
+	XF86XK_SpellCheck
+	XF86XK_ContextMenu
+	XF86XK_MediaRepeat
+	XF86XK_10ChannelsUp
+	XF86XK_10ChannelsDown
+	XF86XK_Images
+	XF86XK_NotificationCenter
+	XF86XK_PickupPhone
+	XF86XK_HangupPhone
+	XF86XK_Fn
+	XF86XK_Fn_Esc
+	XF86XK_FnRightShift
+	XF86XK_Numeric0
+	XF86XK_Numeric1
+	XF86XK_Numeric2
+	XF86XK_Numeric3
+	XF86XK_Numeric4
+	XF86XK_Numeric5
+	XF86XK_Numeric6
+	XF86XK_Numeric7
+	XF86XK_Numeric8
+	XF86XK_Numeric9
+	XF86XK_NumericStar
+	XF86XK_NumericPound
+	XF86XK_NumericA
+	XF86XK_NumericB
+	XF86XK_NumericC
+	XF86XK_NumericD
+	XF86XK_CameraFocus
+	XF86XK_WPSButton
+	XF86XK_CameraZoomIn
+	XF86XK_CameraZoomOut
+	XF86XK_CameraUp
+	XF86XK_CameraDown
+	XF86XK_CameraLeft
+	XF86XK_CameraRight
+	XF86XK_AttendantOn
+	XF86XK_AttendantOff
+	XF86XK_AttendantToggle
+	XF86XK_LightsToggle
+	XF86XK_ALSToggle
+	XF86XK_Buttonconfig
+	XF86XK_Taskmanager
+	XF86XK_Journal
+	XF86XK_ControlPanel
+	XF86XK_AppSelect
+	XF86XK_Screensaver
+	XF86XK_VoiceCommand
+	XF86XK_Assistant
+	XF86XK_EmojiPicker
+	XF86XK_Dictate
+	XF86XK_BrightnessMin
+	XF86XK_BrightnessMax
+	XF86XK_KbdInputAssistPrev
+	XF86XK_KbdInputAssistNext
+	XF86XK_KbdInputAssistPrevgroup
+	XF86XK_KbdInputAssistNextgroup
+	XF86XK_KbdInputAssistAccept
+	XF86XK_KbdInputAssistCancel
+	XF86XK_RightUp
+	XF86XK_RightDown
+	XF86XK_LeftUp
+	XF86XK_LeftDown
+	XF86XK_RootMenu
+	XF86XK_MediaTopMenu
+	XF86XK_Numeric11
+	XF86XK_Numeric12
+	XF86XK_AudioDesc
+	XF86XK_3DMode
+	XF86XK_NextFavorite
+	XF86XK_StopRecord
+	XF86XK_PauseRecord
+	XF86XK_VOD
+	XF86XK_Unmute
+	XF86XK_FastReverse
+	XF86XK_SlowReverse
+	XF86XK_Data
+	XF86XK_OnScreenKeyboard
+	XF86XK_PrivacyScreenToggle
+	XF86XK_SelectiveScreenshot
+	XF86XK_Macro1
+	XF86XK_Macro2
+	XF86XK_Macro3
+	XF86XK_Macro4
+	XF86XK_Macro5
+	XF86XK_Macro6
+	XF86XK_Macro7
+	XF86XK_Macro8
+	XF86XK_Macro9
+	XF86XK_Macro10
+	XF86XK_Macro11
+	XF86XK_Macro12
+	XF86XK_Macro13
+	XF86XK_Macro14
+	XF86XK_Macro15
+	XF86XK_Macro16
+	XF86XK_Macro17
+	XF86XK_Macro18
+	XF86XK_Macro19
+	XF86XK_Macro20
+	XF86XK_Macro21
+	XF86XK_Macro22
+	XF86XK_Macro23
+	XF86XK_Macro24
+	XF86XK_Macro25
+	XF86XK_Macro26
+	XF86XK_Macro27
+	XF86XK_Macro28
+	XF86XK_Macro29
+	XF86XK_Macro30
+	XF86XK_MacroRecordStart
+	XF86XK_MacroRecordStop
+	XF86XK_MacroPresetCycle
+	XF86XK_MacroPreset1
+	XF86XK_MacroPreset2
+	XF86XK_MacroPreset3
+	XF86XK_KbdLcdMenu1
+	XF86XK_KbdLcdMenu2
+	XF86XK_KbdLcdMenu3
+	XF86XK_KbdLcdMenu4
+	XF86XK_KbdLcdMenu5
 
 	#X11 using wayland version
 	"escape": uinput.KeyEsc,
