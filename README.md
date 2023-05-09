@@ -87,7 +87,7 @@ The configuration file `keyMap.txt` has the following syntax
 - `keyClick` : Presses a key once when button pressed
 - `keyClickRelease` : Presses a Key once when button released
 
-#Use theses to press/unpress special chars that won't work using xdotool
+#Use theses to press/unpress any char (faster than xdotool, no support for keys like ctrl or media yet)
 - `specialPressOnPress` : Supports 1 char.
 - `specialPressOnRelease` : 1 char
 - `specialReleaseOnPress` : 1 char
