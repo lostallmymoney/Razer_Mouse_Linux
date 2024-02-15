@@ -8,5 +8,7 @@ WantedBy=default.target
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/Naga_Linux/nagaServerCatcher.sh
+Restart=always
+RestartSec=5
 TimeoutStartSec=20
 Group=razerInputGroup
