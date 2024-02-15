@@ -46,6 +46,3 @@ _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
 sudo cp -r -n -v "keyMap.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"/keyMap.txt
-
-
-grep 'alias naga=' ~/.bash_aliases  || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases > /dev/null

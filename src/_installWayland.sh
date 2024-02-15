@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev
+sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev libxkbcommon-dev
 
 echo "Checking requirements..."
 
@@ -26,14 +26,16 @@ sudo chmod 755 /usr/local/bin/nagaWayland
 
 echo "Installing dotool :"
 
-wget https://git.sr.ht/~geb/dotool/archive/874650ad22dfb20ef24ab1f78666aa2e5178a0f0.tar.gz -O dotool.tar.gz
+sleep 1
+wget https://git.sr.ht/~geb/dotool/archive/b5812c001daeeaff1f259031661e47f3a612220c.tar.gz -O dotool.tar.gz
 tar -xf dotool.tar.gz  > /dev/null
-mv -f dotool-874650ad22dfb20ef24ab1f78666aa2e5178a0f0 dotool  > /dev/null
+mv -fu dotool-b5812c001daeeaff1f259031661e47f3a612220c dotool > /dev/null
+sleep 1
 cd dotool
-sudo sh install.sh > /dev/null
+./build.sh
+sudo ./build.sh install
 cd ..
-#rm -rdf dotool
-rm  -f dotool.tar.gz  > /dev/null
+rm  -rf dotool*  > /dev/null
 
 
 cp -rf ./src/window-calls-extended@hseliger.eu ~/.local/share/gnome-shell/extensions
@@ -47,5 +49,3 @@ sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 sudo groupadd -f razerInputGroup
 
 printf 'KERNEL=="uinput", GROUP="razerInputGroup"' | sudo tee /etc/udev/rules.d/80-nagaWayland.rules >/dev/null
-
-grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases > /dev/null

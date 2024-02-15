@@ -30,8 +30,12 @@ printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="6
 LOGINTYPE=$(loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type)
 if [ "$LOGINTYPE" = "Type=wayland" ]; then
 	sh ./src/_installWayland.sh
+	sed -i '/alias naga=/d' ~/.bash_aliases
+	grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases > /dev/null
 else
 	sh ./src/_installX11.sh
+	sudo sed -i '/alias naga=/d' ~/.bash_aliases
+	grep 'alias naga=' ~/.bash_aliases  || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases > /dev/null
 fi
 
 if [ "$LOGINTYPE" = "Type=wayland" ]; then

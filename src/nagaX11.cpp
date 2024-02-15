@@ -538,7 +538,14 @@ int main(const int argc, const char *const argv[])
 		else if (strstr(argv[1], "debug") != NULL)
 		{
 			clog << "Starting naga debug, logs :" << endl;
-			(void)!(system("journalctl -fu naga"));
+			if (argc > 2)
+			{
+				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));			
+			}
+			else
+			{
+				(void)!(system("journalctl -fu naga"));
+			}
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{

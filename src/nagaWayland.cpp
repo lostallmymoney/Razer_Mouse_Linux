@@ -34,7 +34,7 @@ static const string getTitle()
 	DBusConnection *connection = dbus_bus_get(DBUS_BUS_SESSION, &error);
 	if (dbus_error_is_set(&error))
 	{
-		std::cerr << "Error connecting to bus: " << error.message << std::endl;
+		cerr << "Error connecting to bus: " << error.message << endl;
 		dbus_error_free(&error);
 		return "";
 	}
@@ -42,14 +42,14 @@ static const string getTitle()
 	DBusMessage *message = dbus_message_new_method_call(DB_DESTINATION, DB_PATH, DB_INTERFACE, DB_METHOD);
 	if (message == nullptr)
 	{
-		std::cerr << "Error creating message" << std::endl;
+		cerr << "Error creating message" << endl;
 		return "";
 	}
 
 	DBusMessage *reply = dbus_connection_send_with_reply_and_block(connection, message, -1, &error);
 	if (dbus_error_is_set(&error))
 	{
-		std::cerr << "Error calling method: " << error.message << std::endl;
+		cerr << "Error calling method: " << error.message << endl;
 		dbus_error_free(&error);
 		return "";
 	}
@@ -57,7 +57,7 @@ static const string getTitle()
 	char *result;
 	if (!dbus_message_get_args(reply, &error, DBUS_TYPE_STRING, &result, DBUS_TYPE_INVALID))
 	{
-		std::cerr << "Error reading reply: " << error.message << std::endl;
+		cerr << "Error reading reply: " << error.message << endl;
 		dbus_error_free(&error);
 		return "";
 	}
@@ -143,6 +143,7 @@ public:
 				loadConf(true);
 			}
 		}
+
 	}
 	void remapRoutine()
 	{
@@ -161,6 +162,7 @@ public:
 	}
 	void scheduleReMap(const string *const reMapStr)
 	{
+		clog << "Remap Routine"<<endl;
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (winConfigActive)
 		{
@@ -197,12 +199,11 @@ private:
 	const int size = sizeof(ev1);
 	vector<pair<const char *const, const char *const>> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
-	map<int, std::map<bool, vector<MacroEvent *>>> *currentConfigPtr;
 
 	void initConf()
 	{
 		string commandContent;
-		map<int, std::map<bool, vector<MacroEvent *>>> *iteratedConfig;
+		map<int, map<bool, vector<MacroEvent *>>> *iteratedConfig;
 		bool isIteratingConfig = false;
 
 		ifstream in(conf_file.c_str(), ios::in);
@@ -255,13 +256,16 @@ private:
 						if (!configKeysMap[commandType]->Prefix()->empty())
 							commandContent = *configKeysMap[commandType]->Prefix() + commandContent;
 
+						if (!configKeysMap[commandType]->Suffix()->empty())
+							commandContent = commandContent + *configKeysMap[commandType]->Suffix();
+
 						(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], new string(commandContent)));
 						// Encode and store mapping v3
 					}
 					else if (commandType == "key")
 					{
-						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent);
-						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent;
+						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent + *configKeysMap["keyreleaseonrelease"]->Suffix());
+						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent + *configKeysMap["keypressonpress"]->Suffix();
 						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], new string(commandContent)));
 						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], new string(*commandContent2)));
 					}
@@ -321,7 +325,7 @@ private:
 					{
 					case 2 ... 13:
 						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*currentConfigPtr)[ev11->code][ev11->value == 1]).detach(); // real key number = ev11->code - 1
+						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code][ev11->value == 1]).detach(); // real key number = ev11->code - 1
 						break;
 					}
 				}
@@ -336,7 +340,7 @@ private:
 					{
 					case 275 ... 276:
 						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*currentConfigPtr)[ev11->code - 261][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
+						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code - 261][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
 						break;
 					}
 				}
@@ -388,6 +392,7 @@ private:
 	const static void executeThreadNow(const string *const macroContent)
 	{
 		thread(executeNow, macroContent).detach();
+		clog<<"EXECUTED : "<< macroContent->c_str() << endl;
 	}
 	// end of configKeys functions
 
@@ -399,7 +404,7 @@ private:
 		}
 	}
 
-	void emplaceConfigKey(const std::string &key, bool onKeyPressed, auto functionPtr, const std::string &prefix = "", const std::string &suffix = "")
+	void emplaceConfigKey(const string &key, bool onKeyPressed, auto functionPtr, const string &prefix = "", const string &suffix = "")
 	{
 		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, prefix, suffix));
 	}
@@ -522,7 +527,14 @@ int main(const int argc, const char *const argv[])
 		else if (strstr(argv[1], "debug") != NULL)
 		{
 			clog << "Starting naga debug, logs :" << endl;
-			(void)!(system("journalctl -fu naga"));
+			if (argc > 2)
+			{
+				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));			
+			}
+			else
+			{
+				(void)!(system("journalctl -fu naga"));
+			}
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{
