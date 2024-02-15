@@ -27,7 +27,7 @@
 
 /* exported init */
 
-const { Gio } = imports.gi;
+import Gio from 'gi://Gio';
 
 const MR_DBUS_IFACE = `
 <node>
@@ -38,8 +38,7 @@ const MR_DBUS_IFACE = `
     </interface>
 </node>`;
 
-class Extension {
-    enable() {
+export default class WCExtension {    enable() {
         this._dbus = Gio.DBusExportedObject.wrapJSObject(MR_DBUS_IFACE, this);
         this._dbus.export(Gio.DBus.session, '/org/gnome/Shell/Extensions/WindowsExt');
     }
