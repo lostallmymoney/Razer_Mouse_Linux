@@ -39,6 +39,7 @@ rm  -rf dotool*  > /dev/null
 
 
 cp -rf ./src/window-calls-extended@hseliger.eu ~/.local/share/gnome-shell/extensions
+sleep 1
 gnome-extensions enable window-calls-extended@hseliger.eu
 
 _dir="/home/$USER/.naga"
