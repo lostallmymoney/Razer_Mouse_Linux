@@ -555,7 +555,7 @@ int main(const int argc, const char *const argv[])
 		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
 		{
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
-			(void)!(system("sudo bash -c \"naga stop && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\""));
+			(void)!(system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\""));
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
@@ -585,7 +585,7 @@ int main(const int argc, const char *const argv[])
 	}
 	else
 	{
-		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  debug		 Shows log.\n  repair         For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
+		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  debug		 Shows log.\n  fix            For dead keypad.\n  uninstall      Uninstalls the daemon." << endl;
 	}
 	return 0;
 }

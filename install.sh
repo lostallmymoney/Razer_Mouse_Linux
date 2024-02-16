@@ -30,16 +30,9 @@ printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="6
 LOGINTYPE=$(loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type)
 if [ "$LOGINTYPE" = "Type=wayland" ]; then
 	sh ./src/_installWayland.sh
-	relogRequired=true
 	sed -i '/alias naga=/d' ~/.bash_aliases
 	grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases > /dev/null
-else
-	sh ./src/_installX11.sh
-	sudo sed -i '/alias naga=/d' ~/.bash_aliases
-	grep 'alias naga=' ~/.bash_aliases  || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases > /dev/null
-fi
 
-if [ "$LOGINTYPE" = "Type=wayland" ]; then
 	while true; do
 		read -p "Naga for Wayland is currently installing, do you want to install for X11 too ? (recommended) y/n : " yn
 		case $yn in
@@ -52,12 +45,15 @@ if [ "$LOGINTYPE" = "Type=wayland" ]; then
 		esac
 	done
 else
+	sh ./src/_installX11.sh
+	sudo sed -i '/alias naga=/d' ~/.bash_aliases
+	grep 'alias naga=' ~/.bash_aliases  || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases > /dev/null
+
 	while true; do
 		read -p "Naga for X11 is currently installing, do you want to install for Wayland too ? (recommended) y/n : " yn
 		case $yn in
 		[Yy]*)
 			sh ./src/_installWayland.sh
-			relogRequired=true
 			break
 			;;
 		[Nn]*) break ;;
@@ -90,8 +86,9 @@ tput setaf 2
 printf "Service started !\nStop with naga service stop\nStart with naga service start\n"
 tput sgr0
 printf "Star the repo here 😁 :\nhttps://github.com/lostallmymoney/Razer_Mouse_Linux\n\n"
+xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
 
-if [ "${relogRequired:-false}" = true ]; then
+if [ "$LOGINTYPE" = "Type=wayland" ]; then
 	printf "RELOGGING NECESSARY,\n"
 	bash -c 'read -sp "Press ENTER to log out..."'
 	sudo pkill -HUP -u $USER
