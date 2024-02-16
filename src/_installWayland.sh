@@ -42,7 +42,7 @@ sleep 0.1
 clear -x
 
 sudo gnome-extensions uninstall -q window-calls-extended@hseliger.eu
-gnome-extensions install ./src/window-calls-extended@hseliger.eu.shell-extension.zip
+sudo gnome-extensions install ./src/window-calls-extended@hseliger.eu.shell-extension.zip --force
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
