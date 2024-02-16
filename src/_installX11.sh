@@ -27,7 +27,7 @@ command -v g++ >/dev/null 2>&1 || {
     exit 1
 }
 
-reset
+clear -x
 
 echo "Compiling code..."
 g++ ./src/nagaX11.cpp -o ./src/nagaX11 -pthread -Ofast --std=c++2b -lX11 -lXtst -lXmu

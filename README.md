@@ -24,7 +24,7 @@ Works for sure with :
 	`naga start` 				//Starts a daemon.	
 	`naga edit ($EDITOR)` 			//Edits naga config, then restart service if edited.     
 							(you can also specify editor : naga edit vim)
-	`naga debug` 				//Shows logs in realt time. (Add arg to override journalctl's args.)
+	`naga debug` 				//Shows logs in realt time. (Add arg to override journalctl's args, ex -au.)
 	`naga stop`				//Stops the daemon.
 	`naga fix`				//Restarts usb services.
 	`naga uninstall` 			//Uninstalls the daemon tool.

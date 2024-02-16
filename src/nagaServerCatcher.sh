@@ -3,6 +3,7 @@
 if [ "$(loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type)" = "Type=wayland" ]; then
 	killall dotoold > /dev/null 2>&1
 	setsid bash -c 'dotoold'&
+	gnome-extensions enable window-calls-extended@hseliger.eu
 	if [ $# -eq 0 ]; then
 		nagaWayland serviceHelper
 	else

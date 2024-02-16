@@ -10,7 +10,7 @@ command -v g++ >/dev/null 2>&1 || {
     exit 1
 }
 
-reset
+clear -x
 
 echo "Compiling code..."
 g++ -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -Ofast --std=c++2b -ldbus-1
@@ -24,22 +24,25 @@ fi
 sudo mv ./src/nagaWayland /usr/local/bin/
 sudo chmod 755 /usr/local/bin/nagaWayland
 
-echo "Installing dotool :"
+printf "Installing dotool :\n"
 
-sleep 1
+sleep 0.1
 wget https://git.sr.ht/~geb/dotool/archive/b5812c001daeeaff1f259031661e47f3a612220c.tar.gz -O dotool.tar.gz
 tar -xf dotool.tar.gz  > /dev/null
 mv -fu dotool-b5812c001daeeaff1f259031661e47f3a612220c dotool > /dev/null
-sleep 1
+sleep 0.1
 cd dotool
 ./build.sh
 sudo ./build.sh install
 cd ..
+sleep 0.1
 rm  -rf dotool*  > /dev/null
+sleep 0.1
 
+clear -x
 
-cp -rf ./src/window-calls-extended@hseliger.eu ~/usr/share/gnome-shell/extensions/
-gnome-extensions enable window-calls-extended@hseliger.eu
+sudo gnome-extensions uninstall -q window-calls-extended@hseliger.eu
+gnome-extensions install ./src/window-calls-extended@hseliger.eu.shell-extension.zip
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
