@@ -1,12 +1,12 @@
 #!/bin/sh
 if [ "$(id -u)" = "0" ]; then
-    echo "This script must not be executed as root"
+    printf "This script must not be executed as root\n"
     exit 1
 fi
 
 sudo sh src/nagaKillroot.sh >/dev/null
 
-echo "Copying files..."
+printf "Copying files...\n"
 
 sudo mkdir -p /usr/local/bin/Naga_Linux
 
@@ -23,25 +23,31 @@ sudo cp -f ./src/nagaUninstall.sh /usr/local/bin/Naga_Linux/
 sudo chmod 755 /usr/local/bin/Naga_Linux/nagaUninstall.sh
 sudo groupadd -f razerInputGroup
 
-sudo echo "Installing requirements..."
+printf "Installing requirements...\n"
 
 printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
 
-LOGINTYPE=$(loginctl show-session $(loginctl | grep $(whoami) | awk '{print $1}') -p Type)
+LOGINTYPE=$(loginctl show-session "$(loginctl | grep "$(whoami)" | awk '{print $1}')" -p Type)
 if [ "$LOGINTYPE" = "Type=wayland" ]; then
+	if ! nc -z 8.8.8.8 53 >/dev/null 2>&1
+	then
+		printf "\033[0;31mNO INTERNET CONNECTION\033[0m\n"
+		exit 1
+	fi
 	sh ./src/_installWayland.sh
 	sed -i '/alias naga=/d' ~/.bash_aliases
 	grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases > /dev/null
 
 	while true; do
-		read -p "Naga for Wayland is currently installing, do you want to install for X11 too ? (recommended) y/n : " yn
+		printf "\033[38;2;255;165;0mNaga for Wayland is currently installing,\n	do you want to install for X11 too ? (recommended) y/n : \033[0m"
+		read -r yn
 		case $yn in
 		[Yy]*)
 			sh ./src/_installX11.sh
 			break
 			;;
 		[Nn]*) break ;;
-		*) echo "Please answer yes or no." ;;
+		*) printf "Please answer yes or no.\n" ;;
 		esac
 	done
 else
@@ -50,14 +56,20 @@ else
 	grep 'alias naga=' ~/.bash_aliases  || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases > /dev/null
 
 	while true; do
-		read -p "Naga for X11 is currently installing, do you want to install for Wayland too ? (recommended) y/n : " yn
+		printf "\033[38;2;255;165;0mNaga for Wayland is currently installing,\n	do you want to install for X11 too ? (recommended) y/n : \033[0m"
+		read -r yn
 		case $yn in
 		[Yy]*)
+			if ! nc -z 8.8.8.8 53 >/dev/null 2>&1
+			then
+				printf "\033[0;31mNO INTERNET CONNECTION\033[0m\n"
+				exit 1
+			fi
 			sh ./src/_installWayland.sh
 			break
 			;;
 		[Nn]*) break ;;
-		*) echo "Please answer yes or no." ;;
+		*) printf "Please answer yes or no.\n" ;;
 		esac
 	done
 fi
@@ -82,14 +94,15 @@ sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start
 sudo systemctl enable naga
 sudo systemctl start naga
 
-tput setaf 2
-printf "Service started !\nStop with naga service stop\nStart with naga service start\n"
-tput sgr0
-printf "Star the repo here 😁 :\nhttps://github.com/lostallmymoney/Razer_Mouse_Linux\n\n"
+printf "\033[0;32mService started !\nStop with naga service stop\nStart with naga service start\033[0m\n"
+printf "Star the repo here 😁 :\n"
+printf "\033[0;35mhttps://github.com/lostallmymoney/Razer_Mouse_Linux\033[0m\n\n"
+
+
 xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
 
 if [ "$LOGINTYPE" = "Type=wayland" ]; then
-	printf "RELOGGING NECESSARY,\n"
+	printf "\033[0;31mRELOGGING NECESSARY\033[0m\n"
 	bash -c 'read -sp "Press ENTER to log out..."'
 	sudo pkill -HUP -u $USER
 fi

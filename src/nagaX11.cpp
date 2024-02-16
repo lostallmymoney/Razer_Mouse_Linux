@@ -540,7 +540,7 @@ int main(const int argc, const char *const argv[])
 			clog << "Starting naga debug, logs :" << endl;
 			if (argc > 2)
 			{
-				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));			
+				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));
 			}
 			else
 			{

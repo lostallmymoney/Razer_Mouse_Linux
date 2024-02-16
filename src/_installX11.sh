@@ -1,40 +1,36 @@
 #!/bin/bash
 
 if [ "$(id -u)" = "0" ]; then
-    echo "This script must not be executed as root"
+    printf "\033[0;31mThis script must not be executed as root\033[0m\n"
     exit 1
 fi
 
-sudo echo "Installing requirements..."
+printf "Installing requirements...\n"
 
 sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps libglib2.0-dev
 
-echo "Checking requirements..."
+printf "Checking requirements...\n"
 
 command -v xdotool >/dev/null 2>&1 || {
-    tput setaf 1
-    echo >&2 "I require xdotool but it's not installed! Aborting."
+    printf "\033[0;31mI require xdotool but it's not installed! Aborting.\033[0m\n"
     exit 1
 }
 command -v xinput >/dev/null 2>&1 || {
-    tput setaf 1
-    echo >&2 "I require xinput but it's not installed! Aborting."
+    printf "\033[0;31mI require xinput but it's not installed! Aborting.\033[0m\n"
     exit 1
 }
 command -v g++ >/dev/null 2>&1 || {
-    tput setaf 1
-    echo >&2 "I require g++ but it's not installed! Aborting."
+    printf "\033[0;31mI require g++ but it's not installed! Aborting.\033[0m\n"
     exit 1
 }
 
 clear -x
 
-echo "Compiling code..."
+printf "Compiling code...\n"
 g++ ./src/nagaX11.cpp -o ./src/nagaX11 -pthread -Ofast --std=c++2b -lX11 -lXtst -lXmu
 
 if [ ! -f ./src/nagaX11 ]; then
-    tput setaf 1
-    echo "Error at compile! Ensure you have g++ installed. !!!Aborting!!!"
+    printf "\033[0;31mError at compile! Ensure you have g++ installed. !!!Aborting!!!\033[0m\n"
     exit 1
 fi
 

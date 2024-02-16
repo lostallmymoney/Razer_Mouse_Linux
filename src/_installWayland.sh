@@ -2,23 +2,22 @@
 
 sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev libxkbcommon-dev golang-go scdoc
 
-echo "Checking requirements..."
+printf "Checking requirements...\n"
 
 command -v g++ >/dev/null 2>&1 || {
-    tput setaf 1
-    echo >&2 "I require g++ but it's not installed! Aborting."
+    printf "\033[0;31mI require g++ but it's not installed! Aborting.\033[0m\n"
     exit 1
 }
 
 clear -x
 
-echo "Compiling code..."
+printf "Compiling code...\n"
 g++ -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -Ofast --std=c++2b -ldbus-1
 
 if [ ! -f ./src/nagaWayland ]; then
-    tput setaf 1
-    echo "Error at compile! Ensure you have g++ installed. !!!Aborting!!!"
-    exit 1; exit 1; exit 1
+
+    printf "\033[0;31mError at compile! Ensure you have g++ installed. !!!Aborting!!!\033[0m\n"
+    exit 1
 fi
 
 sudo mv ./src/nagaWayland /usr/local/bin/
@@ -31,7 +30,7 @@ wget https://git.sr.ht/~geb/dotool/archive/b5812c001daeeaff1f259031661e47f3a6122
 tar -xf dotool.tar.gz  > /dev/null
 mv -fu dotool-b5812c001daeeaff1f259031661e47f3a612220c dotool > /dev/null
 sleep 0.1
-cd dotool
+cd dotool || exit 1
 ./build.sh
 sudo ./build.sh install
 cd ..
