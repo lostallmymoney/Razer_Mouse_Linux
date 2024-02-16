@@ -1,5 +1,7 @@
 #!/bin/bash
 
+printf "Installing requirements...\n"
+
 sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev libxkbcommon-dev golang-go scdoc
 
 printf "Checking requirements...\n"
@@ -27,20 +29,20 @@ printf "Installing dotool :\n"
 
 sleep 0.1
 wget https://git.sr.ht/~geb/dotool/archive/b5812c001daeeaff1f259031661e47f3a612220c.tar.gz -O dotool.tar.gz
-tar -xf dotool.tar.gz  > /dev/null
-mv -fu dotool-b5812c001daeeaff1f259031661e47f3a612220c dotool > /dev/null
+tar -xf dotool.tar.gz >/dev/null
+mv -fu dotool-b5812c001daeeaff1f259031661e47f3a612220c dotool >/dev/null
 sleep 0.1
 cd dotool || exit 1
 ./build.sh
 sudo ./build.sh install
 cd ..
 sleep 0.1
-rm  -rf dotool*  > /dev/null
+rm -rf dotool* >/dev/null
 sleep 0.1
 
 clear -x
 
-sudo gnome-extensions disable window-calls-extended@hseliger.eu > /dev/null
+sudo gnome-extensions disable window-calls-extended@hseliger.eu >/dev/null
 sudo gnome-extensions uninstall -q window-calls-extended@hseliger.eu
 gnome-extensions install ./src/window-calls-extended@hseliger.eu.shell-extension.zip --force
 

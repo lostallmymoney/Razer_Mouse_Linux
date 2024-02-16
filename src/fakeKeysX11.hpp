@@ -14,9 +14,10 @@ struct FakeKey
 	KeySym *keysyms;
 	KeyCode modifier_table[N_MODIFIER_INDEXES];
 
-	 ~FakeKey() {
-        XFree(keysyms);
-    }
+	~FakeKey()
+	{
+		XFree(keysyms);
+	}
 };
 
 static int utf8_to_ucs4(const unsigned char *src_orig, unsigned int *dst, int len)
@@ -97,7 +98,6 @@ FakeKey *fakekey_init(Display *xdpy)
 	if (xdpy == NULL || !XTestQueryExtension(xdpy, &event, &error, &major, &minor))
 		return NULL;
 
-
 	fk = (FakeKey *)malloc(sizeof(FakeKey));
 	memset(fk, 0, sizeof(FakeKey));
 
@@ -149,7 +149,7 @@ int fakekey_send_keyevent(FakeKey *fk, KeyCode keycode, Bool is_press, int flags
 			XTestFakeKeyEvent(fk->xdpy, fk->modifier_table[ControlMapIndex],
 							  is_press, CurrentTime);
 
-		if (flags & Mod1Mask) //ALT MASK
+		if (flags & Mod1Mask) // ALT MASK
 			XTestFakeKeyEvent(fk->xdpy, fk->modifier_table[Mod1MapIndex],
 							  is_press, CurrentTime);
 
@@ -228,7 +228,7 @@ int fakekey_press(FakeKey *fk, const unsigned char *utf8_char_in, int len_bytes,
 	unsigned int ucs4_out;
 
 	if (fk->held_keycode) /* key is already held down */
-		return 0;	
+		return 0;
 
 	if (len_bytes < 0)
 	{
@@ -242,7 +242,6 @@ int fakekey_press(FakeKey *fk, const unsigned char *utf8_char_in, int len_bytes,
 
 	if (ucs4_out > 0x00ff)				  /* < 0xff assume Latin-1 1:1 mapping */
 		ucs4_out = ucs4_out | 0x01000000; /* This gives us the magic X keysym */
-
 
 	return fakekey_press_keysym(fk, (KeySym)ucs4_out, flags);
 }

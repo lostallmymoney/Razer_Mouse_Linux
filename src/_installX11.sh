@@ -37,7 +37,6 @@ fi
 sudo mv ./src/nagaX11 /usr/local/bin/
 sudo chmod 755 /usr/local/bin/nagaX11
 
-
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
 sudo cp -r -n -v "keyMap.txt" "$_dir"

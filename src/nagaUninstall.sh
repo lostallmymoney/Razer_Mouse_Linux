@@ -1,6 +1,6 @@
 #!/bin/sh
 sh /usr/local/bin/Naga_Linux/nagaKillroot.sh
-sleep 0.3 > /dev/null 2>&1 &
+sleep 0.3 >/dev/null 2>&1 &
 echo "Deleting app"
 #Deleting dotool
 sudo rm -vf /usr/local/bin/dotool /usr/local/bin/dotoolc /usr/local/bin/dotoold

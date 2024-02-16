@@ -143,7 +143,6 @@ public:
 				loadConf(true);
 			}
 		}
-
 	}
 	void remapRoutine()
 	{
@@ -162,7 +161,7 @@ public:
 	}
 	void scheduleReMap(const string *const reMapStr)
 	{
-		clog << "Remap Routine"<<endl;
+		clog << "Remap Routine" << endl;
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (winConfigActive)
 		{
@@ -392,7 +391,7 @@ private:
 	const static void executeThreadNow(const string *const macroContent)
 	{
 		thread(executeNow, macroContent).detach();
-		clog<<"EXECUTED : "<< macroContent->c_str() << endl;
+		clog << "EXECUTED : " << macroContent->c_str() << endl;
 	}
 	// end of configKeys functions
 
@@ -529,7 +528,7 @@ int main(const int argc, const char *const argv[])
 			clog << "Starting naga debug, logs :" << endl;
 			if (argc > 2)
 			{
-				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));			
+				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));
 			}
 			else
 			{
