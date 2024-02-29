@@ -161,7 +161,6 @@ public:
 	}
 	void scheduleReMap(const string *const reMapStr)
 	{
-		clog << "Remap Routine" << endl;
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (winConfigActive)
 		{
@@ -351,7 +350,6 @@ private:
 
 	const static void chmapNow(const string *const macroContent)
 	{
-		lock_guard<mutex> guard(configSwitcherMutex);
 		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
 	}
 
