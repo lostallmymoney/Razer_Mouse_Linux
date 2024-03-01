@@ -55,7 +55,7 @@ else
 	grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases >/dev/null
 
 	while true; do
-		printf "\033[38;2;255;165;0mNaga for Wayland is currently installing,\n	do you want to install for X11 too ? (recommended) y/n : \033[0m"
+		printf "\033[38;2;255;165;0mNaga for X11 is currently installing,\n	do you want to install for Wayland too ? (recommended) y/n : \033[0m"
 		read -r yn
 		case $yn in
 		[Yy]*)
