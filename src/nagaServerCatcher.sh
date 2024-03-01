@@ -1,6 +1,6 @@
 #!/bin/sh
 #Finds the visual server and starts the right one
-while [ "$(who | grep -c tty)" -eq 0 ]; do
+while [ "$(who | wc -l)" -lt 2 ]; do
 	sleep 1
 done
 if [ "$(loginctl show-session "$(loginctl | grep "$(whoami)" | awk '{print $1}')" -p Type)" = "Type=wayland" ]; then
