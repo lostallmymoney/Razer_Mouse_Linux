@@ -1,6 +1,7 @@
 #!/bin/sh
 # shellcheck disable=SC2046
 # shellcheck disable=SC2009
+
 if [ "$(id -u)" -ne 0 ]; then
 	if [ $# -eq 0 ]; then
 		#X11

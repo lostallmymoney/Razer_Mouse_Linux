@@ -2,6 +2,7 @@
 Description=Custom key bindings for the side panel of razer mouses.
 After=default.target
 
+
 [Install]
 WantedBy=default.target
 
@@ -10,5 +11,5 @@ Type=simple
 ExecStart=/usr/local/bin/Naga_Linux/nagaServerCatcher.sh
 Restart=always
 RestartSec=5
-TimeoutStartSec=20
+TimeoutStartSec=5
 Group=razerInputGroup

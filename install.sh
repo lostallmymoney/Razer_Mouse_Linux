@@ -89,7 +89,7 @@ sleep 0.5
 sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
 
 sudo systemctl enable naga
-sudo systemctl start naga
+sudo systemctl restart naga
 
 printf "\033[0;32mService started !\nStop with naga service stop\nStart with naga service start\033[0m\n"
 printf "Star the repo here 😁 :\n"

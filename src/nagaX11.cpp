@@ -428,18 +428,15 @@ public:
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
+		bool isThereADevice = false;
 		for (pair<const char *const, const char *const> &device : devices)
 		{ // Setup check
 			side_btn_fd = open(device.first, O_RDONLY), extra_btn_fd = open(device.second, O_RDONLY);
+
 			if (side_btn_fd != -1 || extra_btn_fd != -1)
 			{
 				if (side_btn_fd == -1)
 				{
-					if (extra_btn_fd == -1)
-					{
-						cerr << "No naga devices found or you don't have permission to access them." << endl;
-						exit(1);
-					}
 					clog << "Reading from: " << device.second << endl;
 					areSideBtnEnabled = false;
 				}
@@ -449,10 +446,19 @@ public:
 					areExtraBtnEnabled = false;
 				}
 				else
+				{
 					clog << "Reading from: " << device.first << endl
 						 << " and " << device.second << endl;
+				}
+				isThereADevice = true;
 				break;
 			}
+		}
+
+		if (!isThereADevice)
+		{
+			cerr << "No naga devices found or you don't have permission to access them." << endl;
+			exit(1);
 		}
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
@@ -533,7 +539,7 @@ int main(const int argc, const char *const argv[])
 		{
 			clog << "Starting naga daemon as service, naga debug to see logs..." << endl;
 			usleep(100000);
-			(void)!(system("sudo systemctl start naga"));
+			(void)!(system("sudo systemctl restart naga"));
 		}
 		else if (strstr(argv[1], "debug") != NULL)
 		{
