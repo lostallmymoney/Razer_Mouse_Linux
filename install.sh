@@ -98,7 +98,7 @@ printf "\033[0;35mhttps://github.com/lostallmymoney/Razer_Mouse_Linux\033[0m\n\n
 
 xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
 
-if [ "$WAYLANDTYPE" = "Type=wayland" ]; then
+if [ "$WAYLANDTYPE" = true ]; then
 	printf "\033[0;31mRELOGGING NECESSARY\033[0m\n"
 	bash -c 'read -sp "Press ENTER to log out..."'
 	sudo pkill -HUP -u "$USER"
