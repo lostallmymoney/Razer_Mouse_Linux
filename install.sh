@@ -27,8 +27,9 @@ printf "Installing requirements...\n"
 
 printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
 
-LOGINTYPE=$(loginctl show-session "$(loginctl | grep "$(whoami)" | awk '{print $1}')" -p Type)
-if [ "$LOGINTYPE" = "Type=wayland" ]; then
+# shellcheck disable=SC2046
+if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
+	WAYLANDTYPE=true
 	if ! nc -z 8.8.8.8 53 >/dev/null 2>&1; then
 		printf "\033[0;31mNO INTERNET CONNECTION\033[0m\n"
 		exit 1
@@ -97,8 +98,8 @@ printf "\033[0;35mhttps://github.com/lostallmymoney/Razer_Mouse_Linux\033[0m\n\n
 
 xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
 
-if [ "$LOGINTYPE" = "Type=wayland" ]; then
+if [ "$WAYLANDTYPE" = "Type=wayland" ]; then
 	printf "\033[0;31mRELOGGING NECESSARY\033[0m\n"
 	bash -c 'read -sp "Press ENTER to log out..."'
-	sudo pkill -HUP -u $USER
+	sudo pkill -HUP -u "$USER"
 fi

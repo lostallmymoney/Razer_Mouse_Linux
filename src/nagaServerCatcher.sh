@@ -3,7 +3,8 @@
 while [ "$(who | wc -l)" -lt 2 ]; do
 	sleep 1
 done
-if [ "$(loginctl show-session "$(loginctl | grep "$(whoami)" | awk '{print $1}')" -p Type)" = "Type=wayland" ]; then
+# shellcheck disable=SC2046
+if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
 	echo "Starting Wayland"
 	gnome-extensions enable window-calls-extended@hseliger.eu
 	killall dotoold >/dev/null 2>&1
