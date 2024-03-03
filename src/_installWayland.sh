@@ -14,7 +14,7 @@ command -v g++ >/dev/null 2>&1 || {
 clear -x
 
 printf "Compiling code...\n"
-g++ -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -Ofast --std=c++2b -ldbus-1
+g++ -I/usr/lib64/dbus-1.0/include -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -Ofast --std=c++2b -ldbus-1
 
 if [ ! -f ./src/nagaWayland ]; then
 
