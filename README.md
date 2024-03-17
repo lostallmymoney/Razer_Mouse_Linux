@@ -42,7 +42,7 @@ please add the corresponding repos for xdotool and his dependency :
 	You can also install libnotify-bin to get notifications if they are not there : `sudo apt install libnotify-bin`     	
 ## DEPENDENCIES :	
 X11 : `libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps`    
-Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev`    
+Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev golang-go`    
 If you are running something else than ubuntu and it's not compiling theses are the packages to find.     
 ## INSTALLATION :     
 Run `sh install.sh`.       
