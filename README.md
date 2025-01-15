@@ -11,8 +11,8 @@ Or run sh install.sh from the directory to install.
 - Razer Naga Epic Chroma in CentOS 7
 - Razer Naga Epic (pre-2014 version) in Ubuntu 14.04, 15.04, 15.10
 - Razer Naga (RZ01-0028) (Thanks to khornem) in Ubuntu 14.04
-- Razer Naga Molten (Thanks to noobxgockel) in Linux Mint 17.02
 - Razer Chroma (Thanks to [felipeacsi](https://github.com/felipeacsi)) in Manjaro
+- Razer Naga Molten (Thanks to noobxgockel) in Linux Mint 17.02 (Same as 2012)
 - Razer Naga 2012 (RZ01-0058) (Thanks to [mrlinuxfish](https://github.com/violet-fish), [brianfreytag](https://github.com/brianfreytag)) in Arch Linux, Ubuntu 16.04
 - Razer Naga Chroma (Thanks to [ipsod](https://github.com/ipsod)) in Linux Mint KDE 18.1
 - Razer Naga Trinity (Thanks to [haringsrob](https://github.com/haringsrob) and [ws141](https://github.com/ws141))
