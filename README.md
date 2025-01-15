@@ -18,6 +18,7 @@ Very probably(like almost surely certainly) works with :
 - Razer Naga Trinity (Thanks to [haringsrob](https://github.com/haringsrob) and [ws141](https://github.com/ws141))
 - Razer Pro Wireless (Thanks to [Stibax](https://github.com/Stibax))
 - Razer Naga V2 (Thanks to [ibarrick](https://github.com/ibarrick))
+- Razer Naga X (Thanks to [https://github.com/bgrabow](https://github.com/bgrabow))
 Works for sure with :
 - Razer Naga 2014 (Ubuntu)
 ## COMMANDS :
