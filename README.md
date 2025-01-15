@@ -7,7 +7,7 @@ In one command :
 `sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip -o Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`     
 Or run sh install.sh from the directory to install.     
 ## SUPPORTS :     
-Very probably(like almost surely certainly) works with :
+99% compatible with :
 - Razer Naga Epic Chroma in CentOS 7
 - Razer Naga Epic (pre-2014 version) in Ubuntu 14.04, 15.04, 15.10
 - Razer Naga (RZ01-0028) (Thanks to khornem) in Ubuntu 14.04
@@ -20,7 +20,6 @@ Very probably(like almost surely certainly) works with :
 - Razer Naga V2 (Thanks to [ibarrick](https://github.com/ibarrick))
 - Razer Naga Left Handed (Thanks to [Izaya-San](https://github.com/Izaya-San))
 - Razer Naga X (Thanks to [grabow](https://github.com/bgrabow))
-Works for sure with :
 - Razer Naga 2014 (Ubuntu)
 ## COMMANDS :
 
