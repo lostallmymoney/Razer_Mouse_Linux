@@ -5,18 +5,18 @@ Now with app auto profiles !
 ## INSTALL :
 In one command :     
 `sudo apt install unzip wget -y && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O Razer_Mouse_Linux.zip && unzip -o Razer_Mouse_Linux.zip && cd Razer_Mouse_Linux-master && sh install.sh && cd .. && rm -rf Razer_Mouse_Linux-master Razer_Mouse_Linux.zip`     
-Or run sh install.sh from the directory to install.     
+Or run `sh install.sh` from the directory to install.     
 ## SUPPORTS :     
 99% compatible with :
 - Razer Naga Epic Chroma in CentOS 7
 - Razer Naga Epic (pre-2014 version) in Ubuntu 14.04, 15.04, 15.10
 - Razer Naga (RZ01-0028) (Thanks to khornem) in Ubuntu 14.04
-- Razer Chroma (Thanks to [felipeacsi](https://github.com/felipeacsi)) in Manjaro
+- Razer Naga Chroma (Thanks to [felipeacsi](https://github.com/felipeacsi)) in Manjaro
 - Razer Naga Molten (Thanks to noobxgockel) in Linux Mint 17.02 (Same as 2012)
 - Razer Naga 2012 (RZ01-0058) (Thanks to [mrlinuxfish](https://github.com/violet-fish), [brianfreytag](https://github.com/brianfreytag)) in Arch Linux, Ubuntu 16.04
 - Razer Naga Chroma (Thanks to [ipsod](https://github.com/ipsod)) in Linux Mint KDE 18.1
 - Razer Naga Trinity (Thanks to [haringsrob](https://github.com/haringsrob) and [ws141](https://github.com/ws141))
-- Razer Pro Wireless (Thanks to [Stibax](https://github.com/Stibax))
+- Razer Naga Pro Wireless (Thanks to [Stibax](https://github.com/Stibax))
 - Razer Naga V2 (Thanks to [ibarrick](https://github.com/ibarrick))
 - Razer Naga Left Handed (Thanks to [Izaya-San](https://github.com/Izaya-San))
 - Razer Naga X (Thanks to [grabow](https://github.com/bgrabow))
