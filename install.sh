@@ -30,7 +30,7 @@ printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="6
 # shellcheck disable=SC2046
 if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
 	WAYLANDTYPE=true
-	if  ! ping -c 1 8.8.8.8 &>/dev/null; then
+	if ! nslookup google.com > /dev/null 2>&1; then
 		printf "\033[0;31mNO INTERNET CONNECTION\033[0m\n"
 		exit 1
 	fi

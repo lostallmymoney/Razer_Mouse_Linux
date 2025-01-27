@@ -236,14 +236,14 @@ private:
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				(*configSwitcher->configWindowAndLockMap)[commandContent] = new pair<bool, const string *>(false, new string(""));
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send \"Profile : " + commandContent + "\""))->c_str());
+				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send -a NagaMouse \"Profile swapped :\" \"" + commandContent + "\""))->c_str());
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send \"Profile : " + commandContent + "\""))->c_str());
+				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send -a NagaMouse \"Profile change :\" \"" + commandContent + "\""))->c_str());
 			}
 		}
 		in.close();
