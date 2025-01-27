@@ -38,7 +38,7 @@ configWindow=Spotify
 12 - keyClick=nextsong
 configEnd
 
-configWindow=gnome-terminal-server
+configWindow=org.gnome.Terminal
 1 - key=mute
 3 - string=gnome@terminal.com
 4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
