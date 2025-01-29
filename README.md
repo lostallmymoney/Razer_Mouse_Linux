@@ -60,22 +60,22 @@ Now works with systemctl services !
 Also adds 2 lines to your .profile and a line to the sudoer's file to make sure you are always able to start the daemon on relogin.     
 
 ## CONFIGURATION :
-The configuration file `keyMap.txt` has the following syntax
-    `config=<configName>` set the name of the following config. The initial loaded config be `defaultConfig` unless specified as argument.
+The configuration file `keyMap.txt` has the following syntax :
+    `config=<configName>` sets the name of the config. The initial loaded config is `defaultConfig` unless specified as argument.
     `<keynumber> - <option>=<command>`
     `<keynumber>` is a number between 1-14 representing the 12 keys of the naga's keypad + two on the top of the naga.
     `<option>` determines what will be applied to `<command>`. The possible choices are:
 
-- `chmap`: Changes the keymap for another config inside `keymap.txt` in `~/.naga`.
-- `champRelease`: Changes the keymap on key release.
-- `unlockChmap`: Unlocks the config for a windowConfig that has been changed to another config (can also simply chmap back to the windowConfig).
+- `chmap`: Changes the config for another config inside `keymap.txt` in `~/.naga`.
+- `chmapRelease`: Changes the config on key release.
+- `unlockChmap`: Unlocks the config for a windowConfig that has been changed to another config (can also simply chmap back to the windowConfig). Simply said : Re-allows auto config changes per window.
 - `sleep` and `sleepRelease`: Sleeps.
 - `string` and `stringRelease`: Writes a string. This doesn't use xdotool so xdotool keys won't work.
 - `xdotoolType` and `xdotoolTypeRelease`: Types a string using xdotool (fallback option).
-- `key`: Does keyPress at press and keyRelease at release.
-- `specialKey`: Does special keyPress at press and special keyRelease at release.
+- `key`: keyPress at press and keyRelease at release.
+- `specialKey`: Special keyPress at press and special keyRelease at release.
 - `keyPressOnPress`: The xdotool key is pressed when the key is pressed.
-- `keyReleaseOnRelease`: The xdotool key is released when the key is released.			
+- `keyReleaseOnRelease`: The xdotool key is released when the key is released.	
 - `keyPressOnRelease`: The xdotool key is pressed when the key is released.
 - `keyReleaseOnPress`: The xdotool key is released when the key is pressed. There seems to be a list of keys on https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h but you need to remove XK_ and they're not all there so google them if you want to be sure.
 - `run`: Runs the command `<command>` (in bash /bin/bash) on key press.
@@ -98,7 +98,8 @@ The configuration file `keyMap.txt` has the following syntax
 `<command>` is what is going to be used based on the option.    
 To test any `<command>` run it in the command cited above.    
 `configEnd` Marks the end of a config.   
-For a mouseclick run `xdotool click <command>` (Can put numbers from 1 to 9 and options such as *--window etc).   
+For a mouseclick use something like `run=xdotool click xPos yPos` (Check xdotool wiki for more).
+
 You may have as many configs as you want in the keyMap.txt file, just make sure to give them different names and include defaultConfig.
 
 [Link for Keys](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h)
@@ -125,7 +126,7 @@ An example `keyMap.txt` configuration file is the following:
     2 - chmap=defaultConfig
     #etc
     configEnd     
-If you are trying to disable a button's original input, you might want to test with xinput or evtest.     
+If you are trying to disable a button's original input (for the top buttons, the numpad is ok), you might want to test with xinput or evtest.     
 Any non existing functionality can be created through the "run" option.       
 #### In depth :
 1) In order to get rid of the original bindings it disables the keypad using xinput as follows:      
