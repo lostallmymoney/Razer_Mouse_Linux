@@ -95,8 +95,7 @@ The configuration file `keyMap.txt` has the following syntax :
 - `specialReleaseOnPress` : 1 char
 - `specialReleaseOnRelease` : 1 char
 
-`<command>` is what is going to be used based on the option.    
-To test any `<command>` run it in the command cited above.    
+
 `configEnd` Marks the end of a config.   
 For a mouseclick use something like `run=xdotool click xPos yPos` (Check xdotool wiki for more).
 
