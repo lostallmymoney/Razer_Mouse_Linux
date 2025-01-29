@@ -35,7 +35,7 @@ Or run `sh install.sh` from the directory to install.
 	`naga serviceHelper ($CONFIG)`		//For the services or manual change of configs.      
 							(need to disable service & add udev rule for $USER)        
 Map razer naga devices keys easily with the command `naga edit`.     
-## UBUNTU FLAVORS (XORG):    
+## UBUNTU FLAVORS (X11):    
 Try installing first and if it doesn't work     
 please add the corresponding repos for xdotool and his dependency :     
 	https://packages.ubuntu.com/search?keywords=xdotool     
