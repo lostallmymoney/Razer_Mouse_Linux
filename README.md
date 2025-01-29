@@ -35,13 +35,14 @@ Or run `sh install.sh` from the directory to install.
 	`naga serviceHelper ($CONFIG)`		//For the services or manual change of configs.      
 							(need to disable service & add udev rule for $USER)        
 Map razer naga devices keys easily with the command `naga edit`.     
-## UBUNTU FLAVORS :    
+## UBUNTU FLAVORS (XORG):    
 Try installing first and if it doesn't work     
 please add the corresponding repos for xdotool and his dependency :     
 	https://packages.ubuntu.com/search?keywords=xdotool     
 	https://packages.ubuntu.com/search?keywords=libxdo3&searchon=names     
 	(Click on your version and add the line to /etc/apt/sources.list, then you can run the script.)     
-	You can also install libnotify-bin to get notifications if they are not there : `sudo apt install libnotify-bin`     	
+	You can also install libnotify-bin to get notifications if they are not there : `sudo apt install libnotify-bin`    
+For Wayland you might have to do something equivalent.
 ## DEPENDENCIES :	
 X11 : `libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps`    
 Wayland : `g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev golang-go`    
