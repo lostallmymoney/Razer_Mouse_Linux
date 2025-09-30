@@ -371,15 +371,13 @@ private:
 		{
 			throw runtime_error("runAndWrite Failed !");
 		}
-		size_t bufferSize = 1024;
-		char *buffer = (char *)malloc(bufferSize);
+		char buffer[1024];
 		size_t bytesRead = 0;
-		while ((bytesRead = fread(buffer, 1, bufferSize, pipe.get())) > 0)
+		while ((bytesRead = fread(buffer, 1, sizeof(buffer), pipe.get())) > 0)
 		{
 			string chunk(buffer, bytesRead);
 			writeStringNow(&chunk);
 		}
-		free(buffer);
 	}
 	const static void runAndWriteThread(const string *const macroContent)
 	{
