@@ -336,16 +336,16 @@ private:
 	const static void specialReleaseNow(const string *const macroContent)
 	{
 		const char targetChar = (*macroContent)[0];
-		for (pair<const char *const, FakeKey *const> &keyPair : *fakeKeyFollowUps)
+		for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
 		{
-			if (*keyPair.first == targetChar)
+			if (*aKeyFollowUpPair->first == targetChar)
 			{
 				lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-				FakeKey *const aKeyFaker = keyPair.second;
+				FakeKey *const aKeyFaker = aKeyFollowUpPair->second;
 				fakekey_release(aKeyFaker);
 				XFlush(aKeyFaker->xdpy);
 				XCloseDisplay(aKeyFaker->xdpy);
-				fakeKeyFollowUps->erase(keyPair.first);
+				fakeKeyFollowUps->erase(aKeyFollowUpPair);
 				delete aKeyFaker;
 				return;
 			}
