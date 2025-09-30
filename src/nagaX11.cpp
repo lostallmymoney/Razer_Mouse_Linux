@@ -336,7 +336,7 @@ private:
 	const static void specialReleaseNow(const string *const macroContent)
 	{
 		const char targetChar = (*macroContent)[0];
-		for (auto &[keyPtr, aKeyFaker] : *fakeKeyFollowUps)
+		for (const auto &[keyPtr, aKeyFaker] : *fakeKeyFollowUps)
 		{
 			if (*keyPtr == targetChar)
 			{
