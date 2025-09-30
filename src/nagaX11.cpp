@@ -396,10 +396,10 @@ private:
 
 	static void runActions(vector<MacroEvent *> *const relativeMacroEventsPointer)
 	{
-		const auto end = relativeMacroEventsPointer->cend();
-		for (auto it = relativeMacroEventsPointer->cbegin(); it != end; ++it)
+		const vector<MacroEvent *>::const_iterator eventsEnd = relativeMacroEventsPointer->cend();
+		for (vector<MacroEvent *>::const_iterator eventIterator = relativeMacroEventsPointer->cbegin(); eventIterator != eventsEnd; ++eventIterator)
 		{ // run all the events at Key
-			(*it)->first->runInternal((*it)->second);
+			(*eventIterator)->first->runInternal((*eventIterator)->second);
 		}
 	}
 
