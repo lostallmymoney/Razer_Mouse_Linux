@@ -335,10 +335,10 @@ private:
 	}
 	const static void specialReleaseNow(const string *const macroContent)
 	{
-		const char targetChar = (*macroContent)[0];
+		const char *const targetChar = &(*macroContent)[0];
 		for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
 		{
-			if (*aKeyFollowUpPair->first == targetChar)
+			if (*aKeyFollowUpPair->first == *targetChar)
 			{
 				lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 				FakeKey *const aKeyFaker = aKeyFollowUpPair->second;
