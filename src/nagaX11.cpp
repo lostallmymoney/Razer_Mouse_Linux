@@ -335,16 +335,16 @@ private:
 	}
 	const static void specialReleaseNow(const string *const macroContent)
 	{
-		for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
+		const char targetChar = (*macroContent)[0];
+		for (auto &[keyPtr, aKeyFaker] : *fakeKeyFollowUps)
 		{
-			if (*aKeyFollowUpPair->first == (*macroContent)[0])
+			if (*keyPtr == targetChar)
 			{
 				lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-				FakeKey *const aKeyFaker = aKeyFollowUpPair->second;
 				fakekey_release(aKeyFaker);
 				XFlush(aKeyFaker->xdpy);
 				XCloseDisplay(aKeyFaker->xdpy);
-				fakeKeyFollowUps->erase(aKeyFollowUpPair);
+				fakeKeyFollowUps->erase(keyPtr);
 				delete aKeyFaker;
 				return;
 			}
@@ -396,10 +396,9 @@ private:
 
 	static void runActions(vector<MacroEvent *> *const relativeMacroEventsPointer)
 	{
-		const vector<MacroEvent *>::const_iterator eventsEnd = relativeMacroEventsPointer->cend();
-		for (vector<MacroEvent *>::const_iterator eventIterator = relativeMacroEventsPointer->cbegin(); eventIterator != eventsEnd; ++eventIterator)
+		for (const auto &macroEvent : *relativeMacroEventsPointer)
 		{ // run all the events at Key
-			(*eventIterator)->first->runInternal((*eventIterator)->second);
+			macroEvent->first->runInternal(macroEvent->second);
 		}
 	}
 
