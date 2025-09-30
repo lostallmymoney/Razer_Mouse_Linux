@@ -18,6 +18,7 @@ Or run `sh install.sh` from the directory to install.
 - Razer Naga Trinity (Thanks to [haringsrob](https://github.com/haringsrob) and [ws141](https://github.com/ws141))
 - Razer Naga Pro Wireless (Thanks to [Stibax](https://github.com/Stibax))
 - Razer Naga V2 (Thanks to [ibarrick](https://github.com/ibarrick))
+- Razer Naga V2 HyperSpeed
 - Razer Naga Left Handed (Thanks to [Izaya-San](https://github.com/Izaya-San))
 - Razer Naga X (Thanks to [grabow](https://github.com/bgrabow))
 - Razer Naga 2014 (Ubuntu)
