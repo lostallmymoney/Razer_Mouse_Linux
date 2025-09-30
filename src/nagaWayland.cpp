@@ -359,6 +359,7 @@ private:
 	}
 	const static void runAndWrite(const string *const macroContent)
 	{
+		constexpr size_t BufferSize = 1024;
 		string result;
 		unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
 		if (!pipe)
@@ -366,10 +367,10 @@ private:
 			throw runtime_error("runAndWrite Failed !");
 		}
 
-		char buffer[1024];
+		char buffer[BufferSize];
 
 		size_t bytesRead = 0;
-		while ((bytesRead = fread(buffer, 1, sizeof(buffer), pipe.get())) > 0)
+		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
 		{
 			string chunk(buffer, bytesRead);
 			(void)!system(("echo keydown " + chunk + " | dotoolc").c_str());
