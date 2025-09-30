@@ -191,8 +191,8 @@ class NagaDaemon
 {
 private:
 	static constexpr size_t BufferSize = 1024;
-	static const string dotoolcPrefix;
-	static const string dotoolcSuffix;
+	inline static const string dotoolcPrefix = "echo keydown ";
+	inline static const string dotoolcSuffix = " | dotoolc";
 	map<string, configKey *const> configKeysMap;
 
 	string currentConfigName;
@@ -535,9 +535,6 @@ public:
 		run();
 	}
 };
-
-const string NagaDaemon::dotoolcPrefix = "echo keydown ";
-const string NagaDaemon::dotoolcSuffix = " | dotoolc";
 
 void stopD()
 {
