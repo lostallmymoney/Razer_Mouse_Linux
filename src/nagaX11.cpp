@@ -141,6 +141,7 @@ public:
 class NagaDaemon
 {
 private:
+	static constexpr size_t BufferSize = 1024;
 	map<string, configKey *const> configKeysMap;
 	static configSwitchScheduler *const configSwitcher;
 	struct input_event ev1[64];
@@ -371,9 +372,9 @@ private:
 		{
 			throw runtime_error("runAndWrite Failed !");
 		}
-		char buffer[1024];
+		char buffer[BufferSize];
 		size_t bytesRead = 0;
-		while ((bytesRead = fread(buffer, 1, sizeof(buffer), pipe.get())) > 0)
+		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
 		{
 			string chunk(buffer, bytesRead);
 			writeStringNow(&chunk);

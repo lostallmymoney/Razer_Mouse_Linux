@@ -190,6 +190,7 @@ static configSwitchScheduler *const configSwitcher = new configSwitchScheduler()
 class NagaDaemon
 {
 private:
+	static constexpr size_t BufferSize = 1024;
 	map<string, configKey *const> configKeysMap;
 
 	string currentConfigName;
@@ -366,10 +367,10 @@ private:
 			throw runtime_error("runAndWrite Failed !");
 		}
 
-		char buffer[1024];
+		char buffer[BufferSize];
 
 		size_t bytesRead = 0;
-		while ((bytesRead = fread(buffer, 1, sizeof(buffer), pipe.get())) > 0)
+		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
 		{
 			string chunk(buffer, bytesRead);
 			(void)!system(("echo keydown " + chunk + " | dotoolc").c_str());
