@@ -190,6 +190,7 @@ static configSwitchScheduler *const configSwitcher = new configSwitchScheduler()
 class NagaDaemon
 {
 private:
+	static constexpr size_t BufferSize = 1024;
 	map<string, configKey *const> configKeysMap;
 
 	string currentConfigName;
@@ -359,7 +360,6 @@ private:
 	}
 	const static void runAndWrite(const string *const macroContent)
 	{
-		constexpr size_t BufferSize = 1024;
 		string result;
 		unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
 		if (!pipe)
