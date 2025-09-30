@@ -191,6 +191,8 @@ class NagaDaemon
 {
 private:
 	static constexpr size_t BufferSize = 1024;
+	static const string dotoolcPrefix;
+	static const string dotoolcSuffix;
 	map<string, configKey *const> configKeysMap;
 
 	string currentConfigName;
@@ -394,18 +396,16 @@ private:
 		}
 
 		char buffer[BufferSize];
-		static const string prefix = "echo keydown ";
-		static const string suffix = " | dotoolc";
 		string command;
-		command.reserve(prefix.size() + BufferSize + suffix.size());
+		command.reserve(dotoolcPrefix.size() + BufferSize + dotoolcSuffix.size());
 
 		size_t bytesRead = 0;
 		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
 		{
 			command.clear();
-			command.append(prefix);
+			command.append(dotoolcPrefix);
 			command.append(buffer, bytesRead);
-			command.append(suffix);
+			command.append(dotoolcSuffix);
 			(void)!system(command.c_str());
 		}
 	}
@@ -535,6 +535,9 @@ public:
 		run();
 	}
 };
+
+const string NagaDaemon::dotoolcPrefix = "echo keydown ";
+const string NagaDaemon::dotoolcSuffix = " | dotoolc";
 
 void stopD()
 {
