@@ -394,7 +394,7 @@ private:
 
 	static void runActions(vector<MacroEvent *> *const relativeMacroEventsPointer)
 	{
-		for (const auto &macroEvent : *relativeMacroEventsPointer)
+		for (MacroEvent *const &macroEvent : *relativeMacroEventsPointer)
 		{ // run all the events at Key
 			macroEvent->first->runInternal(macroEvent->second);
 		}
