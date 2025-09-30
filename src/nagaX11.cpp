@@ -202,10 +202,18 @@ private:
 
 					if (configKeysMap.contains(commandType))
 					{ // filter out bad types
-						if (!configKeysMap[commandType]->Prefix()->empty())
-							commandContent = *configKeysMap[commandType]->Prefix() + commandContent;
+						const configKey *key = configKeysMap[commandType];
+						const string *prefix = key->Prefix();
+						
+						if (!prefix->empty())
+						{
+							string temp;
+							temp.reserve(prefix->size() + commandContent.size());
+							temp.append(*prefix).append(commandContent);
+							commandContent = temp;
+						}
 
-						(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], new string(commandContent)));
+						(*iteratedButtonConfig)[key->IsOnKeyPressed()].emplace_back(new MacroEvent(key, new string(commandContent)));
 						// Encode and store mapping v3
 					}
 					else if (commandType == "key")
@@ -216,8 +224,19 @@ private:
 							hexedChar << "0x" << setfill('0') << setw(2) << hex << static_cast<int>(commandContent[0]);
 							commandContent = hexedChar.str();
 						}
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], new string(*configKeysMap["keypressonpress"]->Prefix() + commandContent)));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent)));
+						const configKey *pressKey = configKeysMap["keypressonpress"];
+						const configKey *releaseKey = configKeysMap["keyreleaseonrelease"];
+						
+						string *pressContent = new string();
+						pressContent->reserve(pressKey->Prefix()->size() + commandContent.size());
+						pressContent->append(*pressKey->Prefix()).append(commandContent);
+						
+						string *releaseContent = new string();
+						releaseContent->reserve(releaseKey->Prefix()->size() + commandContent.size());
+						releaseContent->append(*releaseKey->Prefix()).append(commandContent);
+						
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(pressKey, pressContent));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(releaseKey, releaseContent));
 					}
 					else if (commandType == "specialkey")
 					{
@@ -237,14 +256,20 @@ private:
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				(*configSwitcher->configWindowAndLockMap)[commandContent] = new pair<bool, const string *>(false, new string(""));
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send -a NagaMouse \"Profile swapped :\" \"" + commandContent + "\""))->c_str());
+				string *notifyCmd = new string();
+				notifyCmd->reserve(48 + commandContent.size());
+				notifyCmd->assign("notify-send -a NagaMouse \"Profile swapped :\" \"").append(commandContent).append("\"");
+				configSwitcher->notifySendMap.emplace(commandContent, notifyCmd->c_str());
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send -a NagaMouse \"Profile change :\" \"" + commandContent + "\""))->c_str());
+				string *notifyCmd = new string();
+				notifyCmd->reserve(47 + commandContent.size());
+				notifyCmd->assign("notify-send -a NagaMouse \"Profile change :\" \"").append(commandContent).append("\"");
+				configSwitcher->notifySendMap.emplace(commandContent, notifyCmd->c_str());
 			}
 		}
 		in.close();

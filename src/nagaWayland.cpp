@@ -252,21 +252,41 @@ private:
 
 					if (configKeysMap.contains(commandType))
 					{ // filter out bad types
-						if (!configKeysMap[commandType]->Prefix()->empty())
-							commandContent = *configKeysMap[commandType]->Prefix() + commandContent;
+						const configKey *key = configKeysMap[commandType];
+						const string *prefix = key->Prefix();
+						const string *suffix = key->Suffix();
+						
+						if (!prefix->empty() || !suffix->empty())
+						{
+							string temp;
+							temp.reserve(prefix->size() + commandContent.size() + suffix->size());
+							if (!prefix->empty())
+								temp.append(*prefix);
+							temp.append(commandContent);
+							if (!suffix->empty())
+								temp.append(*suffix);
+							commandContent = temp;
+						}
 
-						if (!configKeysMap[commandType]->Suffix()->empty())
-							commandContent = commandContent + *configKeysMap[commandType]->Suffix();
-
-						(*iteratedButtonConfig)[configKeysMap[commandType]->IsOnKeyPressed()].emplace_back(new MacroEvent(configKeysMap[commandType], new string(commandContent)));
+						(*iteratedButtonConfig)[key->IsOnKeyPressed()].emplace_back(new MacroEvent(key, new string(commandContent)));
 						// Encode and store mapping v3
 					}
 					else if (commandType == "key")
 					{
-						string *commandContent2 = new string(*configKeysMap["keyreleaseonrelease"]->Prefix() + commandContent + *configKeysMap["keyreleaseonrelease"]->Suffix());
-						commandContent = *configKeysMap["keypressonpress"]->Prefix() + commandContent + *configKeysMap["keypressonpress"]->Suffix();
-						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(configKeysMap["keypressonpress"], new string(commandContent)));
-						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(configKeysMap["keyreleaseonrelease"], new string(*commandContent2)));
+						const configKey *releaseKey = configKeysMap["keyreleaseonrelease"];
+						const configKey *pressKey = configKeysMap["keypressonpress"];
+						
+						string *commandContent2 = new string();
+						commandContent2->reserve(releaseKey->Prefix()->size() + commandContent.size() + releaseKey->Suffix()->size());
+						commandContent2->append(*releaseKey->Prefix()).append(commandContent).append(*releaseKey->Suffix());
+						
+						string temp;
+						temp.reserve(pressKey->Prefix()->size() + commandContent.size() + pressKey->Suffix()->size());
+						temp.append(*pressKey->Prefix()).append(commandContent).append(*pressKey->Suffix());
+						commandContent = temp;
+						
+						(*iteratedButtonConfig)[true].emplace_back(new MacroEvent(pressKey, new string(commandContent)));
+						(*iteratedButtonConfig)[false].emplace_back(new MacroEvent(releaseKey, commandContent2));
 					}
 					else
 					{
@@ -280,14 +300,20 @@ private:
 				commandContent.erase(0, 13);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
 				(*configSwitcher->configWindowAndLockMap)[commandContent] = new pair<bool, const string *>(false, new string(""));
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send \"Profile : " + commandContent + "\""))->c_str());
+				string *notifyCmd = new string();
+				notifyCmd->reserve(24 + commandContent.size());
+				notifyCmd->assign("notify-send \"Profile : ").append(commandContent).append("\"");
+				configSwitcher->notifySendMap.emplace(commandContent, notifyCmd->c_str());
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				commandContent.erase(0, 7);
 				iteratedConfig = &macroEventsKeyMaps[commandContent];
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send \"Profile : " + commandContent + "\""))->c_str());
+				string *notifyCmd = new string();
+				notifyCmd->reserve(24 + commandContent.size());
+				notifyCmd->assign("notify-send \"Profile : ").append(commandContent).append("\"");
+				configSwitcher->notifySendMap.emplace(commandContent, notifyCmd->c_str());
 			}
 		}
 		in.close();
@@ -368,12 +394,19 @@ private:
 		}
 
 		char buffer[BufferSize];
+		static const string prefix = "echo keydown ";
+		static const string suffix = " | dotoolc";
+		string command;
+		command.reserve(prefix.size() + BufferSize + suffix.size());
 
 		size_t bytesRead = 0;
 		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
 		{
-			string chunk(buffer, bytesRead);
-			(void)!system(("echo keydown " + chunk + " | dotoolc").c_str());
+			command.clear();
+			command.append(prefix);
+			command.append(buffer, bytesRead);
+			command.append(suffix);
+			(void)!system(command.c_str());
 		}
 	}
 	const static void runAndWriteThread(const string *const macroContent)
