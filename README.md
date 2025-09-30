@@ -126,13 +126,13 @@ An example `keyMap.txt` configuration file is the following:
     2 - chmap=defaultConfig
     #etc
     configEnd     
-If you are trying to disable a button's original input (for the top buttons, the numpad is ok), you might want to test with xinput or evtest.     
 Any non existing functionality can be created through the "run" option.       
 #### In depth :
-1) In order to get rid of the original bindings it disables the keypad using xinput as follows:      
+1) The application intercepts button events and prevents their original actions from firing by using the `EVIOCGRAB` ioctl call to gain exclusive control over both the side buttons (keypad) and extra buttons (e.g., forward/backward buttons on top of the mouse).     
+2) For the side buttons (keypad), it disables the keypad device entirely using xinput:      
     $ xinput set-int-prop [id] "Device Enabled" 8 0     
 where [id] is the id number of the keypad returned by $ xinput.     
-2) You may have to also run     
+3) You may have to also run     
     $ xinput set-button-map [id2] 1 2 3 4 5 6 7 11 10 8 9 13 14 15      
 where [id2] is the id number of the pointer device returned by `xinput`   
 In the case of naga 2014 you also have to check which of those two has more than 7 numbers by typing `xinput get-button-map [id2]`.     
