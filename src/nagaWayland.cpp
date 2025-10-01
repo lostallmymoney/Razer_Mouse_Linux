@@ -6,7 +6,7 @@
 #include <iostream>
 #include <dbus/dbus.h>
 #include <vector>
-#include <string.h>
+#include <cstring>
 #include <string_view>
 #include <fstream>
 #include <fcntl.h>
