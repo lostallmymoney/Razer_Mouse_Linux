@@ -72,7 +72,7 @@ public:
 		currentConfigName = scheduledReMapName;
 		currentConfigPtr = &macroEventsKeyMaps[*scheduledReMapName];
 		if (!silent)
-			(void)!(system(notifySendMap[*scheduledReMapName]));
+			(void)system(notifySendMap[*scheduledReMapName]);
 	}
 	void checkForWindowConfig()
 	{
@@ -425,7 +425,7 @@ private:
 	}
 	static void executeNow(const string *const macroContent)
 	{
-		(void)!(system(macroContent->c_str()));
+		(void)system(macroContent->c_str());
 	}
 	static void executeThreadNow(const string *const macroContent)
 	{
@@ -582,7 +582,7 @@ configSwitchScheduler *const NagaDaemon::configSwitcher = new configSwitchSchedu
 void stopD()
 {
 	clog << "Stopping possible naga daemon" << endl;
-	(void)!(system(("/usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
+	(void)system(("/usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
 };
 
 // arguments manage
@@ -593,7 +593,7 @@ int main(const int argc, const char *const argv[])
 		if (strstr(argv[1], "serviceHelper") != NULL)
 		{
 			stopD();
-			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+			(void)system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
 			if (argc > 2 && !string(argv[2]).empty())
 				NagaDaemon(string(argv[2]).c_str()); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else
@@ -603,39 +603,39 @@ int main(const int argc, const char *const argv[])
 		{
 			clog << "Starting naga daemon as service, naga debug to see logs..." << endl;
 			usleep(100000);
-			(void)!(system("sudo systemctl restart naga"));
+			(void)system("sudo systemctl restart naga");
 		}
 		else if (strstr(argv[1], "debug") != NULL)
 		{
 			clog << "Starting naga debug, logs :" << endl;
 			if (argc > 2)
 			{
-				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));
+				(void)system(("journalctl " + string(argv[2]) + " naga").c_str());
 			}
 			else
 			{
-				(void)!(system("journalctl -fu naga"));
+				(void)system("journalctl -fu naga");
 			}
 		}
 		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
 		{
 			clog << "Stopping possible naga daemon" << endl;
-			(void)!(system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
+			(void)system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
 		}
 		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
 		{
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
-			(void)!(system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\""));
+			(void)system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\"");
 		}
 		else if (strstr(argv[1], "edit") != NULL)
 		{
 			if (argc > 2)
 			{
-				(void)!(system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; " + string(argv[2]) + " " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str()));
+				(void)system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; " + string(argv[2]) + " " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
 			}
 			else
 			{
-				(void)!(system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano -m " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str()));
+				(void)system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano -m " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
 			}
 		}
 		else if (strstr(argv[1], "uninstall") != NULL)
@@ -649,7 +649,7 @@ int main(const int argc, const char *const argv[])
 			}
 			else
 			{
-				(void)!(system("/usr/local/bin/Naga_Linux/nagaUninstall.sh"));
+				(void)system("/usr/local/bin/Naga_Linux/nagaUninstall.sh");
 			}
 		}
 	}
