@@ -257,8 +257,6 @@ private:
 	{
 		if (areSideBtnEnabled)
 			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
-		if (areExtraBtnEnabled)
-			ioctl(extra_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over extra buttons.
 		ev11 = &ev1[1];
 		while (1)
 		{

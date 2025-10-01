@@ -126,15 +126,17 @@ An example `keyMap.txt` configuration file is the following:
     2 - chmap=defaultConfig
     #etc
     configEnd     
+If you are trying to disable a button's original input (for the top buttons, the numpad is ok), you might want to test with xinput or evtest.     
 Any non existing functionality can be created through the "run" option.       
 #### In depth :
-1) The application intercepts button events and prevents their original actions from firing by using the `EVIOCGRAB` ioctl call to gain exclusive control over both the side buttons (keypad) and extra buttons (e.g., forward/backward buttons on top of the mouse).     
-2) For the side buttons (keypad), it disables the keypad device entirely using xinput:      
+1) In order to get rid of the original bindings:
+   - For **side buttons (keypad)**: The application uses `EVIOCGRAB` to gain exclusive control, preventing original actions.
+   - For **extra buttons (top buttons like forward/backward)**: The application cannot use `EVIOCGRAB` on the mouse device as it would block all mouse functionality including movement. Instead, it disables the keypad device using xinput:      
     $ xinput set-int-prop [id] "Device Enabled" 8 0     
 where [id] is the id number of the keypad returned by $ xinput.     
-3) You may have to also run     
-    $ xinput set-button-map [id2] 1 2 3 4 5 6 7 11 10 8 9 13 14 15      
-where [id2] is the id number of the pointer device returned by `xinput`   
+2) To intercept the extra buttons (buttons 13-14, typically forward/backward), you need to remap them using xinput:     
+    $ xinput set-button-map [id2] 1 2 3 4 5 6 7 11 10 8 9 13 14 15 275 276      
+where [id2] is the id number of the pointer device returned by `xinput`. This command remaps buttons 8-9 to codes 275-276 which the application can then intercept. The `nagaXinputStart.sh` script attempts to do this automatically.   
 In the case of naga 2014 you also have to check which of those two has more than 7 numbers by typing `xinput get-button-map [id2]`.     
 Although this seems to be unnecessary in some systems (i.e CentOS 7)     
 This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.     
