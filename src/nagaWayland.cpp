@@ -550,7 +550,7 @@ public:
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");		 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
 		bool isThereADevice = false;
-		for (pair<const char *const, const char *const> &device : devices)
+		for (const auto &device : devices)
 		{ // Setup check
 			side_btn_fd = open(device.first, O_RDONLY), extra_btn_fd = open(device.second, O_RDONLY);
 
@@ -661,8 +661,8 @@ int main(const int argc, const char *const argv[])
 			stopD();
 			(void)system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
 			initDotoolPipe();
-			if (argc > 2 && !string(argv[2]).empty())
-				NagaDaemon(string(argv[2]).c_str()); // lets you configure a default profile in /etc/systemd/system/naga.service
+			if (argc > 2 && argv[2][0] != '\0')
+				NagaDaemon(argv[2]); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else
 				NagaDaemon();
 		}
