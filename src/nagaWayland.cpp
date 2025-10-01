@@ -150,7 +150,7 @@ class configSwitchScheduler
 {
 private:
 	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false;
-	const string *currentConfigName = NULL, *scheduledReMapName = NULL, *bckConfName = NULL;
+	const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
 
 public:
 	map<const string, pair<bool, const string *> *> *configWindowAndLockMap = new map<const string, pair<bool, const string *> *>();
@@ -368,7 +368,7 @@ private:
 				FD_SET(side_btn_fd, &readset);
 			if (areExtraBtnEnabled)
 				FD_SET(extra_btn_fd, &readset);
-			if (select(FD_SETSIZE, &readset, NULL, NULL, NULL) == -1)
+			if (select(FD_SETSIZE, &readset, nullptr, nullptr, nullptr) == -1)
 				exit(2);
 
 			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
