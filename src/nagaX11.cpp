@@ -27,15 +27,15 @@ class configKey
 private:
 	const string *const prefix;
 	const bool onKeyPressed;
-	const void (*const internalFunction)(const string *const c);
+	void (*const internalFunction)(const string *const c);
 
 public:
-	const bool IsOnKeyPressed() const { return onKeyPressed; }
-	const void runInternal(const string *const content) const { internalFunction(content); }
-	const string *const Prefix() const { return prefix; }
-	const void (*InternalFunction() const)(const string *const) { return internalFunction; }
+	bool IsOnKeyPressed() const { return onKeyPressed; }
+	void runInternal(const string *const content) const { internalFunction(content); }
+	const string *Prefix() const { return prefix; }
+	void (*InternalFunction() const)(const string *const) { return internalFunction; }
 
-	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	configKey(const bool tonKeyPressed, void (*const tinternalF)(const string *const cc), const string tcontent = "") : prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -305,7 +305,7 @@ private:
 	}
 
 	// Functions that can be given to configKeys
-	const static void writeStringNow(const string *const macroContent)
+	static void writeStringNow(const string *const macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
@@ -324,7 +324,7 @@ private:
 		XCloseDisplay(aKeyFaker->xdpy);
 		delete aKeyFaker;
 	}
-	const static void specialPressNow(const string *const macroContent)
+	static void specialPressNow(const string *const macroContent)
 	{
 		lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
 		FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(NULL));
@@ -333,7 +333,7 @@ private:
 		XFlush(aKeyFaker->xdpy);
 		fakeKeyFollowUps->emplace(keyCodeChar, aKeyFaker);
 	}
-	const static void specialReleaseNow(const string *const macroContent)
+	static void specialReleaseNow(const string *const macroContent)
 	{
 		const char *const targetChar = &(*macroContent)[0];
 		for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
@@ -352,23 +352,23 @@ private:
 		}
 		clog << "No candidate for key release" << endl;
 	}
-	const static void chmapNow(const string *const macroContent)
+	static void chmapNow(const string *const macroContent)
 	{
 		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
 	}
-	const static void unlockChmap(const string *const macroContent)
+	static void unlockChmap(const string *const macroContent)
 	{
 		configSwitcher->scheduleUnlockChmap(macroContent); // unlocks chmap
 	}
 
-	const static void sleepNow(const string *const macroContent)
+	static void sleepNow(const string *const macroContent)
 	{
 		usleep(stoul(*macroContent) * 1000); // microseconds make me dizzy in keymap.txt
 	}
-	const static void runAndWrite(const string *const macroContent)
+	static void runAndWrite(const string *const macroContent)
 	{
 		string result;
-		unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
+		unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent->c_str(), "r"), &pclose);
 		if (!pipe)
 		{
 			throw runtime_error("runAndWrite Failed !");
@@ -381,15 +381,15 @@ private:
 			writeStringNow(&chunk);
 		}
 	}
-	const static void runAndWriteThread(const string *const macroContent)
+	static void runAndWriteThread(const string *const macroContent)
 	{
 		thread(runAndWrite, macroContent).detach();
 	}
-	const static void executeNow(const string *const macroContent)
+	static void executeNow(const string *const macroContent)
 	{
 		(void)!(system(macroContent->c_str()));
 	}
-	const static void executeThreadNow(const string *const macroContent)
+	static void executeThreadNow(const string *const macroContent)
 	{
 		thread(executeNow, macroContent).detach();
 	}
@@ -403,7 +403,7 @@ private:
 		}
 	}
 
-	void emplaceConfigKey(const string &key, bool onKeyPressed, auto functionPtr, const string &prefix = "")
+	void emplaceConfigKey(const string &key, bool onKeyPressed, void (*functionPtr)(const string *const), const string &prefix = "")
 	{
 		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, prefix));
 	}

@@ -27,7 +27,7 @@ command -v g++ >/dev/null 2>&1 || {
 clear -x
 
 printf "Compiling code...\n"
-g++ ./src/nagaX11.cpp -o ./src/nagaX11 -pthread -Ofast --std=c++2b -lX11 -lXtst -lXmu
+g++ ./src/nagaX11.cpp -o ./src/nagaX11 -pthread -Ofast --std=c++23 -lX11 -lXtst -lXmu
 
 if [ ! -f ./src/nagaX11 ]; then
     printf "\033[0;31mError at compile! Ensure you have g++ installed. !!!Aborting!!!\033[0m\n"
@@ -39,5 +39,5 @@ sudo chmod 755 /usr/local/bin/nagaX11
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
-sudo cp -r -n -v "keyMap.txt" "$_dir"
+sudo cp -r --update=none -v "keyMap.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"/keyMap.txt

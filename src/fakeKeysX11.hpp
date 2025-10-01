@@ -88,18 +88,18 @@ static int utf8_to_ucs4(const unsigned char *src_orig, unsigned int *dst, int le
 	return src - src_orig;
 }
 
+
 FakeKey *fakekey_init(Display *xdpy)
 {
-	FakeKey *fk = NULL;
+	FakeKey *fk = nullptr;
 	int event, error, major, minor, mod_index, mod_key;
 	XModifierKeymap *modifiers;
 	KeyCode *kp;
 
 	if (xdpy == NULL || !XTestQueryExtension(xdpy, &event, &error, &major, &minor))
-		return NULL;
+		return nullptr;
 
-	fk = (FakeKey *)malloc(sizeof(FakeKey));
-	memset(fk, 0, sizeof(FakeKey));
+	fk = new FakeKey{};
 
 	fk->xdpy = xdpy;
 

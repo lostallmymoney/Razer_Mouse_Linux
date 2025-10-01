@@ -7,6 +7,7 @@
 #include <dbus/dbus.h>
 #include <vector>
 #include <string.h>
+#include <string_view>
 #include <fstream>
 #include <fcntl.h>
 #include <unistd.h>
@@ -15,18 +16,68 @@
 #include <iomanip>
 #include <mutex>
 #include <map>
+#include <memory>
 #include <sstream>
+#include <utility>
+#include <cstdio>
+#include <cstdlib>
+#include <stdexcept>
 using namespace std;
 
 static mutex configSwitcherMutex;
 const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";
+
+static mutex dotoolPipeMutex;
+static FILE *dotoolPipe = nullptr;
+
+static void writeDotoolCommand(string_view command)
+{
+	lock_guard<mutex> lock(dotoolPipeMutex);
+	if (fwrite(command.data(), 1, command.size(), dotoolPipe) != command.size() ||
+		fputc('\n', dotoolPipe) == EOF)
+	{
+		throw runtime_error("runAndWrite Failed to write command to dotoolc");
+	}
+
+	if (fflush(dotoolPipe) == EOF)
+	{
+		throw runtime_error("runAndWrite Failed to flush dotoolc");
+	}
+}
+
+static void closeDotoolPipe()
+{
+	lock_guard<mutex> lock(dotoolPipeMutex);
+	if (dotoolPipe)
+	{
+		pclose(dotoolPipe);
+		dotoolPipe = nullptr;
+	}
+}
+
+static void initDotoolPipe()
+{
+	lock_guard<mutex> lock(dotoolPipeMutex);
+	if (dotoolPipe)
+	{
+		return;
+	}
+
+	dotoolPipe = popen("dotoolc", "w");
+	if (!dotoolPipe)
+	{
+		throw runtime_error("runAndWrite Failed to start dotoolc");
+	}
+	setvbuf(dotoolPipe, nullptr, _IOLBF, 0);
+	atexit(closeDotoolPipe);
+}
 
 const char *DB_INTERFACE = "org.gnome.Shell.Extensions.WindowsExt";
 const char *DB_DESTINATION = "org.gnome.Shell";
 const char *DB_PATH = "/org/gnome/Shell/Extensions/WindowsExt";
 const char *DB_METHOD = "FocusClass";
 
-static const string getTitle()
+static string getTitle()
 {
 	DBusError error;
 	dbus_error_init(&error);
@@ -73,16 +124,16 @@ class configKey
 private:
 	const string *const prefix, *const suffix;
 	const bool onKeyPressed;
-	const void (*const internalFunction)(const string *const c);
+	void (*const internalFunction)(const string *const c);
 
 public:
-	const bool IsOnKeyPressed() const { return onKeyPressed; }
-	const void runInternal(const string *const content) const { internalFunction(content); }
-	const string *const Prefix() const { return prefix; }
-	const string *const Suffix() const { return suffix; }
-	const void (*InternalFunction() const)(const string *const) { return internalFunction; }
+	bool IsOnKeyPressed() const { return onKeyPressed; }
+	void runInternal(const string *const content) const { internalFunction(content); }
+	const string *Prefix() const { return prefix; }
+	const string *Suffix() const { return suffix; }
+	void (*InternalFunction() const)(const string *const) { return internalFunction; }
 
-	configKey(const bool tonKeyPressed, const void (*const tinternalF)(const string *const cc), const string tcontent = "", const string tsuffix = "") : suffix(new string(tsuffix)), prefix(new string(tcontent)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	configKey(const bool tonKeyPressed, void (*const tinternalF)(const string *const cc), const string tcontent = "", const string tsuffix = "") : prefix(new string(tcontent)), suffix(new string(tsuffix)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -191,6 +242,7 @@ class NagaDaemon
 {
 private:
 	static constexpr size_t BufferSize = 1024;
+	static constexpr size_t DotoolCommandLimit = 65536;
 	map<string, configKey *const> configKeysMap;
 
 	string currentConfigName;
@@ -349,43 +401,80 @@ private:
 
 	// Functions that can be given to configKeys
 
-	const static void chmapNow(const string *const macroContent)
+	static void chmapNow(const string *const macroContent)
 	{
 		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
 	}
 
-	const static void sleepNow(const string *const macroContent)
+	static void sleepNow(const string *const macroContent)
 	{
 		usleep(stoul(*macroContent) * 1000); // microseconds make me dizzy in keymap.txt
 	}
-	const static void runAndWrite(const string *const macroContent)
+	static void dotoolKeydown(const string *const macroContent)
 	{
-		string result;
-		unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
+		writeDotoolCommand("keydown " + *macroContent);
+	}
+
+	static void dotoolKeyup(const string *const macroContent)
+	{
+		writeDotoolCommand("keyup " + *macroContent);
+	}
+
+	static void dotoolKey(const string *const macroContent)
+	{
+		writeDotoolCommand("key " + *macroContent);
+	}
+
+	static void dotoolType(const string *const macroContent)
+	{
+		writeDotoolCommand("type " + *macroContent);
+	}
+	static void runAndWrite(const string *const macroContent)
+	{
+		unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent->c_str(), "r"), &pclose);
 		if (!pipe)
 		{
-			throw runtime_error("runAndWrite Failed !");
+			throw runtime_error("runAndWrite execution Failed !");
 		}
 
-		char buffer[BufferSize];
+		string currentLine;
 
-		size_t bytesRead = 0;
-		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
+		int ch = 0;
+		while ((ch = fgetc(pipe.get())) != EOF)
 		{
-			string chunk(buffer, bytesRead);
-			(void)!system(("echo keydown " + chunk + " | dotoolc").c_str());
+			if (ch == '\n')
+			{
+				writeDotoolCommand("type " + currentLine);
+				writeDotoolCommand("key enter");
+				writeDotoolCommand("key home");
+				currentLine.clear();
+			}
+			else
+			{
+				if (currentLine.size() == DotoolCommandLimit)
+				{
+					writeDotoolCommand("type " + currentLine);
+					currentLine.clear();
+				}
+				currentLine.push_back(static_cast<char>(ch));
+			}
+		}
+
+		if (!currentLine.empty())
+		{
+			writeDotoolCommand("type " + currentLine);
 		}
 	}
-	const static void runAndWriteThread(const string *const macroContent)
+	static void runAndWriteThread(const string *const macroContent)
 	{
 		thread(runAndWrite, macroContent).detach();
 	}
 
-	const static void executeNow(const string *const macroContent)
+	static void executeNow(const string *const macroContent)
 	{
 		(void)!(system(macroContent->c_str()));
 	}
-	const static void executeThreadNow(const string *const macroContent)
+	static void executeThreadNow(const string *const macroContent)
 	{
 		thread(executeNow, macroContent).detach();
 		clog << "EXECUTED : " << macroContent->c_str() << endl;
@@ -400,7 +489,7 @@ private:
 		}
 	}
 
-	void emplaceConfigKey(const string &key, bool onKeyPressed, auto functionPtr, const string &prefix = "", const string &suffix = "")
+	void emplaceConfigKey(const string &key, bool onKeyPressed, void (*functionPtr)(const string *const), const string &prefix = "", const string &suffix = "")
 	{
 		configKeysMap.emplace(key, new configKey(onKeyPressed, functionPtr, prefix, suffix));
 	}
@@ -422,8 +511,8 @@ public:
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");	 // NAGA Left Handed THANKS TO https://github.com/Izaya-San
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse");		 // NAGA PRO WIRELESS
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-event-mouse");					//NAGA V2 THANKS TO https://github.com/ibarrick
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse");			 // NAGA X THANKS TO https://github.com/bgrabow
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-event-mouse");							 // NAGA V2 THANKS TO https://github.com/ibarrick
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse");										 // NAGA X THANKS TO https://github.com/bgrabow
 
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
@@ -482,17 +571,17 @@ public:
 		emplaceConfigKey("launch", ONKEYRELEASED, executeThreadNow, "gtk-launch ");
 		emplaceConfigKey("launch2", ONKEYRELEASED, executeNow, "gtk-launch ");
 
-		emplaceConfigKey("keypressonpress", ONKEYPRESSED, executeThreadNow, "echo keydown ", " | dotoolc");
-		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, executeThreadNow, "echo keydown ", " | dotoolc");
+		emplaceConfigKey("keypressonpress", ONKEYPRESSED, dotoolKeydown);
+		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, dotoolKeydown);
 
-		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, executeThreadNow, "echo keyup ", " | dotoolc");
-		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, executeThreadNow, "echo keyup ", " | dotoolc");
+		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, dotoolKeyup);
+		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, dotoolKeyup);
 
-		emplaceConfigKey("keyclick", ONKEYPRESSED, executeThreadNow, "echo key ", " | dotoolc");
-		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, executeThreadNow, "echo key ", " | dotoolc");
+		emplaceConfigKey("keyclick", ONKEYPRESSED, dotoolKey);
+		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, dotoolKey);
 
-		emplaceConfigKey("string", ONKEYPRESSED, executeThreadNow, "echo type ", " | dotoolc");
-		emplaceConfigKey("stringrelease", ONKEYRELEASED, executeThreadNow, "echo type ", " | dotoolc");
+		emplaceConfigKey("string", ONKEYPRESSED, dotoolType);
+		emplaceConfigKey("stringrelease", ONKEYRELEASED, dotoolType);
 
 		initConf();
 
@@ -518,6 +607,7 @@ int main(const int argc, const char *const argv[])
 		{
 			stopD();
 			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
+			initDotoolPipe();
 			if (argc > 2 && !string(argv[2]).empty())
 				NagaDaemon(string(argv[2]).c_str()); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else

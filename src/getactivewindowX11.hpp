@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <locale.h>
+#include <string>
 
 #include <X11/Xlib.h>        // `apt-get install libx11-dev`
 #include <X11/Xmu/WinUtil.h> // `apt-get install libxmu-dev`
@@ -18,7 +19,7 @@ Display *open_display()
     return d;
 }
 
-int handle_error(Display *display, XErrorEvent *error)
+int handle_error([[maybe_unused]] Display *display, [[maybe_unused]] XErrorEvent *error)
 {
     printf("ERROR: X11 error\n");
     xerror = True;
@@ -84,32 +85,48 @@ Window get_named_window(Display *d, Window start)
     return w;
 }
 
-char *print_window_class(Display *d, Window w)
+std::string print_window_class(Display *d, Window w)
 {
     Status s;
     XClassHint *clas;
 
     clas = XAllocClassHint(); // see man
+    if (!clas)
+    {
+        printf("ERROR: XAllocClassHint\n");
+        XCloseDisplay(d);
+        return "E";
+    }
+
     if (xerror)
     {
         printf("ERROR: XAllocClassHint\n");
-        return new char[1]('E');
+        XFree(clas);
+        XCloseDisplay(d);
+        return "E";
     }
 
     s = XGetClassHint(d, w, clas); // see man
-    XCloseDisplay(d);
-    if (xerror || s)
+    std::string result = "E";
+    if (!xerror && s && clas->res_class)
     {
-        return clas->res_class;
+        result = clas->res_class;
     }
     else
     {
         printf("ERROR: XGetClassHint\n");
-        return new char[1]('E');
     }
+
+    if (clas->res_name)
+        XFree(clas->res_name);
+    if (clas->res_class)
+        XFree(clas->res_class);
+    XFree(clas);
+    XCloseDisplay(d);
+    return result;
 }
 
-char *getActiveWindow()
+std::string getActiveWindow()
 {
     Display *d;
     Window w;

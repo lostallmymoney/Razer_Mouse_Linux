@@ -14,7 +14,7 @@ command -v g++ >/dev/null 2>&1 || {
 clear -x
 
 printf "Compiling code...\n"
-g++ -I/usr/lib64/dbus-1.0/include -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -Ofast --std=c++2b -ldbus-1
+g++ -I/usr/lib64/dbus-1.0/include -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -Ofast --std=c++23 -ldbus-1
 
 if [ ! -f ./src/nagaWayland ]; then
 
@@ -28,9 +28,9 @@ sudo chmod 755 /usr/local/bin/nagaWayland
 printf "Installing dotool :\n"
 
 sleep 0.1
-wget https://git.sr.ht/~geb/dotool/archive/b5812c001daeeaff1f259031661e47f3a612220c.tar.gz -O dotool.tar.gz
+wget https://git.sr.ht/~geb/dotool/archive/1fea2c210fcb25522c4ff5c900ef7522c197f5ed.tar.gz -O dotool.tar.gz
 tar -xf dotool.tar.gz >/dev/null
-mv -fu dotool-b5812c001daeeaff1f259031661e47f3a612220c dotool >/dev/null
+mv -fu dotool-1fea2c210fcb25522c4ff5c900ef7522c197f5ed dotool >/dev/null
 sleep 0.1
 cd dotool || exit 1
 ./build.sh
@@ -48,7 +48,7 @@ gnome-extensions install ./src/window-calls-extended@hseliger.eu.shell-extension
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
-sudo cp -r -n -v "keyMapWayland.txt" "$_dir"
+sudo cp -r --update=none -v "keyMapWayland.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 
 sudo groupadd -f razerInputGroup
