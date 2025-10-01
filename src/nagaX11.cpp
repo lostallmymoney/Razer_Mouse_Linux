@@ -11,11 +11,17 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/input.h>
+#include <linux/uinput.h>
+#include <sys/ioctl.h>
 #include <thread>
 #include <iomanip>
 #include <mutex>
 #include <map>
+#include <memory>
 #include <sstream>
+#include <cerrno>
+#include <cstring>
+#include "extraButtonCapture.hpp"
 using namespace std;
 
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
@@ -148,6 +154,8 @@ private:
 	const int size = sizeof(ev1);
 	vector<pair<const char *const, const char *const>> devices;
 	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
+	unique_ptr<UInputForwarder> extraForwarder;
+	bool extraDeviceGrabbed = false;
 
 	void initConf()
 	{
@@ -251,14 +259,10 @@ private:
 	}
 
 	int side_btn_fd, extra_btn_fd;
-	input_event *ev11;
 	fd_set readset;
 
 	void run()
 	{
-		if (areSideBtnEnabled)
-			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
-		ev11 = &ev1[1];
 		while (1)
 		{
 			configSwitcher->remapRoutine();
@@ -273,31 +277,65 @@ private:
 
 			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
 			{
-				if (read(side_btn_fd, ev1, size) == -1)
+				ssize_t bytesRead = read(side_btn_fd, ev1, size);
+				if (bytesRead == -1)
 					exit(2);
-				if (ev11->type == EV_KEY)
-				{ // Key event (press or release)
-					switch (ev11->code)
+				if (bytesRead % sizeof(input_event) != 0)
+				{
+					continue;
+				}
+				size_t eventCount = static_cast<size_t>(bytesRead) / sizeof(input_event);
+				for (size_t i = 0; i < eventCount; ++i)
+				{
+					const input_event &event = ev1[i];
+					if (event.type != EV_KEY)
 					{
-					case 2 ... 13:
-						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code][ev11->value == 1]).detach(); // real key number = ev11->code - 1
-						break;
+						continue;
 					}
+					if (event.code < 2 || event.code > 13)
+					{
+						continue;
+					}
+					if (event.value != 0 && event.value != 1)
+					{
+						continue;
+					}
+
+					configSwitcher->checkForWindowConfig();
+					thread(runActions, &(*configSwitcher->currentConfigPtr)[event.code][event.value == 1]).detach();
 				}
 			}
 			if (areExtraBtnEnabled && FD_ISSET(extra_btn_fd, &readset)) // Extra buttons
 			{
-				if (read(extra_btn_fd, ev1, size) == -1)
+				ssize_t bytesRead = read(extra_btn_fd, ev1, size);
+				if (bytesRead == -1)
 					exit(2);
-				if (ev1[0].value != ' ' && ev11->type == EV_KEY)
-				{ // Only extra buttons
-					switch (ev11->code)
+				if (bytesRead % sizeof(input_event) != 0)
+				{
+					continue;
+				}
+				size_t eventCount = static_cast<size_t>(bytesRead) / sizeof(input_event);
+				for (size_t i = 0; i < eventCount; ++i)
+				{
+					const input_event &event = ev1[i];
+					if (event.type == EV_KEY)
 					{
-					case 275 ... 276:
-						configSwitcher->checkForWindowConfig();
-						thread(runActions, &(*configSwitcher->currentConfigPtr)[ev11->code - 261][ev11->value == 1]).detach(); // real key number = ev11->code - OFFSET (#262)
-						break;
+						if (event.code == 275 || event.code == 276)
+						{
+							configSwitcher->checkForWindowConfig();
+							thread(runActions, &(*configSwitcher->currentConfigPtr)[event.code - 261][event.value == 1]).detach();
+							continue;
+						}
+
+						if (extraDeviceGrabbed && extraForwarder)
+						{
+							extraForwarder->forward(event);
+							continue;
+						}
+					}
+					else if (extraDeviceGrabbed && extraForwarder)
+					{
+						extraForwarder->forward(event);
 					}
 				}
 			}
@@ -426,9 +464,9 @@ public:
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");	 // NAGA Left Handed THANKS TO https://github.com/Izaya-San
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse");		 // NAGA PRO WIRELESS
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-event-mouse");					//NAGA V2 THANKS TO https://github.com/ibarrick
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse");			 // NAGA X THANKS TO https://github.com/bgrabow
-		
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-event-mouse");							 // NAGA V2 THANKS TO https://github.com/ibarrick
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse");										 // NAGA X THANKS TO https://github.com/bgrabow
+
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");			 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
 		bool isThereADevice = false;
@@ -454,6 +492,9 @@ public:
 						 << " and " << device.second << endl;
 				}
 				isThereADevice = true;
+
+				if (areSideBtnEnabled)
+					ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
 				break;
 			}
 		}
@@ -462,6 +503,26 @@ public:
 		{
 			cerr << "No naga devices found or you don't have permission to access them." << endl;
 			exit(1);
+		}
+
+		if (areExtraBtnEnabled)
+		{
+			extraForwarder.reset(new UInputForwarder());
+			if (!extraForwarder->init(extra_btn_fd))
+			{
+				extraForwarder.reset();
+				clog << "[naga-x11] uinput forwarding disabled; continuing without exclusive extra buttons." << endl;
+			}
+			else if (ioctl(extra_btn_fd, EVIOCGRAB, 1) == -1)
+			{
+				clog << "[naga-x11] failed to grab extra button device: " << strerror(errno) << endl;
+				extraForwarder.reset();
+			}
+			else
+			{
+				extraDeviceGrabbed = true;
+				clog << "[naga-x11] extra buttons grabbed; pointer events forwarded via uinput." << endl;
+			}
 		}
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.

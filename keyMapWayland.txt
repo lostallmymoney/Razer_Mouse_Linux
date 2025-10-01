@@ -11,6 +11,7 @@ config=defaultConfig
 10 - keyClick=previoussong
 11 - key=playpause
 12 - keyClick=nextsong
+13 - key=playpause
 configEnd
 
 config=defaultConfig2
