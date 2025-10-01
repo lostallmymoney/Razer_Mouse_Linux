@@ -126,17 +126,21 @@ An example `keyMap.txt` configuration file is the following:
     2 - chmap=defaultConfig
     #etc
     configEnd     
-If you are trying to disable a button's original input (for the top buttons, the numpad is ok), you might want to test with xinput or evtest.     
+If you are trying to disable a button's original input (for the top buttons, the numpad is ok), you might want to test with xinput (X11) or evtest.     
 Any non existing functionality can be created through the "run" option.       
 #### In depth :
 1) In order to get rid of the original bindings:
-   - For **side buttons (keypad)**: The application uses `EVIOCGRAB` to gain exclusive control, preventing original actions.
-   - For **extra buttons (top buttons like forward/backward)**: The application cannot use `EVIOCGRAB` on the mouse device as it would block all mouse functionality including movement. Instead, it disables the keypad device using xinput:      
+   - For **side buttons (keypad)**: The application uses `EVIOCGRAB` to gain exclusive control, preventing original actions in both X11 and Wayland.
+   - For **extra buttons (top buttons like forward/backward)**: The application cannot use `EVIOCGRAB` on the mouse device as it would block all mouse functionality including movement. The behavior differs between display servers:
+     - **X11**: Uses xinput to disable the keypad device and remap buttons:      
     $ xinput set-int-prop [id] "Device Enabled" 8 0     
 where [id] is the id number of the keypad returned by $ xinput.     
-2) To intercept the extra buttons (buttons 13-14, typically forward/backward), you need to remap them using xinput:     
+     - **Wayland**: The application can detect and respond to extra button presses, but **cannot prevent the original actions** (e.g., browser back/forward navigation) from occurring. This is a limitation of the Wayland architecture where input grabbing of the mouse device would block all mouse functionality. Both the custom macro and the original action will trigger.
+2) To intercept the extra buttons (buttons 13-14, typically forward/backward):     
+   - **X11**: You need to remap them using xinput to prevent original actions:     
     $ xinput set-button-map [id2] 1 2 3 4 5 6 7 11 10 8 9 13 14 15 275 276      
 where [id2] is the id number of the pointer device returned by `xinput`. This command remaps buttons 8-9 to codes 275-276 which the application can then intercept. The `nagaXinputStart.sh` script attempts to do this automatically.   
+   - **Wayland**: The extra buttons report as codes 275-276 and are detected by the application, but original actions cannot be suppressed without using EVIOCGRAB (which would block all mouse input).
 In the case of naga 2014 you also have to check which of those two has more than 7 numbers by typing `xinput get-button-map [id2]`.     
 Although this seems to be unnecessary in some systems (i.e CentOS 7)     
 This tool adds the files `$HOME/.naga/`, `/etc/udev/rules.d/80-naga.rules`, `/usr/local/bin/(naga && nagaXinputStart.sh)`, and `/etc/systemd/system/naga.service`.     
