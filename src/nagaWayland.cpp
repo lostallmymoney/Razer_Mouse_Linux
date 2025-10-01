@@ -29,7 +29,7 @@
 using namespace std;
 
 static mutex configSwitcherMutex;
-const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";
+static const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";
 
 static mutex dotoolPipeMutex;
 static FILE *dotoolPipe = nullptr;
@@ -76,10 +76,10 @@ static void initDotoolPipe()
 	atexit(closeDotoolPipe);
 }
 
-const char *DB_INTERFACE = "org.gnome.Shell.Extensions.WindowsExt";
-const char *DB_DESTINATION = "org.gnome.Shell";
-const char *DB_PATH = "/org/gnome/Shell/Extensions/WindowsExt";
-const char *DB_METHOD = "FocusClass";
+constexpr const char *DB_INTERFACE = "org.gnome.Shell.Extensions.WindowsExt";
+constexpr const char *DB_DESTINATION = "org.gnome.Shell";
+constexpr const char *DB_PATH = "/org/gnome/Shell/Extensions/WindowsExt";
+constexpr const char *DB_METHOD = "FocusClass";
 
 static string getTitle()
 {
