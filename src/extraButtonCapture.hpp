@@ -16,6 +16,11 @@ private:
 	int fd = -1;
 	mutable bool warned = false;
 
+	static constexpr size_t bitsToLongs(size_t bits)
+	{
+		return (bits + (sizeof(unsigned long) * 8) - 1) / (sizeof(unsigned long) * 8);
+	}
+
 	bool fail(const char *step)
 	{
 		std::clog << "[naga] uinput " << step << " failed: " << std::strerror(errno) << std::endl;
@@ -49,24 +54,105 @@ public:
 
 		warned = false;
 
-		if (ioctl(fd, UI_SET_EVBIT, EV_KEY) == -1 || ioctl(fd, UI_SET_EVBIT, EV_REL) == -1 || ioctl(fd, UI_SET_EVBIT, EV_SYN) == -1)
-		{
-			return fail("UI_SET_EVBIT");
-		}
+		constexpr size_t bitsPerLong = sizeof(unsigned long) * 8;
+		const size_t evBitsLen = bitsToLongs(EV_MAX + 1);
+		unsigned long evBits[evBitsLen];
+		std::memset(evBits, 0, sizeof(evBits));
 
-		for (int code : {BTN_LEFT, BTN_RIGHT, BTN_MIDDLE, BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK, BTN_TASK})
+		auto hasBit = [bitsPerLong](const unsigned long *bits, int bit)
 		{
-			if (ioctl(fd, UI_SET_KEYBIT, code) == -1)
+			return bits[bit / bitsPerLong] & (1UL << (bit % bitsPerLong));
+		};
+
+		bool mirroredCapabilities = ioctl(sourceFd, EVIOCGBIT(0, sizeof(evBits)), evBits) != -1;
+		if (mirroredCapabilities)
+		{
+			for (int type = 0; type <= EV_MAX; ++type)
 			{
-				return fail("UI_SET_KEYBIT");
+				if (!hasBit(evBits, type))
+				{
+					continue;
+				}
+				if (ioctl(fd, UI_SET_EVBIT, type) == -1)
+				{
+					return fail("UI_SET_EVBIT");
+				}
+
+				if (type == EV_KEY)
+				{
+					const size_t keyBitsLen = bitsToLongs(KEY_MAX + 1);
+					unsigned long keyBits[keyBitsLen];
+					std::memset(keyBits, 0, sizeof(keyBits));
+					if (ioctl(sourceFd, EVIOCGBIT(EV_KEY, sizeof(keyBits)), keyBits) != -1)
+					{
+						for (int code = 0; code <= KEY_MAX; ++code)
+						{
+							if (hasBit(keyBits, code) && ioctl(fd, UI_SET_KEYBIT, code) == -1)
+							{
+								return fail("UI_SET_KEYBIT");
+							}
+						}
+					}
+				}
+				else if (type == EV_REL)
+				{
+					const size_t relBitsLen = bitsToLongs(REL_MAX + 1);
+					unsigned long relBits[relBitsLen];
+					std::memset(relBits, 0, sizeof(relBits));
+					if (ioctl(sourceFd, EVIOCGBIT(EV_REL, sizeof(relBits)), relBits) != -1)
+					{
+						for (int code = 0; code <= REL_MAX; ++code)
+						{
+							if (hasBit(relBits, code) && ioctl(fd, UI_SET_RELBIT, code) == -1)
+							{
+								return fail("UI_SET_RELBIT");
+							}
+						}
+					}
+				}
+				else if (type == EV_MSC)
+				{
+					const size_t mscBitsLen = bitsToLongs(MSC_MAX + 1);
+					unsigned long mscBits[mscBitsLen];
+					std::memset(mscBits, 0, sizeof(mscBits));
+					if (ioctl(sourceFd, EVIOCGBIT(EV_MSC, sizeof(mscBits)), mscBits) != -1)
+					{
+						for (int code = 0; code <= MSC_MAX; ++code)
+						{
+							if (hasBit(mscBits, code) && ioctl(fd, UI_SET_MSCBIT, code) == -1)
+							{
+								return fail("UI_SET_MSCBIT");
+							}
+						}
+					}
+				}
 			}
 		}
-
-		for (int code : {REL_X, REL_Y, REL_WHEEL, REL_HWHEEL})
+		else
 		{
-			if (ioctl(fd, UI_SET_RELBIT, code) == -1)
+			if (ioctl(fd, UI_SET_EVBIT, EV_KEY) == -1 || ioctl(fd, UI_SET_EVBIT, EV_REL) == -1 || ioctl(fd, UI_SET_EVBIT, EV_SYN) == -1)
 			{
-				return fail("UI_SET_RELBIT");
+				return fail("UI_SET_EVBIT");
+			}
+			if (ioctl(fd, UI_SET_EVBIT, EV_MSC) == 0 && ioctl(fd, UI_SET_MSCBIT, MSC_SCAN) == -1)
+			{
+				return fail("UI_SET_MSCBIT");
+			}
+
+			for (int code : {BTN_LEFT, BTN_RIGHT, BTN_MIDDLE, BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK, BTN_TASK})
+			{
+				if (ioctl(fd, UI_SET_KEYBIT, code) == -1)
+				{
+					return fail("UI_SET_KEYBIT");
+				}
+			}
+
+			for (int code : {REL_X, REL_Y, REL_WHEEL, REL_HWHEEL})
+			{
+				if (ioctl(fd, UI_SET_RELBIT, code) == -1)
+				{
+					return fail("UI_SET_RELBIT");
+				}
 			}
 		}
 
