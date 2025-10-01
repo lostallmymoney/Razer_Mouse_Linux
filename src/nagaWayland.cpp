@@ -550,7 +550,7 @@ public:
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");		 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
 		bool isThereADevice = false;
-		for (const auto &device : devices)
+		for (pair<const char *const, const char *const> &device : devices)
 		{ // Setup check
 			side_btn_fd = open(device.first, O_RDONLY), extra_btn_fd = open(device.second, O_RDONLY);
 
