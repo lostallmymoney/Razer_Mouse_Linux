@@ -120,7 +120,6 @@ static string getTitle()
 
 	dbus_message_unref(message);
 	dbus_message_unref(reply);
-	clog << "WindowNameLog : " << result << endl;
 	return result;
 }
 
@@ -161,6 +160,7 @@ public:
 	map<string, const char *> notifySendMap;
 	void loadConf(bool silent = false)
 	{
+		clog << "LOADING profile : " << *scheduledReMapName << endl;
 		if (!macroEventsKeyMaps.contains(*scheduledReMapName))
 		{
 			clog << "Undefined profile : " << *scheduledReMapName << endl;
@@ -178,7 +178,7 @@ public:
 		if (currAppClass != lastLoggedWindow)
 		{
 			clog << "WindowNameLog : " << currAppClass << endl;
-			lastLoggedWindow = currAppClass;
+			lastLoggedWindow.assign(currAppClass);
 		}
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (!winConfigActive || currAppClass != currentWindowConfigPtr->first || forceRecheck)
@@ -518,6 +518,11 @@ private:
 	{
 		thread(executeNow, macroContent).detach();
 	}
+
+	static void unlockChmap(const string *const macroContent)
+	{
+		configSwitcher->scheduleUnlockChmap(macroContent);
+	}
 	// end of configKeys functions
 
 	static void runActions(vector<MacroEvent *> *const relativeMacroEventsPointer)
@@ -626,6 +631,9 @@ public:
 
 		emplaceConfigKey("runrelease", ONKEYRELEASED, executeThreadNow);
 		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
+
+		emplaceConfigKey("unlockchmap", ONKEYPRESSED, unlockChmap);
+		emplaceConfigKey("unlockchmaprelease", ONKEYRELEASED, unlockChmap);
 
 		emplaceConfigKey("launch", ONKEYRELEASED, executeThreadNow, "gtk-launch ");
 		emplaceConfigKey("launch2", ONKEYRELEASED, executeNow, "gtk-launch ");

@@ -11,20 +11,26 @@ config=defaultConfig
 10 - keyClick=previoussong
 11 - key=playpause
 12 - keyClick=nextsong
-13 - key=playpause
+13 - key=forward
+14 - key=back
 configEnd
 
 config=defaultConfig2
 1 - key=mute
+2 - key=2
 3 - run=x-terminal-emulator
 3 - sleep=1000
 3 - run=x-terminal-emulator
+4 - key=4
+5 - key=5
+6 - key=6
 7 - key=volumedown
 8 - key=playpause
 9 - key=volumeup
 10 - keyClick=previoussong
 11 - chmap=defaultConfig
 12 - keyClick=nextsong
+13 - key=playpause
 configEnd
 
 configWindow=Spotify
@@ -45,7 +51,20 @@ configWindow=org.gnome.Terminal
 4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
 5 - run=x-terminal-emulator
 7 - key=volumedown
-8 - key=playpause
+8 - chmap=Gnome-terminal-Chmap
+9 - key=volumeup
+10 - keyClick=previoussong
+11 - key=playpause
+12 - keyClick=nextsong
+configEnd
+
+config=Gnome-terminal-Chmap
+1 - key=mute
+3 - string=gnome@terminal.com Alternative
+4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
+5 - run=x-terminal-emulator
+7 - key=volumedown
+8 - unlockChmap=org.gnome.Terminal
 9 - key=volumeup
 10 - keyClick=previoussong
 11 - key=playpause
