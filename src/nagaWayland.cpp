@@ -119,7 +119,6 @@ static string getTitle()
 
 	dbus_message_unref(message);
 	dbus_message_unref(reply);
-	clog << "WindowNameLog : " << result << endl;
 	return result;
 }
 
@@ -151,6 +150,7 @@ class configSwitchScheduler
 private:
 	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false;
 	const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
+	string lastLoggedWindow;
 
 public:
 	map<const string, pair<bool, const string *> *> *configWindowAndLockMap = new map<const string, pair<bool, const string *> *>();
@@ -173,7 +173,11 @@ public:
 	void checkForWindowConfig()
 	{
 		const string currAppClass(getTitle());
-		clog << "WindowNameLog : " << currAppClass << endl;
+		if (currAppClass != lastLoggedWindow)
+		{
+			clog << "WindowNameLog : " << currAppClass << endl;
+			lastLoggedWindow = currAppClass;
+		}
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (!winConfigActive || currAppClass != currentWindowConfigPtr->first || forceRecheck)
 		{
