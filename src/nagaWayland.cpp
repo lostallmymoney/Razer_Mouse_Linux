@@ -666,14 +666,10 @@ int main(const int argc, const char *const argv[])
 			stopD();
 			(void)system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
 			initDotoolPipe();
-			// Check for debug flag in arguments
-			for (int i = 2; i < argc; ++i)
+			// Check for debug flag as last argument
+			if (argc > 2 && strstr(argv[argc - 1], "debug"))
 			{
-				if (strstr(argv[i], "debug"))
-				{
-					enableWindowLogging = true;
-					break;
-				}
+				enableWindowLogging = true;
 			}
 			if (argc > 2 && argv[2][0] != '\0' && !strstr(argv[2], "debug"))
 				NagaDaemon(argv[2]); // lets you configure a default profile in /etc/systemd/system/naga.service
