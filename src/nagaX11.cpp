@@ -27,7 +27,7 @@ using namespace std;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
-static const bool enableWindowLogging = getenv("NAGA_DEBUG") != nullptr;
+static bool enableWindowLogging = getenv("NAGA_DEBUG") != nullptr;
 
 class configKey
 {
@@ -600,7 +600,16 @@ int main(const int argc, const char *const argv[])
 		{
 			stopD();
 			(void)system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
-			if (argc > 2 && argv[2][0] != '\0')
+			// Check for debug flag in arguments
+			for (int i = 2; i < argc; ++i)
+			{
+				if (strstr(argv[i], "debug"))
+				{
+					enableWindowLogging = true;
+					break;
+				}
+			}
+			if (argc > 2 && argv[2][0] != '\0' && !strstr(argv[2], "debug"))
 				NagaDaemon(argv[2]); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else
 				NagaDaemon();
