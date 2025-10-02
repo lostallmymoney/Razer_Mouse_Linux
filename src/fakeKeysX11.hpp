@@ -2,8 +2,8 @@
 #include <X11/XKBlib.h>
 #include <X11/extensions/XTest.h>
 
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
 #define N_MODIFIER_INDEXES (Mod5MapIndex + 1)
 
@@ -96,7 +96,7 @@ FakeKey *fakekey_init(Display *xdpy)
 	XModifierKeymap *modifiers;
 	KeyCode *kp;
 
-	if (xdpy == NULL || !XTestQueryExtension(xdpy, &event, &error, &major, &minor))
+	if (xdpy == nullptr || !XTestQueryExtension(xdpy, &event, &error, &major, &minor))
 		return nullptr;
 
 	fk = new FakeKey{};

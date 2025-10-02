@@ -1,5 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <locale.h>
 #include <string>
 
@@ -10,11 +10,11 @@ Bool xerror = False;
 
 Display *open_display()
 {
-    Display *d = XOpenDisplay(NULL);
-    if (d == NULL)
+    Display *d = XOpenDisplay(nullptr);
+    if (d == nullptr)
     {
         printf("fail\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     return d;
 }
