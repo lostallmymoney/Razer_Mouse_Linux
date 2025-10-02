@@ -21,6 +21,7 @@
 #include <sstream>
 #include <cerrno>
 #include <cstring>
+#include <tuple>
 #include "extraButtonCapture.hpp"
 using namespace std;
 
@@ -54,7 +55,8 @@ class configSwitchScheduler
 {
 private:
 	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false;
-	const string *currentConfigName = NULL, *scheduledReMapName = NULL, *bckConfName = NULL;
+	const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
+	string lastLoggedWindow;
 
 public:
 	map<const string, pair<bool, const string *> *> *configWindowAndLockMap = new map<const string, pair<bool, const string *> *>();
@@ -72,12 +74,16 @@ public:
 		currentConfigName = scheduledReMapName;
 		currentConfigPtr = &macroEventsKeyMaps[*scheduledReMapName];
 		if (!silent)
-			(void)!(system(notifySendMap[*scheduledReMapName]));
+			std::ignore = system(notifySendMap[*scheduledReMapName]);
 	}
 	void checkForWindowConfig()
 	{
 		const string currAppClass(getActiveWindow());
-		clog << "WindowNameLog : " << currAppClass << endl;
+		if (currAppClass != lastLoggedWindow)
+		{
+			clog << "WindowNameLog : " << currAppClass << endl;
+			lastLoggedWindow = currAppClass;
+		}
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (!winConfigActive || currAppClass != currentWindowConfigPtr->first || forceRecheck)
 		{
@@ -183,7 +189,7 @@ private:
 				}
 				else
 				{
-					int pos = commandContent.find('=');
+					std::string::size_type pos = commandContent.find('=');
 					string commandType = commandContent.substr(0, pos); // commandType = numbers + command type
 					commandContent.erase(0, pos + 1);					// commandContent = command content
 					commandType.erase(remove_if(commandType.begin(), commandType.end(), [](unsigned char c)
@@ -193,7 +199,7 @@ private:
 					const string *const buttonNumber = new string(commandType.substr(0, pos)); // Isolate button number
 					commandType = commandType.substr(pos + 1);								   // Isolate command type
 					for (char &c : commandType)
-						c = tolower(c);
+						c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
 
 					int buttonNumberInt;
 					try
@@ -272,15 +278,15 @@ private:
 				FD_SET(side_btn_fd, &readset);
 			if (areExtraBtnEnabled)
 				FD_SET(extra_btn_fd, &readset);
-			if (select(FD_SETSIZE, &readset, NULL, NULL, NULL) == -1)
+			if (select(FD_SETSIZE, &readset, nullptr, nullptr, nullptr) == -1)
 				exit(2);
 
 			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
 			{
-				ssize_t bytesRead = read(side_btn_fd, ev1, size);
+				ssize_t bytesRead = read(side_btn_fd, ev1, static_cast<size_t>(size));
 				if (bytesRead == -1)
 					exit(2);
-				if (bytesRead % sizeof(input_event) != 0)
+				if (static_cast<size_t>(bytesRead) % sizeof(input_event) != 0)
 				{
 					continue;
 				}
@@ -307,10 +313,10 @@ private:
 			}
 			if (areExtraBtnEnabled && FD_ISSET(extra_btn_fd, &readset)) // Extra buttons
 			{
-				ssize_t bytesRead = read(extra_btn_fd, ev1, size);
+				ssize_t bytesRead = read(extra_btn_fd, ev1, static_cast<size_t>(size));
 				if (bytesRead == -1)
 					exit(2);
-				if (bytesRead % sizeof(input_event) != 0)
+				if (static_cast<size_t>(bytesRead) % sizeof(input_event) != 0)
 				{
 					continue;
 				}
@@ -401,7 +407,7 @@ private:
 
 	static void sleepNow(const string *const macroContent)
 	{
-		usleep(stoul(*macroContent) * 1000); // microseconds make me dizzy in keymap.txt
+		usleep(static_cast<useconds_t>(stoul(*macroContent) * 1000)); // microseconds make me dizzy in keymap.txt
 	}
 	static void runAndWrite(const string *const macroContent)
 	{
@@ -425,7 +431,7 @@ private:
 	}
 	static void executeNow(const string *const macroContent)
 	{
-		(void)!(system(macroContent->c_str()));
+		std::ignore = system(macroContent->c_str());
 	}
 	static void executeThreadNow(const string *const macroContent)
 	{
@@ -582,7 +588,7 @@ configSwitchScheduler *const NagaDaemon::configSwitcher = new configSwitchSchedu
 void stopD()
 {
 	clog << "Stopping possible naga daemon" << endl;
-	(void)!(system(("/usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
+	std::ignore = system(("/usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
 };
 
 // arguments manage
@@ -590,66 +596,66 @@ int main(const int argc, const char *const argv[])
 {
 	if (argc > 1)
 	{
-		if (strstr(argv[1], "serviceHelper") != NULL)
+		if (strstr(argv[1], "serviceHelper"))
 		{
 			stopD();
-			(void)!(system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh"));
-			if (argc > 2 && !string(argv[2]).empty())
-				NagaDaemon(string(argv[2]).c_str()); // lets you configure a default profile in /etc/systemd/system/naga.service
+			std::ignore = system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
+			if (argc > 2 && argv[2][0] != '\0')
+				NagaDaemon nagaDaemon(argv[2]); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else
-				NagaDaemon();
+				NagaDaemon nagaDaemon;
 		}
-		else if (strstr(argv[1], "start") != NULL)
+		else if (strstr(argv[1], "start"))
 		{
 			clog << "Starting naga daemon as service, naga debug to see logs..." << endl;
 			usleep(100000);
-			(void)!(system("sudo systemctl restart naga"));
+			std::ignore = system("sudo systemctl restart naga");
 		}
-		else if (strstr(argv[1], "debug") != NULL)
+		else if (strstr(argv[1], "debug"))
 		{
 			clog << "Starting naga debug, logs :" << endl;
 			if (argc > 2)
 			{
-				(void)!(system(("journalctl " + string(argv[2]) + " naga").c_str()));
+				std::ignore = system(("journalctl " + string(argv[2]) + " naga").c_str());
 			}
 			else
 			{
-				(void)!(system("journalctl -fu naga"));
+				std::ignore = system("journalctl -fu naga");
 			}
 		}
-		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
+		else if (strstr(argv[1], "kill") || strstr(argv[1], "stop"))
 		{
 			clog << "Stopping possible naga daemon" << endl;
-			(void)!(system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str()));
+			std::ignore = system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
 		}
-		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
+		else if (strstr(argv[1], "repair") || strstr(argv[1], "tame") || strstr(argv[1], "fix"))
 		{
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
-			(void)!(system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\""));
+			std::ignore = system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\"");
 		}
-		else if (strstr(argv[1], "edit") != NULL)
+		else if (strstr(argv[1], "edit"))
 		{
 			if (argc > 2)
 			{
-				(void)!(system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; " + string(argv[2]) + " " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str()));
+				std::ignore = system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; " + string(argv[2]) + " " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
 			}
 			else
 			{
-				(void)!(system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano -m " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str()));
+				std::ignore = system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano -m " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
 			}
 		}
-		else if (strstr(argv[1], "uninstall") != NULL)
+		else if (strstr(argv[1], "uninstall"))
 		{
 			string answer;
 			clog << "Are you sure you want to uninstall ? y/n" << endl;
 			cin >> answer;
-			if (answer.length() != 1 || (answer[0] != 'y' && answer[0] != 'Y'))
+			if (answer.size() != 1 || (answer[0] != 'y' && answer[0] != 'Y'))
 			{
 				clog << "Aborting" << endl;
 			}
 			else
 			{
-				(void)!(system("/usr/local/bin/Naga_Linux/nagaUninstall.sh"));
+				std::ignore = system("/usr/local/bin/Naga_Linux/nagaUninstall.sh");
 			}
 		}
 	}
