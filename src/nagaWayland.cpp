@@ -149,7 +149,7 @@ static map<string, map<int, map<bool, vector<MacroEvent *>>>> macroEventsKeyMaps
 class configSwitchScheduler
 {
 private:
-	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false;
+	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false, notifyOnNextLoad = false;
 	const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
 	string lastLoggedWindow;
 
@@ -160,18 +160,21 @@ public:
 	map<string, const char *> notifySendMap;
 	void loadConf(bool silent = false)
 	{
-		clog << "LOADING profile : " << *scheduledReMapName << endl;
+		if (notifyOnNextLoad)
+			silent=false;
+			
+		scheduledReMap = notifyOnNextLoad = false;
 		if (!macroEventsKeyMaps.contains(*scheduledReMapName))
 		{
 			clog << "Undefined profile : " << *scheduledReMapName << endl;
 			return;
 		}
-		scheduledReMap = false;
 		currentConfigName = scheduledReMapName;
 		currentConfigPtr = &macroEventsKeyMaps[*scheduledReMapName];
 		if (!silent)
 			std::ignore = system(notifySendMap[*scheduledReMapName]);
 	}
+
 	void checkForWindowConfig()
 	{
 		const string currAppClass(getTitle());
@@ -194,25 +197,25 @@ public:
 					scheduledReMapName = configWindow->second->second;
 				else
 					scheduledReMapName = &configWindow->first;
-				scheduledReMap = winConfigActive = true;
+				winConfigActive = true;
 				loadConf(true);
 			}
 			else if (winConfigActive)
 			{
-				scheduledReMap = true, winConfigActive = false;
+				winConfigActive = false;
 				scheduledReMapName = bckConfName;
 				loadConf(true);
 			}
 		}
 	}
+
 	void remapRoutine()
 	{
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (scheduledUnlock)
 		{
-			scheduledUnlock = false;
-			scheduledUnlockWindowCfgPtr->second->first = false;
-			forceRecheck = true;
+			scheduledUnlockWindowCfgPtr->second->first = scheduledUnlock = false;
+			forceRecheck = notifyOnNextLoad = true;
 		}
 
 		if (scheduledReMap)
@@ -220,14 +223,14 @@ public:
 			loadConf();
 		}
 	}
+
 	void scheduleReMap(const string *const reMapStr)
 	{
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (winConfigActive)
 		{
-			currentWindowConfigPtr->second->first = true;
+			currentWindowConfigPtr->second->first = forceRecheck = notifyOnNextLoad = true;;
 			currentWindowConfigPtr->second->second = reMapStr;
-			forceRecheck = true;
 		}
 		else
 		{
@@ -235,14 +238,20 @@ public:
 			scheduledReMap = true;
 		}
 	}
+
 	void scheduleUnlockChmap(const string *const unlockStr)
 	{
-		lock_guard<mutex> guard(configSwitcherMutex);
-		scheduledUnlockWindowCfgPtr = configWindowAndLockMap->find(*unlockStr);
-		if (scheduledUnlockWindowCfgPtr != configWindowAndLockMap->end() && scheduledUnlockWindowCfgPtr->second->first)
+		bool shouldRecheck = false;
 		{
-			scheduledUnlock = true;
+			lock_guard<mutex> guard(configSwitcherMutex);
+			scheduledUnlockWindowCfgPtr = configWindowAndLockMap->find(*unlockStr);
+			if (scheduledUnlockWindowCfgPtr != configWindowAndLockMap->end() && scheduledUnlockWindowCfgPtr->second->first)
+			{
+				scheduledUnlock = shouldRecheck = true;
+			}
 		}
+		if (shouldRecheck)
+			checkForWindowConfig();
 	}
 };
 
@@ -363,8 +372,6 @@ private:
 
 	void run()
 	{
-		if (areSideBtnEnabled)
-			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
 		while (1)
 		{
 			configSwitcher->remapRoutine();
@@ -593,6 +600,9 @@ public:
 			exit(1);
 		}
 
+		if (areSideBtnEnabled)
+			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
+
 		if (areExtraBtnEnabled)
 		{
 			extraForwarder.reset(new UInputForwarder());
@@ -716,7 +726,7 @@ int main(const int argc, const char *const argv[])
 			}
 			else
 			{
-				std::ignore = system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano -m " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'" ).c_str());
+				std::ignore = system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano -m " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
 			}
 		}
 		else if (strstr(argv[1], "uninstall"))

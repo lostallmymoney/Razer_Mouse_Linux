@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ "$(id -u)" = "0" ]; then
     printf "\033[0;31mThis script must not be executed as root\033[0m\n"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 printf "Installing requirements...\n"
 

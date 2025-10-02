@@ -12,8 +12,8 @@ config=defaultConfig
 10 - keyClick=XF86AudioPrev
 11 - key=XF86AudioPlay
 12 - keyClick=XF86AudioNext
-13 - key=XF86Forward
-14 - key=XF86Back
+13 - key=XF86Back
+14 - key=XF86Forward
 configEnd
 
 config=defaultConfig2

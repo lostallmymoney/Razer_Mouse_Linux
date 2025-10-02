@@ -23,17 +23,35 @@ sudo cp -f ./src/nagaUninstall.sh /usr/local/bin/Naga_Linux/
 sudo chmod 755 /usr/local/bin/Naga_Linux/nagaUninstall.sh
 sudo groupadd -f razerInputGroup
 
+WAYLANDTYPE=false
+
+touch ~/.bash_aliases
+
+check_connectivity() {
+	ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 && return 0
+	command -v nslookup >/dev/null 2>&1 && nslookup google.com >/dev/null 2>&1 && return 0
+	command -v nc >/dev/null 2>&1 && nc -z 8.8.8.8 53 >/dev/null 2>&1 && return 0
+	return 1
+}
+
+warn_connectivity() {
+	if ! check_connectivity; then
+		printf "\033[0;33mWarning: No internet connection detected. Installation may fail.\033[0m\n"
+		printf "Press ENTER to continue without internet or Ctrl+C to abort... "
+		# shellcheck disable=SC2034
+		read -r _
+	fi
+}
+
 printf "Installing requirements...\n"
 
 printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
 
+warn_connectivity
+
 # shellcheck disable=SC2046
 if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
 	WAYLANDTYPE=true
-	if ! nslookup google.com > /dev/null 2>&1; then
-		printf "\033[0;31mNO INTERNET CONNECTION\033[0m\n"
-		exit 1
-	fi
 	sh ./src/_installWayland.sh
 	sed -i '/alias naga=/d' ~/.bash_aliases
 	grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases >/dev/null
@@ -52,7 +70,7 @@ if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') 
 	done
 else
 	sh ./src/_installX11.sh
-	sudo sed -i '/alias naga=/d' ~/.bash_aliases
+	sed -i '/alias naga=/d' ~/.bash_aliases
 	grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases >/dev/null
 
 	while true; do
@@ -60,10 +78,6 @@ else
 		read -r yn
 		case $yn in
 		[Yy]*)
-			if ! nc -z 8.8.8.8 53 >/dev/null 2>&1; then
-				printf "\033[0;31mNO INTERNET CONNECTION\033[0m\n"
-				exit 1
-			fi
 			sh ./src/_installWayland.sh
 			break
 			;;
@@ -100,6 +114,8 @@ xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
 
 if [ "$WAYLANDTYPE" = true ]; then
 	printf "\033[0;31mRELOGGING NECESSARY\033[0m\n"
-	bash -c 'read -sp "Press ENTER to log out..."'
+	printf "Press ENTER to log out..."
+	# shellcheck disable=SC2034
+	read -r _
 	sudo pkill -HUP -u "$USER"
 fi
