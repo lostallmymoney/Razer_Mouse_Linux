@@ -27,6 +27,7 @@ using namespace std;
 static mutex fakeKeyFollowUpsMutex, configSwitcherMutex;
 static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
+static const bool enableWindowLogging = getenv("NAGA_DEBUG") != nullptr;
 
 class configKey
 {
@@ -78,7 +79,7 @@ public:
 	void checkForWindowConfig()
 	{
 		const string currAppClass(getActiveWindow());
-		if (currAppClass != lastLoggedWindow)
+		if (enableWindowLogging && currAppClass != lastLoggedWindow)
 		{
 			clog << "WindowNameLog : " << currAppClass << endl;
 			lastLoggedWindow = currAppClass;

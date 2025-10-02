@@ -30,6 +30,7 @@ using namespace std;
 
 static mutex configSwitcherMutex;
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";
+static const bool enableWindowLogging = getenv("NAGA_DEBUG") != nullptr;
 
 static mutex dotoolPipeMutex;
 static FILE *dotoolPipe = nullptr;
@@ -173,7 +174,7 @@ public:
 	void checkForWindowConfig()
 	{
 		const string currAppClass(getTitle());
-		if (currAppClass != lastLoggedWindow)
+		if (enableWindowLogging && currAppClass != lastLoggedWindow)
 		{
 			clog << "WindowNameLog : " << currAppClass << endl;
 			lastLoggedWindow = currAppClass;
