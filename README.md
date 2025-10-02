@@ -20,6 +20,11 @@ Or, clone the repo and run:
 sh install.sh
 ```
 
+Then configure:
+```bash
+naga edit
+```
+
 ---
 
 ## 🖱️ Supported Devices
