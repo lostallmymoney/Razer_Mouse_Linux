@@ -30,7 +30,6 @@ using namespace std;
 
 static mutex configSwitcherMutex;
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";
-static bool enableWindowLogging = getenv("NAGA_DEBUG") != nullptr;
 
 static mutex dotoolPipeMutex;
 static FILE *dotoolPipe = nullptr;
@@ -120,6 +119,7 @@ static string getTitle()
 
 	dbus_message_unref(message);
 	dbus_message_unref(reply);
+	clog << "WindowNameLog : " << result << endl;
 	return result;
 }
 
@@ -151,7 +151,6 @@ class configSwitchScheduler
 private:
 	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false;
 	const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
-	string lastLoggedWindow;
 
 public:
 	map<const string, pair<bool, const string *> *> *configWindowAndLockMap = new map<const string, pair<bool, const string *> *>();
@@ -174,11 +173,7 @@ public:
 	void checkForWindowConfig()
 	{
 		const string currAppClass(getTitle());
-		if (enableWindowLogging && currAppClass != lastLoggedWindow)
-		{
-			clog << "WindowNameLog : " << currAppClass << endl;
-			lastLoggedWindow = currAppClass;
-		}
+		clog << "WindowNameLog : " << currAppClass << endl;
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (!winConfigActive || currAppClass != currentWindowConfigPtr->first || forceRecheck)
 		{
@@ -666,12 +661,7 @@ int main(const int argc, const char *const argv[])
 			stopD();
 			(void)system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
 			initDotoolPipe();
-			// Check for debug flag as last argument
-			if (argc > 2 && strstr(argv[argc - 1], "debug"))
-			{
-				enableWindowLogging = true;
-			}
-			if (argc > 2 && argv[2][0] != '\0' && !strstr(argv[2], "debug"))
+			if (argc > 2 && argv[2][0] != '\0')
 				NagaDaemon(argv[2]); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else
 				NagaDaemon();
