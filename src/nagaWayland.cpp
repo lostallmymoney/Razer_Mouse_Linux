@@ -656,7 +656,7 @@ int main(const int argc, const char *const argv[])
 {
 	if (argc > 1)
 	{
-		if (strstr(argv[1], "serviceHelper") != NULL)
+		if (strstr(argv[1], "serviceHelper"))
 		{
 			stopD();
 			(void)system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
@@ -666,13 +666,13 @@ int main(const int argc, const char *const argv[])
 			else
 				NagaDaemon();
 		}
-		else if (strstr(argv[1], "start") != NULL)
+		else if (strstr(argv[1], "start"))
 		{
 			clog << "Starting naga daemon as service, naga debug to see logs..." << endl;
 			usleep(100000);
 			(void)system("sudo systemctl restart naga");
 		}
-		else if (strstr(argv[1], "debug") != NULL)
+		else if (strstr(argv[1], "debug"))
 		{
 			clog << "Starting naga debug, logs :" << endl;
 			if (argc > 2)
@@ -684,17 +684,17 @@ int main(const int argc, const char *const argv[])
 				(void)system("journalctl -fu naga");
 			}
 		}
-		else if (strstr(argv[1], "kill") != NULL || strstr(argv[1], "stop") != NULL)
+		else if (strstr(argv[1], "kill") || strstr(argv[1], "stop"))
 		{
 			clog << "Stopping possible naga daemon" << endl;
 			(void)system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
 		}
-		else if (strstr(argv[1], "repair") != NULL || strstr(argv[1], "tame") != NULL || strstr(argv[1], "fix") != NULL)
+		else if (strstr(argv[1], "repair") || strstr(argv[1], "tame") || strstr(argv[1], "fix"))
 		{
 			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
 			(void)system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\"");
 		}
-		else if (strstr(argv[1], "edit") != NULL)
+		else if (strstr(argv[1], "edit"))
 		{
 			if (argc > 2)
 			{
@@ -705,7 +705,7 @@ int main(const int argc, const char *const argv[])
 				(void)system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; sudo nano -m " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
 			}
 		}
-		else if (strstr(argv[1], "uninstall") != NULL)
+		else if (strstr(argv[1], "uninstall"))
 		{
 			string answer;
 			clog << "Are you sure you want to uninstall ? y/n" << endl;
