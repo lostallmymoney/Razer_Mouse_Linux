@@ -63,6 +63,7 @@ Easily map keys with:
 naga edit
 ```
 
+> **Disclaimer:** Make sure to have at least **300KB of free RAM** to run this daemon seamlessly.
 ---
 
 ## 📦 Dependencies
