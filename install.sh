@@ -107,6 +107,7 @@ echo '# Allow systemctl start naga without password for the current user' | sudo
 echo "$USER ALL=(ALL) NOPASSWD: /bin/systemctl start naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
 sudo chmod 0440 /etc/sudoers.d/naga
 echo 'Added /etc/sudoers.d/naga for passwordless systemctl start naga.'
+sudo visudo -c
 
 sudo systemctl enable naga
 sudo systemctl restart naga

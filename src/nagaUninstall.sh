@@ -22,3 +22,23 @@ if [ -f /etc/sudoers.d/naga ] ; then
 	echo "Removing Naga sudoers.d entries..."
 	sudo rm -vf /etc/sudoers.d/naga
 fi
+
+sudo visudo -c
+
+# Remove alias naga from .bash_aliases
+if [ -f "$HOME/.bash_aliases" ]; then
+    sed -i "/alias naga=/d" "$HOME/.bash_aliases"
+    echo "Removed alias naga from .bash_aliases."
+fi
+
+# Remove environment and autostart lines from ~/.profile
+if [ -f "$HOME/.profile" ]; then
+	sed -i '/env | tee \~\/\.naga\/envSetup/d' "$HOME/.profile"
+	sed -i '/sudo systemctl start naga/d' "$HOME/.profile"
+fi
+
+# Remove ~/.naga/envSetup if present
+if [ -f "$HOME/.naga/envSetup" ]; then
+	rm -f "$HOME/.naga/envSetup"
+	echo "Removed ~/.naga/envSetup."
+fi
