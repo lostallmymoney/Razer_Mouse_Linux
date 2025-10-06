@@ -421,16 +421,18 @@ private:
 	static void runAndWrite(const string *const macroContent)
 	{
 		string result;
-		unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent->c_str(), "r"), &pclose);
+		std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
 		if (!pipe)
 		{
 			throw runtime_error("runAndWrite Failed !");
 		}
 		char buffer[BufferSize];
-		size_t bytesRead = 0;
+		size_t bytesRead;
+		string chunk;
+   		chunk.reserve(BufferSize);
 		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
 		{
-			string chunk(buffer, bytesRead);
+			chunk.assign(buffer, bytesRead);
 			writeStringNow(&chunk);
 		}
 	}

@@ -41,12 +41,12 @@ static void writeDotoolCommand(string_view command)
 	if (fwrite(command.data(), 1, command.size(), dotoolPipe) != command.size() ||
 		fputc('\n', dotoolPipe) == EOF)
 	{
-		throw runtime_error("runAndWrite Failed to write command to dotoolc");
+		throw runtime_error("Failed to write command to dotoolc");
 	}
 
 	if (fflush(dotoolPipe) == EOF)
 	{
-		throw runtime_error("runAndWrite Failed to flush dotoolc");
+		throw runtime_error("Failed to flush dotoolc");
 	}
 }
 
@@ -71,7 +71,7 @@ static void initDotoolPipe()
 	dotoolPipe = popen("dotoolc", "w");
 	if (!dotoolPipe)
 	{
-		throw runtime_error("runAndWrite Failed to start dotoolc");
+		throw runtime_error("Failed to start dotoolc");
 	}
 	setvbuf(dotoolPipe, nullptr, _IOLBF, 0);
 	atexit(closeDotoolPipe);
@@ -411,6 +411,8 @@ private:
 					}
 
 					configSwitcher->checkForWindowConfig();
+					if (event.value == 1)
+						clog << "Side button " << (event.code - 1) << " pressed" << endl;
 					thread(runActions, &(*configSwitcher->currentConfigPtr)[event.code][event.value == 1]).detach();
 				}
 			}
@@ -427,6 +429,8 @@ private:
 					{
 						if (event.code == 275 || event.code == 276)
 						{
+							if (event.value == 1)
+								clog << "Extra button " << (event.code - 262) << " pressed" << endl;
 							configSwitcher->checkForWindowConfig();
 							thread(runActions, &(*configSwitcher->currentConfigPtr)[event.code - 261][event.value == 1]).detach();
 							continue;
@@ -476,6 +480,7 @@ private:
 	{
 		writeDotoolCommand("type " + *macroContent);
 	}
+	
 	static void runAndWrite(const string *const macroContent)
 	{
 		unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent->c_str(), "r"), &pclose);
@@ -485,33 +490,32 @@ private:
 		}
 
 		string currentLine;
-
-		int ch = 0;
-		while ((ch = fgetc(pipe.get())) != EOF)
-		{
-			if (ch == '\n')
-			{
-				writeDotoolCommand("type " + currentLine);
-				writeDotoolCommand("key enter");
-				writeDotoolCommand("key home");
-				currentLine.clear();
-			}
-			else
-			{
-				if (currentLine.size() == DotoolCommandLimit)
-				{
+		FILE* fp = pipe.get();
+		for (int ch = fgetc(fp), counter = 0; ch != EOF; ch = fgetc(fp)) {
+			if (ch == '\n') {
+				if (!currentLine.empty()) {
 					writeDotoolCommand("type " + currentLine);
+					counter=0;
 					currentLine.clear();
 				}
+				writeDotoolCommand("key enter");
+				writeDotoolCommand("key home");
+			} else {
 				currentLine.push_back(static_cast<char>(ch));
+				counter++;
+				if (counter >= DotoolCommandLimit) {
+					writeDotoolCommand("type " + currentLine);
+					counter=0;
+					currentLine.clear();
+				}
 			}
 		}
 
-		if (!currentLine.empty())
-		{
+		if (!currentLine.empty()) {
 			writeDotoolCommand("type " + currentLine);
 		}
 	}
+
 	static void runAndWriteThread(const string *const macroContent)
 	{
 		thread(runAndWrite, macroContent).detach();
