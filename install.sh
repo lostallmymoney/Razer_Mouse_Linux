@@ -101,7 +101,12 @@ printf "WorkingDirectory=%s" "~" | sudo tee -a /etc/systemd/system/naga.service 
 sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sleep 0.5
-sudo cat /etc/sudoers | grep -qxF "$USER ALL=(ALL) NOPASSWD:/bin/systemctl start naga" || printf "\n%s ALL=(ALL) NOPASSWD:/bin/systemctl start naga\n" "$USER" | sudo EDITOR='tee -a' visudo >/dev/null
+
+# Add sudoers.d drop-in for passwordless systemctl start naga (best practice)
+echo '# Allow systemctl start naga without password for the current user' | sudo tee /etc/sudoers.d/naga-systemctl >/dev/null
+echo "$USER ALL=(ALL) NOPASSWD: /bin/systemctl start naga" | sudo tee -a /etc/sudoers.d/naga-systemctl >/dev/null
+sudo chmod 0440 /etc/sudoers.d/naga-systemctl
+echo 'Added /etc/sudoers.d/naga-systemctl for passwordless systemctl start naga.'
 
 sudo systemctl enable naga
 sudo systemctl restart naga

@@ -66,7 +66,7 @@ public:
 	void loadConf(bool silent = false)
 	{
 		if (notifyOnNextLoad)
-			silent=false;
+			silent = false;
 
 		scheduledReMap = notifyOnNextLoad = false;
 		if (!macroEventsKeyMaps.contains(*scheduledReMapName))
@@ -127,7 +127,7 @@ public:
 			loadConf();
 		}
 	}
-	
+
 	void scheduleReMap(const string *const reMapStr)
 	{
 		lock_guard<mutex> guard(configSwitcherMutex);
@@ -421,7 +421,7 @@ private:
 	static void runAndWrite(const string *const macroContent)
 	{
 		string result;
-		std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(macroContent->c_str(), "r"), pclose);
+		std::unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent->c_str(), "r"), pclose);
 		if (!pipe)
 		{
 			throw runtime_error("runAndWrite Failed !");
@@ -429,7 +429,7 @@ private:
 		char buffer[BufferSize];
 		size_t bytesRead;
 		string chunk;
-   		chunk.reserve(BufferSize);
+		chunk.reserve(BufferSize);
 		while ((bytesRead = fread(buffer, 1, BufferSize, pipe.get())) > 0)
 		{
 			chunk.assign(buffer, bytesRead);

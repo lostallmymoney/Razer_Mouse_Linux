@@ -16,3 +16,9 @@ sudo rm -vf /usr/local/bin/nagaWayland
 sudo rm -vf /etc/udev/rules.d/80-naga.rules
 sudo rm -vf /etc/systemd/system/naga.service
 sudo setsid rm -rvf /usr/local/bin/Naga_Linux/
+
+# Attempt to remove Naga/dotool sudoers includes
+if [ -f /etc/sudoers.d/naga ] || [ -f /etc/sudoers.d/dotool ]; then
+	echo "Removing Naga/dotool sudoers.d entries..."
+	sudo rm -vf /etc/sudoers.d/naga /etc/sudoers.d/dotool
+fi
