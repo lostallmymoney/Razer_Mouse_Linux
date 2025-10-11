@@ -91,7 +91,7 @@ sudo cp -f src/naga.service /etc/systemd/system/
 
 env | tee ~/.naga/envSetup >/dev/null
 grep -qF 'env | tee ~/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | tee ~/.naga/envSetup > /dev/null' | tee -a ~/.profile >/dev/null
-grep -qF 'sudo systemctl start naga' ~/.profile || printf '\n%s\n' 'sudo systemctl start naga > /dev/null' | tee -a ~/.profile >/dev/null
+grep -qF 'sudo systemctl start naga &' ~/.profile || printf '\n%s\n' 'sudo systemctl start naga > /dev/null' | tee -a ~/.profile >/dev/null
 
 printf "Environment=DISPLAY=%s\n" "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
 printf "User=%s\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
@@ -104,9 +104,10 @@ sleep 0.5
 
 # Add sudoers.d drop-in for passwordless systemctl start naga (best practice)
 echo '# Allow systemctl start naga without password for the current user' | sudo tee /etc/sudoers.d/naga >/dev/null
-echo "$USER ALL=(ALL) NOPASSWD: /bin/systemctl start naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl start naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
 sudo chmod 0440 /etc/sudoers.d/naga
 echo 'Added /etc/sudoers.d/naga for passwordless systemctl start naga.'
+sleep 1.5
 sudo visudo -c
 
 sudo systemctl enable naga
@@ -120,7 +121,7 @@ xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
 
 if [ "$WAYLANDTYPE" = true ]; then
 	printf "\033[0;31mRELOGGING NECESSARY\033[0m\n"
-	printf "Press ENTER to log out..."
+	printf "Press ENTER to log out (reboot)..."
 	# shellcheck disable=SC2034
 	read -r _
 	sudo pkill -HUP -u "$USER"

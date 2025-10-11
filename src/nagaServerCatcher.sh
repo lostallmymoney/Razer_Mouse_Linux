@@ -1,24 +1,33 @@
 #!/bin/sh
-#Finds the visual server and starts the right one
-while [ "$(who | wc -l)" -lt 2 ]; do
-	sleep 1
-done
-# shellcheck disable=SC2046
-if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
-	echo "Starting Wayland"
-	gnome-extensions enable window-calls-extended@hseliger.eu
-	killall dotoold >/dev/null 2>&1
-	setsid bash -c 'dotoold' &
-	if [ $# -eq 0 ]; then
-		nagaWayland serviceHelper
-	else
-		nagaWayland serviceHelper $1
-	fi
+
+# Short sleep to let the session fully initialize
+sleep 2
+
+# Detect Wayland explicitly
+if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+    SESSION="wayland"
 else
-	echo "Starting X11"
-	if [ $# -eq 0 ]; then
-		nagaX11 serviceHelper
-	else
-		nagaX11 serviceHelper $1
-	fi
+    SESSION="x11"
+fi
+
+# Start services
+if [ "$SESSION" = "wayland" ]; then
+    echo "Starting Wayland"
+    if command -v gnome-extensions >/dev/null 2>&1; then
+        gnome-extensions enable window-calls-extended@hseliger.eu
+    fi
+    killall dotoold >/dev/null 2>&1
+    setsid bash -c 'dotoold' &
+    if [ $# -eq 0 ]; then
+        nagaWayland serviceHelper
+    else
+        nagaWayland serviceHelper "$1"
+    fi
+else
+    echo "Starting X11"
+    if [ $# -eq 0 ]; then
+        nagaX11 serviceHelper
+    else
+        nagaX11 serviceHelper "$1"
+    fi
 fi

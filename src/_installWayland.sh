@@ -40,11 +40,44 @@ sleep 0.1
 rm -rf dotool* >/dev/null
 sleep 0.1
 
-clear -x
 
 sudo gnome-extensions disable window-calls-extended@hseliger.eu >/dev/null
 sudo gnome-extensions uninstall -q window-calls-extended@hseliger.eu
-gnome-extensions install ./src/window-calls-extended@hseliger.eu.shell-extension.zip --force
+
+#BYPASS to enable the extension on Gnome Shell 49 (Ubuntu 25.10 only for now)
+
+EXT_ZIP="./src/window-calls-extended@hseliger.eu.shell-extension.zip"
+EXT_DIR="$HOME/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu"
+
+# 1️⃣ Create the extension folder
+mkdir -p "$EXT_DIR"
+
+# 2️⃣ Unzip extension into the folder
+unzip -o "$EXT_ZIP" -d "$EXT_DIR"
+
+# 3️⃣ Patch metadata.json to include GNOME Shell 49
+METADATA="$EXT_DIR/metadata.json"
+if [ -f "$METADATA" ]; then
+    # Add 49 to shell-version if not present
+    if ! grep -q '"49"' "$METADATA"; then
+        sed -i '/"shell-version": \[/ {:a; N; /\]/!ba; /"49"/! s/\("\)\n  \]/\1,\n    "49"\n  ]/}' \
+            ~/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu/metadata.json
+    fi
+else
+    echo "Error: metadata.json not found in $EXT_DIR"
+    exit 1
+fi
+
+# 4️⃣ Fix permissions
+chown -R "$USER:$USER" "$EXT_DIR"
+chmod -R 644 "$EXT_DIR"/*.js "$EXT_DIR"/metadata.json 2>/dev/null || true
+find "$EXT_DIR" -type d -exec chmod 755 {} \;
+
+# 5️⃣ Enable the extension
+gnome-extensions enable window-calls-extended@hseliger.eu
+
+#end of BYPASS
+
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
@@ -54,3 +87,6 @@ sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 sudo groupadd -f razerInputGroup
 
 printf 'KERNEL=="uinput", GROUP="razerInputGroup"' | sudo tee /etc/udev/rules.d/80-nagaWayland.rules >/dev/null
+
+
+clear -x

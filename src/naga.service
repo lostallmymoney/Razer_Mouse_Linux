@@ -1,6 +1,7 @@
 [Unit]
 Description=Custom key bindings for the side panel of razer mouses.
-After=default.target
+After=graphical.target
+Wants=graphical.target
 
 
 [Install]
