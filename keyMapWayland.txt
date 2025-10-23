@@ -4,7 +4,7 @@ config=defaultConfig
 3 - string=hello@hotmail.com
 4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
 5 - run=x-terminal-emulator
-6 - key=T
+6 - key=Kpminus
 7 - key=volumedown
 8 - chmap=defaultConfig2
 9 - key=volumeup
@@ -13,6 +13,39 @@ config=defaultConfig
 12 - keyClick=nextsong
 13 - key=back
 14 - key=forward
+configEnd
+
+configWindow=com.mojang.minecraft.java-edition
+1 - key=1
+2 - key=2
+3 - key=3
+4 - key=4
+5 - key=5
+6 - key=6
+7 - key=7
+8 - key=8
+9 - key=9
+#Nice example loops here
+10 - run=touch ~/.naga/nagaLoop1.lock; [ -f ~/.naga/nagaLoop1.running ] && sleep 0.005 && [ -f ~/.naga/nagaLoop1.running ] && exit 0; touch ~/.naga/nagaLoop1.running; while [ -f ~/.naga/nagaLoop1.lock ]; do echo "click left" | dotoolc; sleep 0.05; done; rm -f ~/.naga/nagaLoop1.running
+10 - runRelease=rm -f ~/.naga/nagaLoop1.lock
+11 - chmap=Minecraft2
+12 - run=touch ~/.naga/nagaLoop2.lock; [ -f ~/.naga/nagaLoop2.running ] && sleep 0.005 && [ -f ~/.naga/nagaLoop2.running ] && exit 0; touch ~/.naga/nagaLoop2.running; while [ -f ~/.naga/nagaLoop2.lock ]; do echo "click right" | dotoolc; sleep 0.05; done; rm -f ~/.naga/nagaLoop2.running
+12 - runRelease=rm -f ~/.naga/nagaLoop2.lock
+configEnd
+
+configWindow=Minecraft2
+1 - key=1
+2 - key=2
+3 - key=3
+4 - key=4
+5 - key=5
+6 - key=6
+7 - key=volumedown
+8 - unlockChmap=com.mojang.minecraft.java-edition
+9 - key=volumeup
+10 - keyClick=previoussong
+11 - key=playpause
+12 - keyClick=nextsong
 configEnd
 
 config=defaultConfig2
@@ -45,7 +78,7 @@ configWindow=Spotify
 12 - keyClick=nextsong
 configEnd
 
-configWindow=org.gnome.Terminal
+configWindow=org.gnome.Ptyxis
 1 - key=mute
 3 - string=gnome@terminal.com
 4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
@@ -64,7 +97,7 @@ config=Gnome-terminal-Chmap
 4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
 5 - run=x-terminal-emulator
 7 - key=volumedown
-8 - unlockChmap=org.gnome.Terminal
+8 - unlockChmap=org.gnome.Ptyxis
 9 - key=volumeup
 10 - keyClick=previoussong
 11 - key=playpause

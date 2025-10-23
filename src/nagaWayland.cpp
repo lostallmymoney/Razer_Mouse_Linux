@@ -452,6 +452,11 @@ private:
 
 	// Functions that can be given to configKeys
 
+	static void mouseClick(const string *const macroContent)
+	{
+		writeDotoolCommand("click " + *macroContent);
+	}
+
 	static void chmapNow(const string *const macroContent)
 	{
 		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
@@ -628,8 +633,13 @@ public:
 		}
 
 		// modulable options list to manage internals inside runActions method arg1:COMMAND, arg2:onKeyPressed?, arg3:function to send prefix+config content.
+		// options must be lowercase here don't get caught
 #define ONKEYPRESSED true
 #define ONKEYRELEASED false
+
+
+		emplaceConfigKey("click", ONKEYPRESSED, mouseClick);
+		emplaceConfigKey("clickrelease", ONKEYRELEASED, mouseClick);
 
 		emplaceConfigKey("chmap", ONKEYPRESSED, chmapNow);
 		emplaceConfigKey("chmaprelease", ONKEYRELEASED, chmapNow);
