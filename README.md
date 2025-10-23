@@ -122,6 +122,8 @@ configEnd
 - `mousePosition` – Move mouse to `<x> <y>` position  
 - `keyClick` – Press key once on press  
 - `keyClickRelease` – Press key once on release  
+- `click` – Press mouse click (left | center | right) (Wayland only)
+- `clickRelease` – Press mouse click (left | center | right) on release (Wayland only)
 
 **Special single-character press/release actions** (faster than xdotool, but no ctrl/media support yet, ONLY ON X11):  
 - `specialPressOnPress`  
