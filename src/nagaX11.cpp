@@ -635,15 +635,24 @@ int main(const int argc, const char *const argv[])
 				std::ignore = system("journalctl -fu naga");
 			}
 		}
-		else if (strstr(argv[1], "kill") || strstr(argv[1], "stop"))
+		else if (strstr(argv[1], "kill"))
+		{
+			clog << "Killing naga daemon processes:" << endl;
+			std::ignore = system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
+		}else if (strstr(argv[1], "stop"))
 		{
 			clog << "Stopping possible naga daemon" << endl;
-			std::ignore = system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
+			std::ignore = system("sudo systemctl stop naga");
 		}
-		else if (strstr(argv[1], "repair") || strstr(argv[1], "tame") || strstr(argv[1], "fix"))
+		else if (strstr(argv[1], "disable") || strstr(argv[1], "stop"))
 		{
-			clog << "Fixing dead keypad syndrome... STUTTER!!" << endl;
-			std::ignore = system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\"");
+			clog << "Disabling naga daemon" << endl;
+			std::ignore = system("sudo systemctl disable naga");
+		}
+		else if (strstr(argv[1], "enable") || strstr(argv[1], "stop"))
+		{
+			clog << "Enabling naga daemon" << endl;
+			std::ignore = system("sudo systemctl enable naga");
 		}
 		else if (strstr(argv[1], "edit"))
 		{

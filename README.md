@@ -50,9 +50,12 @@ Tested & confirmed 99% compatible with:
 ## ⚙️ Commands
 | Command | Description |
 |---------|-------------|
-| `naga start` | Start the daemon |
-| `naga stop` | Stop the daemon |
-| `naga edit ($EDITOR)` | Edit config (auto-restarts daemon). Example: `naga edit vim` |
+| `naga start` | Starts the daemon |
+| `naga stop` | Stops the daemon |
+| `naga kill` | Kills the daemon |
+| `naga enable` | Enables the daemon |
+| `naga disable` | Disables the daemon |
+| `naga edit ($EDITOR)` | Edits config (&restarts daemon). Examples: `naga edit` or `naga edit vim` |
 | `naga debug` | Show logs (realtime, pass args to override `journalctl`) |
 | `naga fix` | Restart USB services |
 | `naga uninstall` | Remove the tool completely |

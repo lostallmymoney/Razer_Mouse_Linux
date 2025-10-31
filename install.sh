@@ -103,11 +103,16 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 sleep 0.5
 
 # Add sudoers.d drop-in for passwordless systemctl start naga (best practice)
+sudo rm /etc/sudoers.d/naga 2>/dev/null
 echo '# Allow systemctl start naga without password for the current user' | sudo tee /etc/sudoers.d/naga >/dev/null
 echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl start naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl disable naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+
 sudo chmod 0440 /etc/sudoers.d/naga
 echo 'Added /etc/sudoers.d/naga for passwordless systemctl start naga.'
-sleep 1.5
 sudo visudo -c
 
 sudo systemctl enable naga
@@ -120,7 +125,7 @@ printf "\033[0;35mhttps://github.com/lostallmymoney/Razer_Mouse_Linux\033[0m\n\n
 xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
 
 if [ "$WAYLANDTYPE" = true ]; then
-	printf "\033[0;31mRELOGGING NECESSARY\033[0m\n"
+	printf "\033[0;31mRELOGGING NECESSARY (for auto profiles.. Press ctrl+c to skip) \033[0m\n"
 	printf "Press ENTER to log out (reboot)..."
 	# shellcheck disable=SC2034
 	read -r _
