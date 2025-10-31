@@ -1,5 +1,5 @@
 # Razer Mouse Linux – Easy Macro Utility
-A lightweight tool to map and manage macros for Razer Naga and other devices on Linux.  
+A lightweight tool to map and manage macros for Razer Naga and other devices on Linux.
 
 ✅ Works on **Wayland** and **X11**
 ✅ Supports **Ubuntu, its flavors, and most other distros** (with dependencies installed)  
@@ -12,7 +12,7 @@ Want support for another device? Just add the files or [contact me](#).
 ## 🚀 Quick Install
 Run this one-liner to install:  
 ```
-sudo apt install unzip wget -y && cd ~ && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -rf ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
+sudo apt install unzip wget -y && cd ~ && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && rm -rf ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -rf ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
 ```
 
 Or, clone the repo and run:
@@ -24,6 +24,15 @@ Then configure:
 ```bash
 naga edit
 ```
+
+If wayland or X11 aren't properly detected or isyou want to manually install them you can :
+```bash
+sh install.sh X11
+```
+```bash
+sh install.sh wayland
+```
+
 
 ---
 
@@ -68,17 +77,18 @@ naga edit
 ```
 
 ---
-
 ## 📦 Dependencies
+### Wayland  
+```bash
+sudo apt install g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev golang-go
+```
+
 ### X11  
 ```bash
 sudo apt install libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
 ```
 
-### Wayland  
-```bash
-sudo apt install g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev golang-go
-```
+
 
 If something fails to compile on your distro → install equivalents of these packages.  
 
@@ -103,30 +113,30 @@ configEnd
 ---
 
 ### 📚 Full Option Reference
-- `chmap` – Switch to another config  
-- `chmapRelease` – Switch config on key release  
+- `chmap` – Switch to another config
+- `chmapRelease` – Switch config on key release
 - `unlockChmap` – Unlocks auto window-based configs  
-- `sleep` / `sleepRelease` – Put system to sleep  
-- `string` / `stringRelease` – Type a literal string (no xdotool)  
-- `xdotoolType` / `xdotoolTypeRelease` – Type a string via xdotool (fallback)  
-- `key` – Press + release a key  
-- `specialKey` – Press + release a special key  
-- `keyPressOnPress` – Hold key on button press  
-- `keyReleaseOnRelease` – Release key on button release  
-- `keyPressOnRelease` – Hold key on button release  
-- `keyReleaseOnPress` – Release key on button press  
-- `run` – Run a shell command asynchronously  
-- `run2` – Run a shell command synchronously  
-- `runRelease` – Run command on release  
-- `runRelease2` – Same as above, synchronous  
-- `runAndWrite` – Run a command and write its output live to screen  
-- `runAndWrite2` – Same as above, synchronous  
-- `setWorkspace` – Switch workspace (via xdotool)  
-- `mousePosition` – Move mouse to `<x> <y>` position  
-- `keyClick` – Press key once on press  
-- `keyClickRelease` – Press key once on release  
+- `sleep` / `sleepRelease` – Put system to sleep
+- `string` / `stringRelease` – Type a literal string
+- `key` – Press + release a key
+- `keyPressOnPress` – Hold key on button press
+- `keyReleaseOnRelease` – Release key on button release
+- `keyPressOnRelease` – Hold key on button release
+- `keyReleaseOnPress` – Release key on button press
+- `run` – Run a shell command asynchronously
+- `run2` – Run a shell command synchronously
+- `runRelease` – Run command on release
+- `runRelease2` – Same as above, synchronous
+- `runAndWrite` – Run a command and write its output live to screen
+- `runAndWrite2` – Same as above, synchronous
+- `keyClick` – Press key once on press
+- `keyClickRelease` – Press key once on release
 - `click` – Press mouse click (left | center | right) (Wayland only)
 - `clickRelease` – Press mouse click (left | center | right) on release (Wayland only)
+- `xdotoolType` / `xdotoolTypeRelease` – Type a string via xdotool (fallback, X11 only)
+- `specialKey` – Press + release a special key (X11 only)
+- `setWorkspace` – Switch workspace (via xdotool, X11 only)
+- `mousePosition` – Move mouse to `<x> <y>` position (X11 only)
 
 **Special single-character press/release actions** (faster than xdotool, but no ctrl/media support yet, ONLY ON X11):  
 - `specialPressOnPress`  
@@ -156,7 +166,7 @@ configEnd
 
 📌 Notes:  
 - If `~/.naga/keyMap.txt` is missing, the daemon **won’t start** (installer copies an example).  
-- Multiple actions per key are allowed; they run sequentially.  
+- Multiple actions per key are allowed; they run sequentially or async depending on choice.  
 - Use `naga edit` to reload configs.  
 
 ---
