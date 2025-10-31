@@ -12,7 +12,7 @@ Want support for another device? Just add the files or [contact me](#).
 ## 🚀 Quick Install
 Run this one-liner to install:  
 ```
-sudo apt install unzip wget -y && cd ~ && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -rf ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && ./install.sh
+sudo apt install unzip wget -y && cd ~ && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -rf ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
 ```
 
 Or, clone the repo and run:
