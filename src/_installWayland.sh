@@ -44,8 +44,6 @@ sleep 0.1
 sudo gnome-extensions disable window-calls-extended@hseliger.eu >/dev/null
 sudo gnome-extensions uninstall -q window-calls-extended@hseliger.eu
 
-#BYPASS to enable the extension on Gnome Shell 49 (Ubuntu 25.10 only for now)
-
 EXT_ZIP="./src/window-calls-extended@hseliger.eu.shell-extension.zip"
 EXT_DIR="$HOME/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu"
 
@@ -55,18 +53,6 @@ mkdir -p "$EXT_DIR"
 # 2️⃣ Unzip extension into the folder
 unzip -o "$EXT_ZIP" -d "$EXT_DIR"
 
-# 3️⃣ Patch metadata.json to include GNOME Shell 49
-METADATA="$EXT_DIR/metadata.json"
-if [ -f "$METADATA" ]; then
-    # Add 49 to shell-version if not present
-    if ! grep -q '"49"' "$METADATA"; then
-        sed -i '/"shell-version": \[/ {:a; N; /\]/!ba; /"49"/! s/\("\)\n  \]/\1,\n    "49"\n  ]/}' \
-            ~/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu/metadata.json
-    fi
-else
-    echo "Error: metadata.json not found in $EXT_DIR"
-    exit 1
-fi
 
 # 4️⃣ Fix permissions
 chown -R "$USER:$USER" "$EXT_DIR"
@@ -75,8 +61,6 @@ find "$EXT_DIR" -type d -exec chmod 755 {} \;
 
 # 5️⃣ Enable the extension
 gnome-extensions enable window-calls-extended@hseliger.eu
-
-#end of BYPASS
 
 
 _dir="/home/$USER/.naga"
