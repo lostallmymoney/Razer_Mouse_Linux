@@ -21,6 +21,11 @@ private:
 		return (bits + (sizeof(unsigned long) * 8) - 1) / (sizeof(unsigned long) * 8);
 	}
 
+	static bool isBitSet(const unsigned long *bits, int bit, size_t bitsPerLong)
+	{
+		return (bits[bit / bitsPerLong] & (1UL << (bit % bitsPerLong))) != 0UL;
+	}
+
 	bool fail(const char *step)
 	{
 		std::clog << "[naga] uinput " << step << " failed: " << std::strerror(errno) << std::endl;
@@ -59,17 +64,12 @@ public:
 		unsigned long evBits[evBitsLen];
 		std::memset(evBits, 0, sizeof(evBits));
 
-		auto hasBit = [bitsPerLong](const unsigned long *bits, int bit)
-		{
-			return bits[bit / bitsPerLong] & (1UL << (bit % bitsPerLong));
-		};
-
 		bool mirroredCapabilities = ioctl(sourceFd, EVIOCGBIT(0, sizeof(evBits)), evBits) != -1;
 		if (mirroredCapabilities)
 		{
 			for (int type = 0; type <= EV_MAX; ++type)
 			{
-				if (!hasBit(evBits, type))
+				if (!isBitSet(evBits, type, bitsPerLong))
 				{
 					continue;
 				}
@@ -87,7 +87,7 @@ public:
 					{
 						for (int code = 0; code <= KEY_MAX; ++code)
 						{
-							if (hasBit(keyBits, code) && ioctl(fd, UI_SET_KEYBIT, code) == -1)
+							if (isBitSet(keyBits, code, bitsPerLong) && ioctl(fd, UI_SET_KEYBIT, code) == -1)
 							{
 								return fail("UI_SET_KEYBIT");
 							}
@@ -103,7 +103,7 @@ public:
 					{
 						for (int code = 0; code <= REL_MAX; ++code)
 						{
-							if (hasBit(relBits, code) && ioctl(fd, UI_SET_RELBIT, code) == -1)
+							if (isBitSet(relBits, code, bitsPerLong) && ioctl(fd, UI_SET_RELBIT, code) == -1)
 							{
 								return fail("UI_SET_RELBIT");
 							}
@@ -119,7 +119,7 @@ public:
 					{
 						for (int code = 0; code <= MSC_MAX; ++code)
 						{
-							if (hasBit(mscBits, code) && ioctl(fd, UI_SET_MSCBIT, code) == -1)
+							if (isBitSet(mscBits, code, bitsPerLong) && ioctl(fd, UI_SET_MSCBIT, code) == -1)
 							{
 								return fail("UI_SET_MSCBIT");
 							}

@@ -9,7 +9,6 @@ if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
 else
     SESSION="x11"
 fi
-
 # Start services
 if [ "$SESSION" = "wayland" ]; then
     echo "Starting Wayland"
@@ -17,7 +16,8 @@ if [ "$SESSION" = "wayland" ]; then
         gnome-extensions enable window-calls-extended@hseliger.eu
     fi
     killall dotoold >/dev/null 2>&1
-    setsid bash -c 'dotoold' &
+    killall nagaDotoold >/dev/null 2>&1
+    setsid bash -c 'nagaDotoold' &
     if [ $# -eq 0 ]; then
         nagaWayland serviceHelper
     else

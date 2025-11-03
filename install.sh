@@ -1,7 +1,26 @@
 #!/bin/sh
+
+cleanup() {
+    stty sane 2>/dev/null || true
+}
+
+abort_install() {
+    printf "\n\033[0;31mInstallation aborted.\033[0m\n" >&2
+    cleanup
+    exit "$1"
+}
+
+on_interrupt() {
+    printf "\n\033[0;31mInterrupted by user.\033[0m\n" >&2
+    abort_install 130
+}
+
+trap on_interrupt INT
+trap cleanup EXIT
+
 if [ "$(id -u)" = "0" ]; then
     printf "This script must not be executed as root\n"
-    exit 1
+    abort_install 1
 fi
 
 sudo sh src/nagaKillroot.sh >/dev/null
@@ -45,27 +64,35 @@ warn_connectivity() {
 
 printf "Installing requirements...\n"
 
-printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="640"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
+printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="660"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
 
 warn_connectivity
+
+run_sub_install() {
+    script_path="$1"
+    if ! sh "$script_path"; then
+        printf "\033[0;31mFailed while running %s.\033[0m\n" "$script_path" >&2
+        abort_install 1
+    fi
+}
 
 # shellcheck disable=SC2046
 
 case "$1" in
     X11|x11)
-        sh ./src/_installX11.sh
+        run_sub_install ./src/_installX11.sh
     ;;
     Wayland|wayland)
-        sh ./src/_installWayland.sh
+        run_sub_install ./src/_installWayland.sh
     ;;
     *)
         if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
             WAYLANDTYPE=true
-            sh ./src/_installWayland.sh
+            run_sub_install ./src/_installWayland.sh
             sed -i '/alias naga=/d' ~/.bash_aliases
             grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases >/dev/null
         else
-            sh ./src/_installX11.sh
+            run_sub_install ./src/_installX11.sh
             sed -i '/alias naga=/d' ~/.bash_aliases
             grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases >/dev/null
         fi
@@ -77,7 +104,7 @@ sudo cp -f src/naga.service /etc/systemd/system/
 
 env | tee ~/.naga/envSetup >/dev/null
 grep -qF 'env | tee ~/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | tee ~/.naga/envSetup > /dev/null' | tee -a ~/.profile >/dev/null
-grep -qF 'sudo systemctl start naga' ~/.profile || printf '\n%s\n' 'sudo systemctl start naga & > /dev/null' | tee -a ~/.profile >/dev/null
+grep -qF 'sudo systemctl start naga' ~/.profile || printf '\n%s\n' 'sudo systemctl start naga > /dev/null' | tee -a ~/.profile >/dev/null
 
 printf "Environment=DISPLAY=%s\n" "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
 printf "User=%s\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service >/dev/null

@@ -113,6 +113,7 @@ configEnd
 ---
 
 ### 📚 Full Option Reference
+Looking for higher-level building blocks? Check out [Functions, Loops & Contexts](#-functions-loops--contexts).
 - `chmap` – Switch to another config
 - `chmapRelease` – Switch config on key release
 - `unlockChmap` – Unlocks auto window-based configs  
@@ -174,6 +175,104 @@ configEnd
 ## 🔄 Autorun
 - Uses **systemd** for service management  
 - Adds persistence lines to `~/.profile` and sudoers  
+
+---
+
+## 🧠 Functions, Loops & Contexts
+These advanced building blocks let you share logic, create repeatable sequences, and keep large configs tidy.
+
+### 🧩 Functions
+- Define reusable combos once with `function=<name>` … `functionEnd`.
+- Only press-phase actions are recorded; call them from a config using `function=<name>` or `functionRelease=<name>`.
+- Functions can call other functions (nesting is allowed) for modular setups.
+- Functions can only include press-phase actions (or other functions); loop bindings are ignored inside a function block.
+
+**Compatible press-phase actions** (usable in both functions and loops):
+- `function` (invoke another function)
+- `chmap`
+- `sleep`
+- `run`
+- `run2`
+- `runandwrite`
+- `runandwrite2`
+- `unlockChmap`
+- `keypressOnPress`
+- `keyReleaseOnPress`
+- `keyClick`
+- `string`
+- Wayland-only `click`
+- X11-only `specialPressOnPress`
+- X11-only `specialReleaseOnPress`
+
+Release-only variants (`runRelease`, `keyPressOnRelease`, etc.) need to be wrapped in a function or triggered from the main config directly.
+
+```txt
+function=prepStandup
+run=notify-send "Stand-up" "Time to share updates"
+sleep=150
+key=Super+N
+sleep=120
+string=Standup notes ready!
+functionEnd
+
+function=toggleMic
+key=XF86AudioMicMute
+functionEnd
+
+# Press to prep workspace, release to mute/unmute the mic
+4 - function=prepStandup
+4 - functionRelease=toggleMic
+```
+
+### 🔁 Loops
+- Wrap repeating sequences with `loop=<name>` … `loopEnd`.
+- Bind them in configs via `loop=<name>` (runs inline) or `loop2=<name>` (runs in a detached thread).
+- Optional arguments let you control behavior:
+	- `loop=myLoop=start` (default) begins the loop.
+	- `loop=myLoop=stop` stops it manually (auto-added on key release unless you pass a negative count).
+	- `loop=myLoop=5` runs exactly 5 cycles; `loop=myLoop=-3` runs 3 cycles without waiting for stop.
+- Loops may call functions, and they can nest other loops (inline or threaded) for complex rotations.
+
+**Compatible press-phase actions inside loops**:
+- `loop`
+
+Release-triggered bindings require nesting within a function if you need them inside loops.
+
+```txt
+loop=burstRotation
+key=Ctrl+1
+sleep=150
+key=Ctrl+2
+sleep=150
+loopEnd
+
+3 - loop=burstRotation        # hold to spam the rotation until release
+4 - loop2=burstRotation=8     # fire 8 passes in a background thread
+5 - loop2=burstRotation=-3    # run 3 passes without waiting for stop
+```
+
+### 🗂️ Contexts
+- Use `context=<name>` … `contextEnd` to store shared lines (they can reference other contexts).
+- Inside a config, drop `context=<name>` and every line stored in that context is injected in place.
+- Great for repeating key layouts across multiple profiles or layering optional behaviors.
+
+```txt
+context=mediaOverlay
+1 - key=XF86AudioPlay
+2 - key=XF86AudioNext
+contextEnd
+
+context=focusShortcuts
+context=mediaOverlay
+3 - key=Super+Left
+4 - key=Super+Right
+contextEnd
+
+config=focusMode
+context=focusShortcuts
+5 - run=notify-send "Focus mode engaged"
+configEnd
+```
 
 ---
 

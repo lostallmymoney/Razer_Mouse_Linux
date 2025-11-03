@@ -1,16 +1,65 @@
-config=defaultConfig
-1 - keyClick=mute
-2 - run=firefox
-3 - string=hello@hotmail.com
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
-5 - run=x-terminal-emulator
-6 - key=Kpminus
+#Minimum loop sleep recommended around 35 ms when interacting with dotool
+
+#Declare functions before using them.
+
+#Functions can contain previous functions
+function=spotifyOpenOnlyOnce
+run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
+functionEnd
+
+#Declare loops before using them.
+function=testfunction
+string=Testing, test... Success !!
+functionEnd
+
+loop=leftClickLoop
+click=left
+sleep=50
+loopEnd
+
+loop=rightClickLoop
+click=right
+sleep=50
+loopEnd
+
+loop=testloop 
+function=testfunction
+sleep=400
+loopEnd
+
+#Nested loops, negative number forces the loop to run 3 times.
+loop=testloop2
+loop=testloop=-3
+sleep=750
+loopEnd
+
+context=test
+3 - loop=testloop2
+contextEnd
+
+context=multiupdown
 7 - key=volumedown
-8 - chmap=defaultConfig2
 9 - key=volumeup
-10 - keyClick=previoussong
+contextEnd
+
+#Nested contexts
+context=multimedia
+context=multiupdown
+10 - key=previoussong
+12 - key=nextsong
+contextEnd
+
+#Declare configs after functions and loop are declared for it.
+config=defaultConfig
+context=multimedia
+context=test
+1 - keyClick=mute
+2 - loop=leftClickLoop
+4 - function=spotifyOpenOnlyOnce
+5 - run=ptyxis
+6 - key=Kpminus
+8 - chmap=defaultConfig2
 11 - key=playpause
-12 - keyClick=nextsong
 13 - key=back
 14 - key=forward
 configEnd
@@ -25,81 +74,62 @@ configWindow=com.mojang.minecraft.java-edition
 7 - key=7
 8 - key=8
 9 - key=9
-#Nice example loops here
-10 - run=touch ~/.naga/nagaLoop1.lock; [ -f ~/.naga/nagaLoop1.running ] && sleep 0.005 && [ -f ~/.naga/nagaLoop1.running ] && exit 0; touch ~/.naga/nagaLoop1.running; while [ -f ~/.naga/nagaLoop1.lock ]; do echo "click left" | dotoolc; sleep 0.05; done; rm -f ~/.naga/nagaLoop1.running
-10 - runRelease=rm -f ~/.naga/nagaLoop1.lock
+10 - loop=leftClickLoop
 11 - chmap=Minecraft2
-12 - run=touch ~/.naga/nagaLoop2.lock; [ -f ~/.naga/nagaLoop2.running ] && sleep 0.005 && [ -f ~/.naga/nagaLoop2.running ] && exit 0; touch ~/.naga/nagaLoop2.running; while [ -f ~/.naga/nagaLoop2.lock ]; do echo "click right" | dotoolc; sleep 0.05; done; rm -f ~/.naga/nagaLoop2.running
-12 - runRelease=rm -f ~/.naga/nagaLoop2.lock
+12 - loop=rightClickLoop
 configEnd
 
 configWindow=Minecraft2
+context=multimedia
 1 - key=1
 2 - key=2
 3 - key=3
 4 - key=4
 5 - key=5
 6 - key=6
-7 - key=volumedown
 8 - unlockChmap=com.mojang.minecraft.java-edition
-9 - key=volumeup
-10 - keyClick=previoussong
 11 - key=playpause
-12 - keyClick=nextsong
 configEnd
 
 config=defaultConfig2
+context=multimedia
 1 - key=mute
 2 - key=2
-3 - run=x-terminal-emulator
+3 - run=ptyxis
 3 - sleep=1000
-3 - run=x-terminal-emulator
+3 - run=ptyxis
 4 - key=4
 5 - key=5
 6 - key=6
-7 - key=volumedown
 8 - key=playpause
-9 - key=volumeup
-10 - keyClick=previoussong
 11 - chmap=defaultConfig
-12 - keyClick=nextsong
 13 - key=playpause
 configEnd
 
 configWindow=Spotify
+context=multimedia
 1 - key=mute
 3 - string=spotify@music.com
-5 - runRelease=x-terminal-emulator
-7 - key=volumedown
+5 - runRelease=ptyxis
 8 - key=playpause
-9 - key=volumeup
-10 - keyClick=previoussong
 11 - key=playpause
-12 - keyClick=nextsong
 configEnd
 
 configWindow=org.gnome.Ptyxis
+context=multimedia
 1 - key=mute
-3 - string=gnome@terminal.com
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
-5 - run=x-terminal-emulator
-7 - key=volumedown
+4 - function=spotifyOpenOnlyOnce
+5 - run=ptyxis
 8 - chmap=Gnome-terminal-Chmap
-9 - key=volumeup
-10 - keyClick=previoussong
 11 - key=playpause
-12 - keyClick=nextsong
 configEnd
 
 config=Gnome-terminal-Chmap
+context=multimedia
 1 - key=mute
 3 - string=gnome@terminal.com Alternative
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
-5 - run=x-terminal-emulator
-7 - key=volumedown
+4 - function=spotifyOpenOnlyOnce
+5 - run=ptyxis
 8 - unlockChmap=org.gnome.Ptyxis
-9 - key=volumeup
-10 - keyClick=previoussong
 11 - key=playpause
-12 - keyClick=nextsong
 configEnd

@@ -7,7 +7,10 @@ fi
 
 printf "Installing requirements...\n"
 
-sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps libglib2.0-dev
+if ! sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps libglib2.0-dev; then
+    printf "\033[0;31mFailed while installing apt packages.\033[0m\n" >&2
+    exit 1
+fi
 
 printf "Checking requirements...\n"
 
@@ -33,6 +36,7 @@ if [ ! -f ./src/nagaX11 ]; then
     printf "\033[0;31mError at compile! Ensure you have g++ installed. !!!Aborting!!!\033[0m\n"
     exit 1
 fi
+printf "Compiled nagaX11...\n"
 
 sudo mv ./src/nagaX11 /usr/local/bin/
 sudo chmod 755 /usr/local/bin/nagaX11

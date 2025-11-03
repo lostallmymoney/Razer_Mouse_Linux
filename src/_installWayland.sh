@@ -2,7 +2,10 @@
 
 printf "Installing requirements...\n"
 
-sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev libxkbcommon-dev golang-go scdoc
+if ! sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev libxkbcommon-dev golang-go scdoc; then
+    printf "\033[0;31mFailed while installing apt packages.\033[0m\n" >&2
+    exit 1
+fi
 
 printf "Checking requirements...\n"
 
@@ -21,6 +24,7 @@ if [ ! -f ./src/nagaWayland ]; then
     printf "\033[0;31mError at compile! Ensure you have g++ installed. !!!Aborting!!!\033[0m\n"
     exit 1
 fi
+printf "Compiled nagaWayland...\n"
 
 sudo mv ./src/nagaWayland /usr/local/bin/
 sudo chmod 755 /usr/local/bin/nagaWayland
@@ -34,7 +38,42 @@ mv -fu dotool-1fea2c210fcb25522c4ff5c900ef7522c197f5ed dotool >/dev/null
 sleep 0.1
 cd dotool || exit 1
 ./build.sh
-sudo ./build.sh install
+dotool_stage="$(mktemp -d)"
+if [ ! -d "$dotool_stage" ]; then
+    printf "\033[0;31mFailed to create staging directory for dotool.\033[0m\n" >&2
+    exit 1
+fi
+cleanup_dotool_stage() {
+    rm -rf "$dotool_stage"
+}
+trap cleanup_dotool_stage EXIT INT TERM
+
+if ! DOTOOL_DESTDIR="$dotool_stage" DOTOOL_BINDIR=bin DOTOOL_UDEV_RULES_DIR=udev ./build.sh install; then
+    printf "\033[0;31mFailed to stage dotool binaries.\033[0m\n" >&2
+    exit 1
+fi
+
+if [ ! -x "$dotool_stage/bin/dotool" ] || [ ! -x "$dotool_stage/bin/dotoolc" ] || [ ! -x "$dotool_stage/bin/dotoold" ]; then
+    printf "\033[0;31mStaged dotool binaries are missing.\033[0m\n" >&2
+    exit 1
+fi
+
+#Path/Convert dotool into nagaDotool
+
+sed -i 's/dotool "\$@"/nagaDotool "\$@"/' "$dotool_stage/bin/dotoold"
+# shellcheck disable=SC2016
+sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\/tmp\/naga\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
+sed -i 's/\/tmp\/dotool-pipe/\/tmp\/naga\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
+
+sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotool" /usr/local/bin/nagaDotool
+sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoolc" /usr/local/bin/nagaDotoolc
+sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoold" /usr/local/bin/nagaDotoold
+sudo install -d -m 0770 -o root -g razerInputGroup /tmp/naga
+
+cleanup_dotool_stage
+trap - EXIT INT TERM
+dotool_stage=""
+
 cd ..
 sleep 0.1
 rm -rf dotool* >/dev/null
@@ -68,9 +107,7 @@ mkdir -p "$_dir"
 sudo cp -r --update=none -v "keyMapWayland.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 
-sudo groupadd -f razerInputGroup
-
-printf 'KERNEL=="uinput", GROUP="razerInputGroup"' | sudo tee /etc/udev/rules.d/80-nagaWayland.rules >/dev/null
+printf 'KERNEL=="uinput", GROUP="razerInputGroup", MODE="0620", OPTIONS+="static_node=uinput"' | sudo tee /etc/udev/rules.d/80-nagaWayland.rules >/dev/null
 
 
 clear -x
