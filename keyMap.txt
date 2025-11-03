@@ -1,19 +1,83 @@
+#Minimum loop sleep recommended around 35 ms when interacting with xdotool
+
+#Declare functions before using them.
+
+#Functions can contain previous functions
+function=spotifyOpenOnlyOnce
+run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
+functionEnd
+
+#Declare loops before using them.
+function=testfunction
+string=Testing, test... Success !!
+functionEnd
+
+loop=leftClickLoop
+run=xdotool click 1
+sleep=50
+loopEnd
+
+loop=rightClickLoop
+run=xdotool click 3
+sleep=50
+loopEnd
+
+loop=testloop 
+function=testfunction
+sleep=400
+loopEnd
+
+#Nested loops, negative number forces the loop to run 3 times.
+loop=testloop2
+loop=testloop=-3
+sleep=750
+loopEnd
+
+context=test
+3 - loop=testloop2
+contextEnd
+
+context=multiupdown
+7 - key=XF86AudioLowerVolume
+9 - key=XF86AudioRaiseVolume
+contextEnd
+
+#Nested contexts
+context=multimedia
+context=multiupdown
+10 - keyClick=XF86AudioPrev
+12 - keyClick=XF86AudioNext
+contextEnd
+
+
 config=defaultConfig
+context=multimedia
+context=test
 1 - keyClick=XF86AudioMute
-2 - run=firefox
-3 - string=hello@hotmail.com
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
+2 - loop=leftClickLoop
+4 - function=spotifyOpenOnlyOnce
 5 - run=x-terminal-emulator
 6 - specialPressOnPress=È
 6 - specialReleaseOnRelease=È
-7 - key=XF86AudioLowerVolume
 8 - chmap=defaultConfig2
-9 - key=XF86AudioRaiseVolume
-10 - keyClick=XF86AudioPrev
 11 - key=XF86AudioPlay
-12 - keyClick=XF86AudioNext
 13 - key=XF86Back
 14 - key=XF86Forward
+configEnd
+
+configWindow=com.mojang.minecraft.java-edition
+1 - key=1
+2 - key=2
+3 - key=3
+4 - key=4
+5 - key=5
+6 - key=6
+7 - key=7
+8 - key=8
+9 - key=9
+10 - loop=leftClickLoop
+11 - chmap=Minecraft2
+12 - loop=rightClickLoop
 configEnd
 
 config=defaultConfig2
@@ -48,7 +112,7 @@ configEnd
 configWindow=Gnome-terminal
 1 - key=XF86AudioMute
 3 - string=gnome@terminal.com
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
+4 - function=spotifyOpenOnlyOnce
 5 - run=x-terminal-emulator
 6 - specialPressOnPress=`
 6 - specialReleaseOnRelease=`
@@ -65,7 +129,7 @@ configEnd
 config=Gnome-terminal-Chmap
 1 - key=XF86AudioMute
 3 - string=gnome@terminal.com Alternative
-4 - run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
+4 - function=spotifyOpenOnlyOnce
 5 - run=x-terminal-emulator
 6 - specialPressOnPress=|
 6 - specialReleaseOnRelease=|
@@ -78,5 +142,4 @@ config=Gnome-terminal-Chmap
 13 - key=XF86AudioPrev
 14 - key=XF86AudioNext
 configEnd
-
 
