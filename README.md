@@ -25,7 +25,7 @@ Then configure:
 naga edit
 ```
 
-If wayland or X11 aren't properly detected or isyou want to manually install them you can :
+If wayland or X11 aren't properly detected or if you want to manually install them you can :
 ```bash
 sh install.sh X11
 ```
