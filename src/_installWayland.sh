@@ -62,8 +62,9 @@ fi
 
 sed -i 's/dotool "\$@"/nagaDotool "\$@"/' "$dotool_stage/bin/dotoold"
 # shellcheck disable=SC2016
-sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\/tmp\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
-sed -i 's/\/tmp\/dotool-pipe/\/tmp\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
+sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\$HOME\/.naga\/protected\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
+# shellcheck disable=SC2016
+sed -i 's/\/tmp\/dotool-pipe/\$HOME\/.naga\/protected\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
 
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotool" /usr/local/bin/nagaDotool
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoolc" /usr/local/bin/nagaDotoolc
@@ -103,6 +104,9 @@ gnome-extensions enable window-calls-extended@hseliger.eu
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
+mkdir -p "$_dir/protected"
+sudo chown root:razerInputGroup "$_dir/protected"
+sudo chmod 770 "$_dir/protected"
 sudo cp -r --update=none -v "keyMapWayland.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 

@@ -12,7 +12,7 @@ Want support for another device? Just add the files or [contact me](#).
 ## 🚀 Quick Install
 Run this one-liner to install:  
 ```
-sudo apt install unzip wget -y && cd ~  && rm -rf ~/Razer_Mouse_Linux.zip && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -rf ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
+sudo apt install unzip wget -y && cd ~ && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && rm -rf ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -rf ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
 ```
 
 Or, clone the repo and run:
@@ -25,7 +25,7 @@ Then configure:
 naga edit
 ```
 
-If wayland or X11 aren't properly detected or if you want to manually install them you can :
+If wayland or X11 aren't properly detected or isyou want to manually install them you can :
 ```bash
 sh install.sh X11
 ```
