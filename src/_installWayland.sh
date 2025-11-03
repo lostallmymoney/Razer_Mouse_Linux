@@ -62,13 +62,12 @@ fi
 
 sed -i 's/dotool "\$@"/nagaDotool "\$@"/' "$dotool_stage/bin/dotoold"
 # shellcheck disable=SC2016
-sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\/tmp\/naga\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
-sed -i 's/\/tmp\/dotool-pipe/\/tmp\/naga\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
+sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\/tmp\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
+sed -i 's/\/tmp\/dotool-pipe/\/tmp\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
 
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotool" /usr/local/bin/nagaDotool
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoolc" /usr/local/bin/nagaDotoolc
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoold" /usr/local/bin/nagaDotoold
-sudo install -d -m 0770 -o root -g razerInputGroup /tmp/naga
 
 cleanup_dotool_stage
 trap - EXIT INT TERM
