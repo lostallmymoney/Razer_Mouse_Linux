@@ -382,8 +382,11 @@ namespace NagaDaemon
 	static constexpr size_t DotoolCommandLimit = 65536;
 	static map<string, nagaCommandClass *const> nagaCommandsMap;
 
-	static struct input_event ev1[64];
-	static const int size = sizeof(ev1);
+	static constexpr size_t input_event_size = sizeof(input_event);
+	static struct input_event side_ev[64];
+	static struct input_event extra_ev[64];
+	static const size_t side_ev_size = static_cast<size_t>(sizeof(side_ev));
+	static const size_t extra_ev_size = static_cast<size_t>(sizeof(extra_ev));
 	static vector<pair<const char *const, const char *const>> devices;
 	static bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
 
@@ -812,17 +815,13 @@ static fd_set readset;
 
 			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
 			{
-				ssize_t bytesRead = read(side_btn_fd, ev1, static_cast<size_t>(size));
+				ssize_t bytesRead = read(side_btn_fd, side_ev, side_ev_size);
 				if (bytesRead == -1)
 					exit(2);
-				if (static_cast<size_t>(bytesRead) % sizeof(input_event) != 0)
-				{
-					continue;
-				}
-				size_t eventCount = static_cast<size_t>(bytesRead) / sizeof(input_event);
+				size_t eventCount = bytesRead / input_event_size;
 				for (size_t i = 0; i < eventCount; ++i)
 				{
-					const input_event &event = ev1[i];
+					const input_event &event = side_ev[i];
 					if (event.type != EV_KEY || event.code < 2 || event.code > 13 || (event.value != 0 && event.value != 1))
 					{
 						continue;
@@ -834,13 +833,14 @@ static fd_set readset;
 			}
 			if (areExtraBtnEnabled && FD_ISSET(extra_btn_fd, &readset)) // Extra buttons
 			{
-				ssize_t bytesRead = read(extra_btn_fd, ev1, static_cast<size_t>(size));
+				ssize_t bytesRead = read(extra_btn_fd, extra_ev, extra_ev_size);
 				if (bytesRead == -1)
 					exit(2);
-				size_t eventCount = static_cast<size_t>(bytesRead) / sizeof(input_event);
+				
+				size_t eventCount = bytesRead / input_event_size;
 				for (size_t i = 0; i < eventCount; ++i)
 				{
-					const input_event &event = ev1[i];
+					const input_event &event = extra_ev[i];
 					if (event.type == EV_KEY)
 					{
 						if (event.code == 275 || event.code == 276)
@@ -1027,7 +1027,7 @@ static fd_set readset;
 			ioctl(side_btn_fd, EVIOCGRAB, 1);
 			// Flush any pending events to prevent stuck keys/buttons (not enough)
 			fcntl(side_btn_fd, F_SETFL, O_NONBLOCK);
-			while (read(side_btn_fd, ev1, static_cast<size_t>(size)) > 0) {}
+			while (read(side_btn_fd, side_ev, side_ev_size) > 0) {}
 			fcntl(side_btn_fd, F_SETFL, 0);
 			//usb_unbind_rebind(sideDevice); // rebind to avoid stuck keys/mouse issues on startup, todo when sudo-rs is updated or workaround found to run as root usb_rebind_helper.sh
 		}
@@ -1050,7 +1050,7 @@ static fd_set readset;
 				clog << "[naga] extra buttons grabbed; pointer events forwarded via uinput." << endl;
 				// Flush any pending events to prevent stuck keys/buttons (not enough)
 				fcntl(extra_btn_fd, F_SETFL, O_NONBLOCK);
-				while (read(extra_btn_fd, ev1, static_cast<size_t>(size)) > 0) {}
+				while (read(extra_btn_fd, extra_ev, extra_ev_size) > 0) {}
 				fcntl(extra_btn_fd, F_SETFL, 0);
 			}
 		}
