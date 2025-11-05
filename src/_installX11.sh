@@ -41,6 +41,9 @@ printf "Compiled nagaX11...\n"
 sudo mv ./src/nagaX11 /usr/local/bin/
 sudo chmod 755 /usr/local/bin/nagaX11
 
+sudo cp -f ./src/nagaXinputStart.sh /usr/local/bin/Naga_Linux/
+sudo chmod 755 /usr/local/bin/Naga_Linux/nagaXinputStart.sh
+
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
 sudo cp -r --update=none -v "keyMap.txt" "$_dir"

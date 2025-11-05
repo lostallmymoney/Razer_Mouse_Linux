@@ -110,6 +110,7 @@ sudo chmod 770 "$_dir/protected"
 sudo cp -r --update=none -v "keyMapWayland.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 
+sudo sh -c '> /etc/udev/rules.d/80-nagaWayland.rules'
 printf 'KERNEL=="uinput", GROUP="razerInputGroup", MODE="0620", OPTIONS+="static_node=uinput"' | sudo tee /etc/udev/rules.d/80-nagaWayland.rules >/dev/null
 
 

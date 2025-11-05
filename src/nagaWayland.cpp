@@ -2,11 +2,8 @@
 // RaulPPelaez, et. al wrote the original file.  As long as you retain this notice you
 // can do whatever you want with this stuff.
 
-#include <algorithm>
 #include <iostream>
 #include <vector>
-#include <cstring>
-#include <cctype>
 #include <fstream>
 #include <fcntl.h>
 #include <unistd.h>
@@ -14,25 +11,22 @@
 #include <linux/uinput.h>
 #include <sys/ioctl.h>
 #include <cerrno>
-#include "extraButtonCapture.hpp"
 #include <thread>
+#include <algorithm>
 #include <mutex>
 #include <map>
 #include <memory>
 #include <atomic>
-#include <utility>
-#include <cstdio>
-#include <cstdlib>
-#include <stdexcept>
-#include <tuple>
 #include <functional>
 #include <string>
+#include "extraButtonCapture.hpp"
 #include "nagaDotoolLib.hpp"
 #include "waylandWindowExtLib.hpp"
+//#include "nagaUsbUnbindRebind.hpp" //todo, when sudo-rs is updated to allow systemctl to use sudoers or if a workaround is found
 using namespace std;
-using nagaDotool::closeDotoolPipe;
-using nagaDotool::initDotoolPipe;
-using nagaDotool::writeDotoolCommand;
+using nagaDotool::closeNagaDotoolPipe;
+using nagaDotool::initNagaDotoolPipe;
+using nagaDotool::writeNagaDotoolCommand;
 using nagaWaylandWindowExt::getTitle;
 
 static mutex configSwitcherMutex;
@@ -48,17 +42,17 @@ public:
 class nagaCommandClass
 {
 private:
-	const string *const prefix, *const suffix;
+	const string prefix, suffix;
 	const bool onKeyPressed;
-	void (*const internalFunction)(const string *const c);
+	void (*const internalFunction)(const string &c);
 
 public:
 	bool IsOnKeyPressed() const { return onKeyPressed; }
-	void run(const string *const content) const { internalFunction(content); }
-	const string *Prefix() const { return prefix; }
-	const string *Suffix() const { return suffix; }
+	void run(const string &content) const { internalFunction(content); }
+	const string &Prefix() const { return prefix; }
+	const string &Suffix() const { return suffix; }
 
-	nagaCommandClass(const bool tonKeyPressed, void (*const tinternalF)(const string *const cc), const string tprefix = "", const string tsuffix = "") : prefix(new string(tprefix)), suffix(new string(tsuffix)), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
+	nagaCommandClass(const bool tonKeyPressed, void (*const tinternalF)(const string &cc), const string &tprefix = "", const string &tsuffix = "") : prefix(tprefix), suffix(tsuffix), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
 };
@@ -66,20 +60,21 @@ public:
 class MacroEvent : public IMacroEvent
 {
 private:
-	const nagaCommandClass *const command;
-	const string *const commandArgument;
+	const nagaCommandClass &command;
+	const string commandArgument;
 
 public:
-	MacroEvent(const nagaCommandClass *const commandPtr, const string *const commandArgumentPtr) : command(commandPtr), commandArgument(commandArgumentPtr)
+	MacroEvent(const nagaCommandClass &commandRef, const string &commandArgumentRef) : command(commandRef), commandArgument(commandArgumentRef)
 	{
 	}
 	void runInternal() const override
 	{
-		command->run(commandArgument);
+		command.run(commandArgument);
 	}
 };
 
-class loop {
+class loop
+{
 private:
 	mutable std::atomic<uint32_t> generation{0};
 	mutable std::atomic<bool> globalStop{false};
@@ -165,51 +160,50 @@ public:
 	}
 };
 
-
 class loopMacroEvent : public IMacroEvent
 {
 protected:
-	const loop *const aNagaLoop;
+	const loop &aNagaLoop;
 	function<void()> loopAction;
 
 public:
-	loopMacroEvent(const loop *const taNagaLoop, const string *const taNagaLoopArgument) : aNagaLoop(taNagaLoop)
+	loopMacroEvent(const loop &taNagaLoop, const string &taNagaLoopArgument) : aNagaLoop(taNagaLoop)
 	{
-		if (*taNagaLoopArgument == "start")
+		if (taNagaLoopArgument == "start")
 		{
-			loopAction = [loopPtr = aNagaLoop]()
-			{ loopPtr->run(); };
+			loopAction = [&loopRef = aNagaLoop]()
+			{ loopRef.run(); };
 		}
-		else if (*taNagaLoopArgument == "stop")
+		else if (taNagaLoopArgument == "stop")
 		{
-			loopAction = [loopPtr = aNagaLoop]()
-			{ loopPtr->stop(); };
+			loopAction = [&loopRef = aNagaLoop]()
+			{ loopRef.stop(); };
 		}
 		else
 		{
 			try
 			{
-				const long long parsedTimes = stoll(*taNagaLoopArgument);
+				const long long parsedTimes = stoll(taNagaLoopArgument);
 				if (parsedTimes > 0)
 				{
 					const size_t convertedTimes = static_cast<size_t>(parsedTimes);
-					loopAction = [loopPtr = aNagaLoop, convertedTimes]()
-					{ loopPtr->runThisManyTimes(convertedTimes); };
+					loopAction = [&loopRef = aNagaLoop, convertedTimes]()
+					{ loopRef.runThisManyTimes(convertedTimes); };
 				}
 				else if (parsedTimes < 0)
 				{
 					const size_t convertedTimes = static_cast<size_t>(-parsedTimes);
-					loopAction = [loopPtr = aNagaLoop, convertedTimes]()
-					{ loopPtr->runThisManyTimesWithoutStop(convertedTimes); };
+					loopAction = [&loopRef = aNagaLoop, convertedTimes]()
+					{ loopRef.runThisManyTimesWithoutStop(convertedTimes); };
 				}
 				else
 				{
-					clog << "Invalid loop argument (zero): " << *taNagaLoopArgument << endl;
+					clog << "Invalid loop argument (zero): " << taNagaLoopArgument << endl;
 				}
 			}
 			catch (...)
 			{
-				clog << "Invalid loop argument: " << *taNagaLoopArgument << endl;
+				clog << "Invalid loop argument: " << taNagaLoopArgument << endl;
 			}
 		}
 	}
@@ -235,6 +229,13 @@ public:
 
 using IMacroEventKeyMap = map<int, map<bool, vector<IMacroEvent *>>>;
 using IMacroEventKeyMaps = map<string, IMacroEventKeyMap>;
+struct ParsedCommand
+{
+	bool isOnKeyPressed;
+	IMacroEvent &macroEvent;
+};
+
+using ParsedCommandList = vector<ParsedCommand>;
 
 static IMacroEventKeyMaps macroEventKeyMaps;
 static map<string, loop *> loopsMap;
@@ -243,35 +244,34 @@ static map<string, vector<string>> contextMap;
 class nagaFunction
 {
 public:
-	vector<MacroEvent *> eventList;
-	void addEvent(MacroEvent *const newEvent)
+	vector<IMacroEvent *> eventList;
+	void addEvent(IMacroEvent *const newEvent)
 	{
 		eventList.emplace_back(newEvent);
-	}
-	void run()
-	{
-		for (MacroEvent *const macroEvent : eventList)
-		{
-			macroEvent->runInternal();
-		}
 	}
 };
 
 static map<string, nagaFunction *> functionsMap;
 
-class configSwitchScheduler
+struct WindowConfigLock
 {
-private:
-	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false, notifyOnNextLoad = false;
-	const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
-	string lastLoggedWindow;
+	bool isLocked;
+	const string *lockedConfigName;
+};
 
-public:
-	map<const string, pair<bool, const string *> *> *configWindowAndLockMap = new map<const string, pair<bool, const string *> *>();
-	IMacroEventKeyMap *currentConfigPtr;
-	map<const string, pair<bool, const string *> *>::iterator currentWindowConfigPtr, scheduledUnlockWindowCfgPtr;
-	map<string, const char *> notifySendMap;
-	void loadConf(bool silent = false)
+namespace configSwitcher
+{
+	using WindowConfigMap = map<const string, WindowConfigLock *>;
+	
+	static bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false, notifyOnNextLoad = false;
+	static const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
+	static string lastLoggedWindow;
+	static WindowConfigMap *configWindowAndLockMap = new WindowConfigMap();
+	static IMacroEventKeyMap *currentConfigPtr;
+	static WindowConfigMap::iterator currentWindowConfigPtr, scheduledUnlockWindowCfgPtr;
+	static map<string, const char *> notifySendMap;
+	
+	static void loadConf(bool silent = false)
 	{
 		if (notifyOnNextLoad)
 			silent = false;
@@ -288,7 +288,7 @@ public:
 			std::ignore = system(notifySendMap[*scheduledReMapName]);
 	}
 
-	void checkForWindowConfig()
+	static void checkForWindowConfig()
 	{
 		const string currAppClass(getTitle());
 		if (currAppClass != lastLoggedWindow)
@@ -300,16 +300,18 @@ public:
 		if (!winConfigActive || currAppClass != currentWindowConfigPtr->first || forceRecheck)
 		{
 			forceRecheck = false;
-			map<const string, pair<bool, const string *> *>::iterator configWindow = configWindowAndLockMap->find(currAppClass);
+			WindowConfigMap::iterator configWindow = configWindowAndLockMap->find(currAppClass);
 			if (configWindow != configWindowAndLockMap->end())
 			{
+				const string &windowName = configWindow->first;
+				WindowConfigLock * const &windowConfigLock = configWindow->second;
 				currentWindowConfigPtr = configWindow;
 				if (!winConfigActive)
 					bckConfName = currentConfigName;
-				if (configWindow->second->first)
-					scheduledReMapName = configWindow->second->second;
+				if (windowConfigLock->isLocked)
+					scheduledReMapName = windowConfigLock->lockedConfigName;
 				else
-					scheduledReMapName = &configWindow->first;
+					scheduledReMapName = &windowName;
 				winConfigActive = true;
 				loadConf(true);
 			}
@@ -322,12 +324,13 @@ public:
 		}
 	}
 
-	void remapRoutine()
+	static void remapRoutine()
 	{
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (scheduledUnlock)
 		{
-			scheduledUnlockWindowCfgPtr->second->first = scheduledUnlock = false;
+			WindowConfigLock * const &windowConfigLock = scheduledUnlockWindowCfgPtr->second;
+			windowConfigLock->isLocked = scheduledUnlock = false;
 			forceRecheck = notifyOnNextLoad = true;
 		}
 
@@ -337,55 +340,57 @@ public:
 		}
 	}
 
-	void scheduleReMap(const string *const reMapStr)
+	static void scheduleReMap(const string &reMapStr)
 	{
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (winConfigActive)
 		{
-			currentWindowConfigPtr->second->first = forceRecheck = notifyOnNextLoad = true;
-			currentWindowConfigPtr->second->second = reMapStr;
+			WindowConfigLock * const &windowConfigLock = currentWindowConfigPtr->second;
+			windowConfigLock->isLocked = forceRecheck = notifyOnNextLoad = true;
+			windowConfigLock->lockedConfigName = &reMapStr;
 		}
 		else
 		{
-			scheduledReMapName = reMapStr;
+			scheduledReMapName = &reMapStr;
 			scheduledReMap = true;
 		}
 	}
 
-	void scheduleUnlockChmap(const string *const unlockStr)
+	static void scheduleUnlockChmap(const string &unlockStr)
 	{
 		bool shouldRecheck = false;
 		{
 			lock_guard<mutex> guard(configSwitcherMutex);
-			scheduledUnlockWindowCfgPtr = configWindowAndLockMap->find(*unlockStr);
-			if (scheduledUnlockWindowCfgPtr != configWindowAndLockMap->end() && scheduledUnlockWindowCfgPtr->second->first)
+			scheduledUnlockWindowCfgPtr = configWindowAndLockMap->find(unlockStr);
+			if (scheduledUnlockWindowCfgPtr != configWindowAndLockMap->end())
 			{
-				scheduledUnlock = shouldRecheck = true;
+				WindowConfigLock * const &windowConfigLock = scheduledUnlockWindowCfgPtr->second;
+				if (windowConfigLock->isLocked)
+				{
+					scheduledUnlock = shouldRecheck = true;
+				}
 			}
 		}
 		if (shouldRecheck)
 			checkForWindowConfig();
 	}
-};
+}
 
-static configSwitchScheduler *const configSwitcher = new configSwitchScheduler();
-
-class NagaDaemon
+namespace NagaDaemon
 {
-private:
 	static constexpr size_t BufferSize = 1024;
 	static constexpr size_t DotoolCommandLimit = 65536;
-	map<string, nagaCommandClass *const> nagaCommandsMap;
+	static map<string, nagaCommandClass *const> nagaCommandsMap;
 
-	struct input_event ev1[64];
-	const int size = sizeof(ev1);
-	vector<pair<const char *const, const char *const>> devices;
-	bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
+	static struct input_event ev1[64];
+	static const int size = sizeof(ev1);
+	static vector<pair<const char *const, const char *const>> devices;
+	static bool areSideBtnEnabled = true, areExtraBtnEnabled = true;
 
-	unique_ptr<UInputForwarder> extraForwarder;
-	bool extraDeviceGrabbed = false;
+	static unique_ptr<UInputForwarder> extraForwarder;
+	static bool extraDeviceGrabbed = false;
 
-	void initConf()
+	static void initConf()
 	{
 		bool (*const shouldIgnoreLine)(const string &) = [](const string &line) -> bool
 		{
@@ -396,22 +401,222 @@ private:
 		const std::function<void(std::string &)> nukeWhitespaces = [](std::string &value)
 		{
 			value.erase(std::remove_if(value.begin(), value.end(),
-					   [](unsigned char c)
-				   { return std::isspace(c); }),
-				value.end());
+									   [](unsigned char c)
+									   { return std::isspace(c); }),
+						value.end());
 		};
 
 		const std::function<void(std::string &)> normalizeCommandType = [&nukeWhitespaces](std::string &value)
 		{
 			nukeWhitespaces(value);
 			std::transform(value.begin(), value.end(), value.begin(),
-					   [](unsigned char c)
-				   { return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); });
+						   [](unsigned char c)
+						   { return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); });
+		};
+
+		const std::function<int(const std::string &)> getButtonNumber = [](const std::string &configLine) -> int
+		{
+			std::string::size_type equalPos = configLine.find('=');
+			if (equalPos == std::string::npos)
+				return -1;
+
+			std::string beforeEqual = configLine.substr(0, equalPos);
+			std::string::size_type dashPos = beforeEqual.find('-');
+			if (dashPos == std::string::npos)
+				return -1;
+
+			try
+			{
+				return std::stoi(beforeEqual.substr(0, dashPos)) + 1;
+			}
+			catch (...)
+			{
+				return -1;
+			}
+		};
+
+		const std::function<std::string(const std::string &)> getCommandType = [](const std::string &configLine) -> std::string
+		{
+			std::string::size_type equalPos = configLine.find('=');
+			if (equalPos == std::string::npos)
+				return "";
+
+			std::string beforeEqual = configLine.substr(0, equalPos);
+			std::string::size_type dashPos = beforeEqual.find('-');
+			if (dashPos == std::string::npos)
+				return beforeEqual; // No dash means button number already removed
+
+			return beforeEqual.substr(dashPos + 1);
+		};
+
+		const std::function<void(std::string &)> cleaveButtonNumber = [](std::string &configLine)
+		{
+			std::string::size_type equalPos = configLine.find('=');
+			if (equalPos == std::string::npos)
+				return;
+
+			std::string beforeEqual = configLine.substr(0, equalPos);
+			std::string::size_type dashPos = beforeEqual.find('-');
+			if (dashPos == std::string::npos)
+				return;
+
+			// Remove the button number and dash, keep everything after the dash
+			std::string afterDash = beforeEqual.substr(dashPos + 1);
+			std::string afterEqual = configLine.substr(equalPos);
+			configLine = afterDash + afterEqual;
+		};
+
+		const std::function<void(std::string &)> cleaveCommandType = [](std::string &configLine)
+		{
+			std::string::size_type equalPos = configLine.find('=');
+			if (equalPos == std::string::npos)
+				return;
+
+			// Remove everything before and including the '='
+			configLine = configLine.substr(equalPos + 1);
+		};
+
+		const std::function<bool(const ParsedCommandList &)> hasAnyCommandOnKeyRelease = [](const ParsedCommandList &commands) -> bool
+		{
+			for (const ParsedCommand &command : commands)
+			{
+				if (!command.isOnKeyPressed)
+					return true;
+			}
+			return false;
+		};
+
+		std::function<ParsedCommandList(std::string)> parseCommand = [&](std::string commandContent) -> ParsedCommandList
+		{
+			ParsedCommandList result;
+			std::string commandType = getCommandType(commandContent);
+			if (commandType.empty())
+				return result;
+
+			cleaveCommandType(commandContent);
+			normalizeCommandType(commandType);
+
+			if (nagaCommandsMap.contains(commandType))
+			{
+				if (!nagaCommandsMap[commandType]->Prefix().empty())
+					commandContent = nagaCommandsMap[commandType]->Prefix() + commandContent;
+
+				if (!nagaCommandsMap[commandType]->Suffix().empty())
+					commandContent = commandContent + nagaCommandsMap[commandType]->Suffix();
+
+				result.emplace_back(ParsedCommand{nagaCommandsMap[commandType]->IsOnKeyPressed(),
+												  *(new MacroEvent(*nagaCommandsMap[commandType], *(new std::string(commandContent))))});
+			}
+			else if (commandType == "key")
+			{
+				std::string commandContent2 =
+					nagaCommandsMap["keyreleaseonrelease"]->Prefix() + commandContent +
+					nagaCommandsMap["keyreleaseonrelease"]->Suffix();
+
+				commandContent =
+					nagaCommandsMap["keypressonpress"]->Prefix() + commandContent +
+					nagaCommandsMap["keypressonpress"]->Suffix();
+
+				result.emplace_back(ParsedCommand{true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], *(new std::string(commandContent))))});
+				result.emplace_back(ParsedCommand{false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], *(new std::string(commandContent2))))});
+			}
+			else if (commandType == "loop" || commandType == "loop2")
+			{
+				std::string loopName = commandContent;
+				std::string actualArgument = "start";
+				const std::string::size_type loopArgPos = commandContent.find('=');
+				bool shouldAddStop = false;
+				bool isOnPress = true;
+
+				if (loopArgPos != std::string::npos)
+				{
+					loopName = commandContent.substr(0, loopArgPos);
+					nukeWhitespaces(loopName);
+					std::string pressArgument = commandContent.substr(loopArgPos + 1);
+					normalizeCommandType(pressArgument); // Normalize loop arguments
+
+					// Process argument and determine behavior
+					if (pressArgument == "startonrelease")
+					{
+						isOnPress = false;
+						actualArgument = "start";
+					}
+					else if (pressArgument == "stoponrelease")
+					{
+						isOnPress = false;
+						actualArgument = "stop";
+					}
+					else if (pressArgument == "start" || pressArgument == "stop")
+					{
+						actualArgument = pressArgument;
+					}
+					else
+					{
+						actualArgument = pressArgument;
+						try
+						{
+							if (std::stoll(pressArgument) > 0)
+								shouldAddStop = true;
+						}
+						catch (...)
+						{
+							shouldAddStop = true;
+						}
+					}
+				}
+				else
+				{
+					nukeWhitespaces(loopName);
+					shouldAddStop = true;
+				}
+
+				std::map<std::string, loop *>::iterator loopIt = loopsMap.find(loopName);
+				if (loopIt == loopsMap.end())
+				{
+					std::clog << "Discarding loop binding, undefined loop: " << loopName << std::endl;
+					return result;
+				}
+
+				const loop &loopRef = *loopIt->second;
+
+				if (commandType == "loop2")
+				{
+					result.emplace_back(ParsedCommand{isOnPress, *(new ThreadedLoopMacroEvent(loopRef, *(new std::string(actualArgument))))});
+					if (shouldAddStop)
+						result.emplace_back(ParsedCommand{false, *(new ThreadedLoopMacroEvent(loopRef, *(new std::string("stop"))))});
+				}
+				else
+				{
+					result.emplace_back(ParsedCommand{isOnPress, *(new loopMacroEvent(loopRef, *(new std::string(actualArgument))))});
+					if (shouldAddStop)
+						result.emplace_back(ParsedCommand{false, *(new loopMacroEvent(loopRef, *(new std::string("stop"))))});
+				}
+			}
+			else if (commandType == "function" || commandType == "functionrelease")
+			{
+				nukeWhitespaces(commandContent);
+				std::map<std::string, nagaFunction *>::iterator functionIt = functionsMap.find(commandContent);
+				if (functionIt == functionsMap.end())
+				{
+					std::clog << "Discarding function binding, undefined function: " << commandContent << std::endl;
+					return result;
+				}
+				bool isOnKeyPressed = commandType == "function";
+				for (IMacroEvent *const funcEvent : functionIt->second->eventList)
+				{
+					result.emplace_back(ParsedCommand{isOnKeyPressed, *funcEvent});
+				}
+			}
+			else
+			{
+				std::clog << "Discarding : " << commandType << "=" << commandContent << std::endl;
+			}
+
+			return result;
 		};
 
 		string commandContent, commandContent2;
 		IMacroEventKeyMap *iteratedConfig;
-		nagaFunction *currentFunction = nullptr;
 		bool isIteratingConfig = false, isIteratingLoop = false, isIteratingFunction = false, isIteratingContext = false;
 
 		ifstream in(conf_file.c_str(), ios::in);
@@ -434,155 +639,39 @@ private:
 				}
 				else
 				{
-					std::function<void(std::string)> parseCommand = [&](std::string commandContent)
+					const std::function<void(const std::string &)> processConfigLine = [&](const std::string &configLine)
 					{
-						std::string::size_type pos = commandContent.find('=');
-						std::string commandType = commandContent.substr(0, pos);
-						commandContent.erase(0, pos + 1);
-						normalizeCommandType(commandType);
-						pos = commandType.find("-");
-						const std::string buttonNumber = commandType.substr(0, pos);
-						commandType = commandType.substr(pos + 1);
+						// Extract button number and cleave it from the line
+						int buttonNumberInt = getButtonNumber(configLine);
+						if (buttonNumberInt == -1)
+							return;
 
-						int buttonNumberInt;
-						try
-						{
-							buttonNumberInt = std::stoi(buttonNumber) + 1;
-						}
-						catch (...)
-						{
-							std::clog << "CONFIG ERROR : " << commandContent << std::endl;
-							std::exit(1);
-						}
+						std::string modifiedConfigLine = configLine;
+						cleaveButtonNumber(modifiedConfigLine);
 
-						std::map<bool, std::vector<IMacroEvent *>> *iteratedButtonConfig = &(*iteratedConfig)[buttonNumberInt];
-
-						if (nagaCommandsMap.contains(commandType))
-						{
-							if (!nagaCommandsMap[commandType]->Prefix()->empty())
-								commandContent = *nagaCommandsMap[commandType]->Prefix() + commandContent;
-
-							if (!nagaCommandsMap[commandType]->Suffix()->empty())
-								commandContent = commandContent + *nagaCommandsMap[commandType]->Suffix();
-
-							(*iteratedButtonConfig)[nagaCommandsMap[commandType]->IsOnKeyPressed()]
-								.emplace_back(new MacroEvent(nagaCommandsMap[commandType], new std::string(commandContent)));
-						}
-						else if (commandType == "key")
-						{
-							std::string commandContent2 =
-								*nagaCommandsMap["keyreleaseonrelease"]->Prefix() + commandContent +
-								*nagaCommandsMap["keyreleaseonrelease"]->Suffix();
-
-							commandContent =
-								*nagaCommandsMap["keypressonpress"]->Prefix() + commandContent +
-								*nagaCommandsMap["keypressonpress"]->Suffix();
-
-							(*iteratedButtonConfig)[true]
-								.emplace_back(new MacroEvent(nagaCommandsMap["keypressonpress"], new std::string(commandContent)));
-							(*iteratedButtonConfig)[false]
-								.emplace_back(new MacroEvent(nagaCommandsMap["keyreleaseonrelease"], new std::string(commandContent2)));
-						}
-						else if (commandType == "loop" || commandType == "loop2")
-						{
-							std::string loopName = commandContent;
-							std::string pressArgument = "start";
-							const std::string::size_type loopArgPos = commandContent.find('=');
-							bool shouldAddStop = true;
-
-							if (loopArgPos != std::string::npos)
-							{
-								loopName = commandContent.substr(0, loopArgPos);
-								nukeWhitespaces(loopName);
-								pressArgument = commandContent.substr(loopArgPos + 1);
-
-								try
-								{
-									if (std::stoll(pressArgument) < 0)
-										shouldAddStop = false;
-								}
-								catch (...)
-								{
-								}
-							}
-							else
-							{
-								nukeWhitespaces(loopName);
-							}
-
-							std::map<std::string, loop *>::iterator loopIt = loopsMap.find(loopName);
-							if (loopIt == loopsMap.end())
-							{
-								std::clog << "Discarding loop binding, undefined loop: " << loopName << std::endl;
-								return;
-							}
-
-							const loop *const loopPtr = loopIt->second;
-
-							if (commandType == "loop2")
-							{
-								(*iteratedButtonConfig)[true]
-									.emplace_back(new ThreadedLoopMacroEvent(loopPtr, new std::string(pressArgument)));
-
-								if (shouldAddStop)
-								{
-									(*iteratedButtonConfig)[false]
-										.emplace_back(new ThreadedLoopMacroEvent(loopPtr, new std::string("stop")));
-								}
-							}
-							else
-							{
-								(*iteratedButtonConfig)[true]
-									.emplace_back(new loopMacroEvent(loopPtr, new std::string(pressArgument)));
-
-								if (shouldAddStop)
-								{
-									(*iteratedButtonConfig)[false]
-										.emplace_back(new loopMacroEvent(loopPtr, new std::string("stop")));
-								}
-							}
-						}
-						else if (commandType == "function" || commandType == "functionrelease")
-						{
-							nukeWhitespaces(commandContent);
-							std::map<std::string, nagaFunction *>::iterator functionIt = functionsMap.find(commandContent);
-							if (functionIt == functionsMap.end())
-							{
-								std::clog << "Discarding function binding, undefined function: " << commandContent << std::endl;
-								return;
-							}
-							for (MacroEvent *const funcEvent : functionIt->second->eventList)
-							{
-								if(commandType == "function")
-									(*iteratedButtonConfig)[true].emplace_back(funcEvent);
-								else
-									(*iteratedButtonConfig)[false].emplace_back(funcEvent);
-							}
-						}
-						else
-						{
-							std::clog << "Discarding : " << commandType << "=" << commandContent << std::endl;
-						}
-					};
-
-					if (commandContent.substr(0, 8) == "context=")
+					ParsedCommandList commands = parseCommand(modifiedConfigLine);
+					for (const ParsedCommand &command : commands)
 					{
-						commandContent.erase(0, 8);
+						(*iteratedConfig)[buttonNumberInt][command.isOnKeyPressed].emplace_back(&command.macroEvent);
+					}
+				};					if (commandContent.substr(0, 8) == "context=")
+					{
+						cleaveCommandType(commandContent);
 						nukeWhitespaces(commandContent);
 						for (const string &contextItem : contextMap[commandContent])
 						{
-							parseCommand(contextItem);
+							processConfigLine(contextItem);
 						}
 					}
 					else
 					{
-						parseCommand(commandContent);
+						processConfigLine(commandContent);
 					}
 				}
 			}
 			else if (commandContent.substr(0, 9) == "function=")
 			{
-				commandContent.erase(0, 9);
+				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
 				nagaFunction *newFunction = new nagaFunction();
 				functionsMap.emplace(string(commandContent), newFunction);
@@ -597,39 +686,24 @@ private:
 					}
 					else
 					{
-						string::size_type pos = commandContent2.find('=');
-						string commandType2 = commandContent2.substr(0, pos);
-						commandContent2.erase(0, pos + 1);
-						normalizeCommandType(commandType2); // Normalize command type
-						if (commandType2 == "function")//function in function
-						{
-							nukeWhitespaces(commandContent2);
-							std::map<std::string, nagaFunction *>::iterator functionIt = functionsMap.find(commandContent2);
-							if (functionIt == functionsMap.end())
-							{
-								clog << "Discarding in function: undefined function " << commandContent2 << endl;
-								continue;
-							}
+						ParsedCommandList commands = parseCommand(commandContent2);
 
-							for (MacroEvent *const funcEvent : functionIt->second->eventList)
-								newFunction->addEvent(funcEvent);
+						// Check if any command is onKeyReleased - if so, discard the whole vector for functions
+						if (hasAnyCommandOnKeyRelease(commands))
+						{
+							clog << "Discarding in function (contains onKeyReleased): " << commandContent2 << endl;
 							continue;
-						}
-
-						if (nagaCommandsMap.contains(commandType2) && nagaCommandsMap[commandType2]->IsOnKeyPressed() == true)
+						} // Add all events from the vector to the function
+						for (const ParsedCommand &command : commands)
 						{
-							newFunction->addEvent(new MacroEvent(nagaCommandsMap[commandType2], new string(commandContent2)));
-						}
-						else
-						{
-							clog << "Discarding in function: " << commandType2 << "=" << commandContent2 << endl;
+							newFunction->addEvent(&command.macroEvent);
 						}
 					}
 				}
 			}
 			else if (commandContent.substr(0, 5) == "loop=")
 			{
-				commandContent.erase(0, 5);
+				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
 				loop *newLoop = new loop();
 				loopsMap.emplace(string(commandContent), newLoop);
@@ -644,98 +718,24 @@ private:
 					}
 					else
 					{
-						const string::size_type pos = commandContent2.find('=');
+						ParsedCommandList commands = parseCommand(commandContent2);
 
-						string commandType2 = commandContent2.substr(0, pos);
-						string commandValue2 = commandContent2.substr(pos + 1);
-						normalizeCommandType(commandType2);
-
-						if (nagaCommandsMap.contains(commandType2) && nagaCommandsMap[commandType2]->IsOnKeyPressed() == true)
+						// Check if any command is onKeyReleased - if so, discard the whole vector for loops
+						if (hasAnyCommandOnKeyRelease(commands))
 						{
-							newLoop->addEvent(new MacroEvent(nagaCommandsMap[commandType2], new string(commandValue2)));
-						}
-						else if (commandType2 == "function")
+							clog << "Discarding in loop (contains onKeyReleased): " << commandContent2 << endl;
+							continue;
+						} // Add all events from the vector to the loop
+						for (const ParsedCommand &command : commands)
 						{
-							nukeWhitespaces(commandValue2);
-
-							std::map<std::string, nagaFunction *>::iterator functionIt = functionsMap.find(commandValue2);
-							if (functionIt == functionsMap.end())
-							{
-								clog << "Discarding in loop: undefined function " << commandValue2 << endl;
-								continue;
-							}
-
-							for (MacroEvent *const funcEvent : functionIt->second->eventList)
-							{
-								newLoop->addEvent(funcEvent);
-							}
-						}
-						else if (commandType2 == "loop" || commandType2 == "loop2") // nested loops
-						{
-							std::string loopCommand = commandValue2;
-							std::string loopName = loopCommand;
-							std::string loopArgument = "start";
-							bool shouldAddStop = true;
-							const std::string::size_type loopArgPos = loopCommand.find('=');
-
-							if (loopArgPos != std::string::npos)
-							{
-								loopName = loopCommand.substr(0, loopArgPos);
-								nukeWhitespaces(loopName);
-								loopArgument = loopCommand.substr(loopArgPos + 1);
-
-								try
-								{
-									if (std::stoll(loopArgument) < 0)
-										shouldAddStop = false;
-								}
-								catch (...)
-								{
-								}
-							}
-							else
-							{
-								nukeWhitespaces(loopName);
-							}
-
-							std::map<std::string, loop *>::iterator loopIt = loopsMap.find(loopName);
-							if (loopIt == loopsMap.end())
-							{
-								clog << "Discarding in loop: undefined nested loop " << loopName << endl;
-								continue;
-							}
-
-							const loop *const loopPtr = loopIt->second;
-
-							if (commandType2 == "loop2")
-							{
-								newLoop->addEvent(new ThreadedLoopMacroEvent(loopPtr, new std::string(loopArgument)));
-
-								if (shouldAddStop)
-								{
-									newLoop->addEvent(new ThreadedLoopMacroEvent(loopPtr, new std::string("stop")));
-								}
-							}
-							else
-							{
-								newLoop->addEvent(new loopMacroEvent(loopPtr, new std::string(loopArgument)));
-
-								if (shouldAddStop)
-								{
-									newLoop->addEvent(new loopMacroEvent(loopPtr, new std::string("stop")));
-								}
-							}
-						}
-						else
-						{
-							clog << "Discarding in loop: " << commandType2 << "=" << commandValue2 << endl;
+							newLoop->addEvent(&command.macroEvent);
 						}
 					}
 				}
 			}
 			else if (commandContent.substr(0, 8) == "context=")
 			{
-				commandContent.erase(0, 8);
+				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
 				vector<string> newContext = vector<string>();
 				contextMap.emplace(string(commandContent), newContext);
@@ -750,7 +750,8 @@ private:
 					}
 					else if (commandContent2.substr(0, 8) == "context=") // nested context
 					{
-						std::string nestedContextName = commandContent2.erase(0, 8);
+						std::string &nestedContextName = commandContent2;
+						cleaveCommandType(nestedContextName);
 						nukeWhitespaces(nestedContextName);
 						for (const std::string &contextItem : contextMap[nestedContextName])
 						{
@@ -766,32 +767,40 @@ private:
 			else if (commandContent.substr(0, 13) == "configWindow=")
 			{
 				isIteratingConfig = true;
-				commandContent.erase(0, 13);
+				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
 				iteratedConfig = &macroEventKeyMaps[commandContent];
-				(*configSwitcher->configWindowAndLockMap)[commandContent] = new pair<bool, const string *>(false, new string(""));
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send -a Naga \"Profile : " + commandContent + "\""))->c_str());
+				(*configSwitcher::configWindowAndLockMap)[commandContent] = new WindowConfigLock{false, new string("")};
+				configSwitcher::notifySendMap.emplace(commandContent, (new string("notify-send -a Naga \"Profile : " + commandContent + "\""))->c_str());
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
-				commandContent.erase(0, 7);
+				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
 				iteratedConfig = &macroEventKeyMaps[commandContent];
-				configSwitcher->notifySendMap.emplace(commandContent, (new string("notify-send -a Naga \"Profile : " + commandContent + "\""))->c_str());
+				configSwitcher::notifySendMap.emplace(commandContent, (new string("notify-send -a Naga \"Profile : " + commandContent + "\""))->c_str());
 			}
+	}
+	in.close();
+}
+
+static int side_btn_fd, extra_btn_fd;
+static fd_set readset;
+
+	static void runActions(vector<IMacroEvent *> *const relativeMacroEventsPointer)
+	{
+		for (IMacroEvent *const macroEvent : *relativeMacroEventsPointer)
+		{ // run all the events at Key
+			macroEvent->runInternal();
 		}
-		in.close();
 	}
 
-	int side_btn_fd, extra_btn_fd;
-	fd_set readset;
-
-	void run()
+	static void run()
 	{
 		while (true)
 		{
-			configSwitcher->remapRoutine();
+			configSwitcher::remapRoutine();
 
 			FD_ZERO(&readset);
 			if (areSideBtnEnabled)
@@ -814,21 +823,13 @@ private:
 				for (size_t i = 0; i < eventCount; ++i)
 				{
 					const input_event &event = ev1[i];
-					if (event.type != EV_KEY)
-					{
-						continue;
-					}
-					if (event.code < 2 || event.code > 13)
-					{
-						continue;
-					}
-					if (event.value != 0 && event.value != 1)
+					if (event.type != EV_KEY || event.code < 2 || event.code > 13 || (event.value != 0 && event.value != 1))
 					{
 						continue;
 					}
 
-					configSwitcher->checkForWindowConfig();
-					thread(runActions, &(*configSwitcher->currentConfigPtr)[event.code][event.value == 1]).detach();
+					configSwitcher::checkForWindowConfig();
+					thread(runActions, &(*configSwitcher::currentConfigPtr)[event.code][event.value == 1]).detach();
 				}
 			}
 			if (areExtraBtnEnabled && FD_ISSET(extra_btn_fd, &readset)) // Extra buttons
@@ -844,14 +845,12 @@ private:
 					{
 						if (event.code == 275 || event.code == 276)
 						{
-							configSwitcher->checkForWindowConfig();
-							thread(runActions, &(*configSwitcher->currentConfigPtr)[event.code - 261][event.value == 1]).detach();
-							continue;
+							configSwitcher::checkForWindowConfig();
+							thread(runActions, &(*configSwitcher::currentConfigPtr)[event.code - 261][event.value == 1]).detach();
 						}
 						else if (extraDeviceGrabbed && extraForwarder)
 						{
 							extraForwarder->forward(event);
-							continue;
 						}
 					}
 					else if (extraDeviceGrabbed && extraForwarder)
@@ -864,44 +863,43 @@ private:
 	}
 
 	// Functions that can be given to configKeys
-
-	static void mouseClick(const string *const macroContent)
+	static void mouseClick(const string &macroContent)
 	{
-		writeDotoolCommand("click " + *macroContent);
+		writeNagaDotoolCommand("click " + macroContent);
 	}
 
-	static void chmapNow(const string *const macroContent)
+	static void chmapNow(const string &macroContent)
 	{
-		configSwitcher->scheduleReMap(macroContent); // schedule config switch/change
+		configSwitcher::scheduleReMap(macroContent); // schedule config switch/change
 	}
 
-	static void sleepNow(const string *const macroContent)
+	static void sleepNow(const string &macroContent)
 	{
-		usleep(static_cast<useconds_t>(stoul(*macroContent) * 1000)); // microseconds make me dizzy in keymap.txt
+		usleep(static_cast<useconds_t>(stoul(macroContent) * 1000)); // microseconds make me dizzy in keymap.txt
 	}
-	static void dotoolKeydown(const string *const macroContent)
+	static void nagaDotoolKeydown(const string &macroContent)
 	{
-		writeDotoolCommand("keydown " + *macroContent);
-	}
-
-	static void dotoolKeyup(const string *const macroContent)
-	{
-		writeDotoolCommand("keyup " + *macroContent);
+		writeNagaDotoolCommand("keydown " + macroContent);
 	}
 
-	static void dotoolKey(const string *const macroContent)
+	static void nagaDotoolKeyup(const string &macroContent)
 	{
-		writeDotoolCommand("key " + *macroContent);
+		writeNagaDotoolCommand("keyup " + macroContent);
 	}
 
-	static void dotoolType(const string *const macroContent)
+	static void nagaDotoolKey(const string &macroContent)
 	{
-		writeDotoolCommand("type " + *macroContent);
+		writeNagaDotoolCommand("key " + macroContent);
 	}
 
-	static void runAndWrite(const string *const macroContent)
+	static void nagaDotoolType(const string &macroContent)
 	{
-		unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent->c_str(), "r"), &pclose);
+		writeNagaDotoolCommand("type " + macroContent);
+	}
+
+	static void runAndWrite(const string &macroContent)
+	{
+		unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent.c_str(), "r"), &pclose);
 		if (!pipe)
 		{
 			throw runtime_error("runAndWrite execution Failed !");
@@ -909,18 +907,19 @@ private:
 
 		string currentLine;
 		FILE *fp = pipe.get();
-		for (int ch = fgetc(fp), counter = 0; ch != EOF; ch = fgetc(fp))
+		size_t counter = 0;
+		for (int ch = fgetc(fp); ch != EOF; ch = fgetc(fp))
 		{
 			if (ch == '\n')
 			{
 				if (!currentLine.empty())
 				{
-					writeDotoolCommand("type " + currentLine);
+					writeNagaDotoolCommand("type " + currentLine);
 					counter = 0;
 					currentLine.clear();
 				}
-				writeDotoolCommand("key enter");
-				writeDotoolCommand("key home");
+				writeNagaDotoolCommand("key enter");
+				writeNagaDotoolCommand("key home");
 			}
 			else
 			{
@@ -928,7 +927,7 @@ private:
 				counter++;
 				if (counter >= DotoolCommandLimit)
 				{
-					writeDotoolCommand("type " + currentLine);
+					writeNagaDotoolCommand("type " + currentLine);
 					counter = 0;
 					currentLine.clear();
 				}
@@ -937,45 +936,36 @@ private:
 
 		if (!currentLine.empty())
 		{
-			writeDotoolCommand("type " + currentLine);
+			writeNagaDotoolCommand("type " + currentLine);
 		}
 	}
 
-	static void runAndWriteThread(const string *const macroContent)
+	static void runAndWriteThread(const string &macroContent)
 	{
-		thread(runAndWrite, macroContent).detach();
+		thread(runAndWrite, std::ref(macroContent)).detach();
 	}
 
-	static void executeNow(const string *const macroContent)
+	static void executeNow(const string &macroContent)
 	{
-		std::ignore = system(macroContent->c_str());
+		std::ignore = system(macroContent.c_str());
 	}
-	static void executeThreadNow(const string *const macroContent)
+	static void executeThreadNow(const string &macroContent)
 	{
-		thread(executeNow, macroContent).detach();
+		thread(executeNow, std::ref(macroContent)).detach();
 	}
 
-	static void unlockChmap(const string *const macroContent)
+	static void unlockChmap(const string &macroContent)
 	{
-		configSwitcher->scheduleUnlockChmap(macroContent);
+		configSwitcher::scheduleUnlockChmap(macroContent);
 	}
 	// end of configKeys functions
 
-	static void runActions(vector<IMacroEvent *> *const relativeMacroEventsPointer)
-	{
-		for (IMacroEvent *const macroEvent : *relativeMacroEventsPointer)
-		{ // run all the events at Key
-			macroEvent->runInternal();
-		}
-	}
-
-	void emplaceConfigKey(const string &nagaCommand, bool onKeyPressed, void (*functionPtr)(const string *const), const string &prefix = "", const string &suffix = "")
+	static void emplaceConfigKey(const string &nagaCommand, bool onKeyPressed, void (*functionPtr)(const string &), const string &prefix = "", const string &suffix = "")
 	{
 		nagaCommandsMap.emplace(nagaCommand, new nagaCommandClass(onKeyPressed, functionPtr, prefix, suffix));
 	}
 
-public:
-	NagaDaemon(const string mapConfig = "defaultConfig")
+	static void init(const string &mapConfig = "defaultConfig")
 	{
 		// modulable device files list
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic-event-mouse");								 // NAGA EPIC
@@ -997,6 +987,7 @@ public:
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");		 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
 		bool isThereADevice = false;
+		const char * sideDevice;
 		for (pair<const char *const, const char *const> &device : devices)
 		{ // Setup check
 			side_btn_fd = open(device.first, O_RDONLY);
@@ -1013,11 +1004,13 @@ public:
 				{
 					clog << "Reading from: " << device.first << endl;
 					areExtraBtnEnabled = false;
+					sideDevice = device.first;
 				}
 				else
 				{
 					clog << "Reading from: " << device.first << endl
 						 << " and " << device.second << endl;
+						 sideDevice= device.first;
 				}
 				isThereADevice = true;
 				break;
@@ -1030,9 +1023,14 @@ public:
 			exit(1);
 		}
 
-		if (areSideBtnEnabled)
-			ioctl(side_btn_fd, EVIOCGRAB, 1); // Give application exclusive control over side buttons.
-
+		if (areSideBtnEnabled){
+			ioctl(side_btn_fd, EVIOCGRAB, 1);
+			// Flush any pending events to prevent stuck keys/buttons (not enough)
+			fcntl(side_btn_fd, F_SETFL, O_NONBLOCK);
+			while (read(side_btn_fd, ev1, static_cast<size_t>(size)) > 0) {}
+			fcntl(side_btn_fd, F_SETFL, 0);
+			//usb_unbind_rebind(sideDevice); // rebind to avoid stuck keys/mouse issues on startup, todo when sudo-rs is updated or workaround found to run as root usb_rebind_helper.sh
+		}
 		if (areExtraBtnEnabled)
 		{
 			extraForwarder.reset(new UInputForwarder());
@@ -1050,6 +1048,10 @@ public:
 			{
 				extraDeviceGrabbed = true;
 				clog << "[naga] extra buttons grabbed; pointer events forwarded via uinput." << endl;
+				// Flush any pending events to prevent stuck keys/buttons (not enough)
+				fcntl(extra_btn_fd, F_SETFL, O_NONBLOCK);
+				while (read(extra_btn_fd, ev1, static_cast<size_t>(size)) > 0) {}
+				fcntl(extra_btn_fd, F_SETFL, 0);
 			}
 		}
 
@@ -1070,11 +1072,14 @@ public:
 		emplaceConfigKey("run", ONKEYPRESSED, executeThreadNow);
 		emplaceConfigKey("run2", ONKEYPRESSED, executeNow);
 
+		emplaceConfigKey("runrelease", ONKEYRELEASED, executeThreadNow);
+		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
+
 		emplaceConfigKey("runandwrite", ONKEYPRESSED, runAndWriteThread);
 		emplaceConfigKey("runandwrite2", ONKEYPRESSED, runAndWrite);
 
-		emplaceConfigKey("runrelease", ONKEYRELEASED, executeThreadNow);
-		emplaceConfigKey("runrelease2", ONKEYRELEASED, executeNow);
+		emplaceConfigKey("runandwriterelease", ONKEYRELEASED, runAndWriteThread);
+		emplaceConfigKey("runandwriterelease2", ONKEYRELEASED, runAndWrite);
 
 		emplaceConfigKey("unlockchmap", ONKEYPRESSED, unlockChmap);
 		emplaceConfigKey("unlockchmaprelease", ONKEYRELEASED, unlockChmap);
@@ -1082,26 +1087,26 @@ public:
 		emplaceConfigKey("launch", ONKEYRELEASED, executeThreadNow, "gtk-launch ");
 		emplaceConfigKey("launch2", ONKEYRELEASED, executeNow, "gtk-launch ");
 
-		emplaceConfigKey("keypressonpress", ONKEYPRESSED, dotoolKeydown);
-		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, dotoolKeydown);
+		emplaceConfigKey("keypressonpress", ONKEYPRESSED, nagaDotoolKeydown);
+		emplaceConfigKey("keypressonrelease", ONKEYRELEASED, nagaDotoolKeydown);
 
-		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, dotoolKeyup);
-		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, dotoolKeyup);
+		emplaceConfigKey("keyreleaseonpress", ONKEYPRESSED, nagaDotoolKeyup);
+		emplaceConfigKey("keyreleaseonrelease", ONKEYRELEASED, nagaDotoolKeyup);
 
-		emplaceConfigKey("keyclick", ONKEYPRESSED, dotoolKey);
-		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, dotoolKey);
+		emplaceConfigKey("keyclick", ONKEYPRESSED, nagaDotoolKey);
+		emplaceConfigKey("keyclickrelease", ONKEYRELEASED, nagaDotoolKey);
 
-		emplaceConfigKey("string", ONKEYPRESSED, dotoolType);
-		emplaceConfigKey("stringrelease", ONKEYRELEASED, dotoolType);
+		emplaceConfigKey("string", ONKEYPRESSED, nagaDotoolType);
+		emplaceConfigKey("stringrelease", ONKEYRELEASED, nagaDotoolType);
 
 		initConf();
 
-		configSwitcher->scheduleReMap(&mapConfig);
-		configSwitcher->loadConf(); // Initialize config
+		configSwitcher::scheduleReMap(mapConfig);
+		configSwitcher::loadConf(); // Initialize config
 
 		run();
 	}
-};
+}
 
 void stopD()
 {
@@ -1117,12 +1122,11 @@ int main(const int argc, const char *const argv[])
 		if (strstr(argv[1], "serviceHelper"))
 		{
 			stopD();
-			std::ignore = system("/usr/local/bin/Naga_Linux/nagaXinputStart.sh");
-			initDotoolPipe();
+			initNagaDotoolPipe();
 			if (argc > 2 && argv[2][0] != '\0')
-				NagaDaemon nagaDaemon(argv[2]); // lets you configure a default profile in /etc/systemd/system/naga.service
+				NagaDaemon::init(argv[2]); // lets you configure a default profile in /etc/systemd/system/naga.service
 			else
-				NagaDaemon nagaDaemon;
+				NagaDaemon::init();
 		}
 		else if (strstr(argv[1], "start"))
 		{
@@ -1199,3 +1203,4 @@ int main(const int argc, const char *const argv[])
 	}
 	return 0;
 }
+

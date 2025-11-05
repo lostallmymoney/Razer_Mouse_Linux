@@ -3,7 +3,6 @@ Description=Custom key bindings for the side panel of razer mouses.
 After=graphical.target
 Wants=graphical.target
 
-
 [Install]
 WantedBy=default.target
 

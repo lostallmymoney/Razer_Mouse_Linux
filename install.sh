@@ -29,9 +29,6 @@ printf "Copying files...\n"
 
 sudo mkdir -p /usr/local/bin/Naga_Linux
 
-sudo cp -f ./src/nagaXinputStart.sh /usr/local/bin/Naga_Linux/
-sudo chmod 755 /usr/local/bin/Naga_Linux/nagaXinputStart.sh
-
 sudo cp -f ./src/nagaKillroot.sh /usr/local/bin/Naga_Linux/
 sudo chmod 755 /usr/local/bin/Naga_Linux/nagaKillroot.sh
 
@@ -64,7 +61,10 @@ warn_connectivity() {
 
 printf "Installing requirements...\n"
 
-printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input",GROUP="razerInputGroup",MODE="660"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
+# Udev rule for Razer input devices (side/extra buttons)
+sudo sh -c '> /etc/udev/rules.d/80-naga.rules'
+printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input", GROUP="razerInputGroup", MODE="0660"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
+
 
 warn_connectivity
 
@@ -76,7 +76,6 @@ run_sub_install() {
     fi
 }
 
-# shellcheck disable=SC2046
 
 case "$1" in
     X11|x11)
@@ -86,6 +85,7 @@ case "$1" in
         run_sub_install ./src/_installWayland.sh
     ;;
     *)
+        # shellcheck disable=SC2046
         if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
             WAYLANDTYPE=true
             run_sub_install ./src/_installWayland.sh
@@ -99,8 +99,8 @@ case "$1" in
     ;;
 esac
 
-
-sudo cp -f src/naga.service /etc/systemd/system/
+# Add naga.service config lines
+sudo cp -f ./src/naga.service /etc/systemd/system/naga.service
 
 env | tee ~/.naga/envSetup >/dev/null
 grep -qF 'env | tee ~/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | tee ~/.naga/envSetup > /dev/null' | tee -a ~/.profile >/dev/null

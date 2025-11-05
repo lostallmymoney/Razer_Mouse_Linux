@@ -130,20 +130,25 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `runRelease2` – Same as above, synchronous
 - `runAndWrite` – Run a command and write its output live to screen
 - `runAndWrite2` – Same as above, synchronous
+- `runAndWriteRelease` – Run a command and write its output live to screen on release
+- `runAndWriteRelease2` – Same as above, synchronous
 - `keyClick` – Press key once on press
 - `keyClickRelease` – Press key once on release
-- `click` – Press mouse click (left | center | right) (Wayland only)
-- `clickRelease` – Press mouse click (left | center | right) on release (Wayland only)
-- `xdotoolType` / `xdotoolTypeRelease` – Type a string via xdotool (fallback, X11 only)
-- `specialKey` – Press + release a special key (X11 only)
-- `setWorkspace` – Switch workspace (via xdotool, X11 only)
-- `mousePosition` – Move mouse to `<x> <y>` position (X11 only)
+- `function` / `functionRelease` – Call a predefined function
+- `loop` – Start/stop a predefined loop inline (synchronous)
+- `loop2` – Start a predefined loop in a detached thread (asynchronous)
+- Wayland-only `click` – Press mouse click (left | center | right)
+- Wayland-only `clickRelease` – Press mouse click (left | center | right) on release
+- X11-only `xdotoolType` / `xdotoolTypeRelease` – Type a string via xdotool (fallback)
+- X11-only `specialKey` – Press + release a special key
+- X11-only `setWorkspace` – Switch workspace (via xdotool)
+- X11-only `mousePosition` – Move mouse to `<x> <y>` position
 
-**Special single-character press/release actions** (faster than xdotool, but no ctrl/media support yet, ONLY ON X11):  
-- `specialPressOnPress`  
-- `specialPressOnRelease`  
-- `specialReleaseOnPress`  
-- `specialReleaseOnRelease`  
+**Special single-character press/release actions** (faster than xdotool, but no ctrl/media support yet):  
+- X11-only `specialPressOnPress`  
+- X11-only `specialPressOnRelease`  
+- X11-only `specialReleaseOnPress`  
+- X11-only `specialReleaseOnRelease`  
 
 👉 For valid key names, see [X11 keysym list](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h) (remove `XK_` prefix).  
 
@@ -185,10 +190,10 @@ These advanced building blocks let you share logic, create repeatable sequences,
 - Define reusable combos once with `function=<name>` … `functionEnd`.
 - Only press-phase actions are recorded; call them from a config using `function=<name>` or `functionRelease=<name>`.
 - Functions can call other functions (nesting is allowed) for modular setups.
-- Functions can only include press-phase actions (or other functions); loop bindings are ignored inside a function block.
 
 **Compatible press-phase actions** (usable in both functions and loops):
 - `function` (invoke another function)
+- `loop` / `loop2` (nested loops with the arguments `=start`, `=stop`, or negative numbers for fixed repeated loops `=-3`.)
 - `chmap`
 - `sleep`
 - `run`
@@ -204,8 +209,7 @@ These advanced building blocks let you share logic, create repeatable sequences,
 - X11-only `specialPressOnPress`
 - X11-only `specialReleaseOnPress`
 
-Release-only variants (`runRelease`, `keyPressOnRelease`, etc.) need to be wrapped in a function or triggered from the main config directly.
-
+**Example:**
 ```txt
 function=prepStandup
 run=notify-send "Stand-up" "Time to share updates"
@@ -231,24 +235,30 @@ functionEnd
 	- `loop=myLoop=start` (default) begins the loop.
 	- `loop=myLoop=stop` stops it manually (auto-added on key release unless you pass a negative count).
 	- `loop=myLoop=5` runs exactly 5 cycles; `loop=myLoop=-3` runs 3 cycles without waiting for stop.
-- Loops may call functions, and they can nest other loops (inline or threaded) for complex rotations.
-
-**Compatible press-phase actions inside loops**:
-- `loop`
+	- `loop=myLoop=startOnRelease` begins loop on key release.
+	- `loop=myLoop=stopOnRelease` stops loop on key release.
+- **Only one instance per loop**: Each loop can have only one running instance at a time. Starting a loop while it's already running will stop the old instance and start a new one.
+- **Loops can include other loops**: Inside a `loop=` or `loop2=` definition, you can call other loops using `loop=anotherLoop=start`, `loop=anotherLoop=stop`, or negative numbers like `loop=anotherLoop=-5` (for fixed-count loops without auto-stop).
+- **All press-phase actions compatible with functions are also compatible with loops**, including nested `loop` / `loop2` calls.
 
 Release-triggered bindings require nesting within a function if you need them inside loops.
 
+**Example:**
 ```txt
 loop=burstRotation
 key=Ctrl+1
 sleep=150
 key=Ctrl+2
-sleep=150
 loopEnd
 
-3 - loop=burstRotation        # hold to spam the rotation until release
-4 - loop2=burstRotation=8     # fire 8 passes in a background thread
-5 - loop2=burstRotation=-3    # run 3 passes without waiting for stop
+loop=autoFarm
+loop=burstRotation=-2    # negative count: run 2 cycles without auto-stop
+sleep=500
+loopEnd
+
+3 - loop=burstRotation        # hold to spam the rotation
+4 - loop2=burstRotation=5     # run 5 cycles in background
+5 - loop=autoFarm             # nested loop example
 ```
 
 ### 🗂️ Contexts
@@ -256,6 +266,7 @@ loopEnd
 - Inside a config, drop `context=<name>` and every line stored in that context is injected in place.
 - Great for repeating key layouts across multiple profiles or layering optional behaviors.
 
+**Example:**
 ```txt
 context=mediaOverlay
 1 - key=XF86AudioPlay

@@ -8,48 +8,48 @@
 
 namespace nagaDotool
 {
-	inline std::mutex dotoolPipeMutex;
-	inline FILE *dotoolPipe = nullptr;
+	inline std::mutex nagaDotoolPipeMutex;
+	inline FILE *nagaDotoolPipe = nullptr;
 
-	inline void closeDotoolPipe()
+	inline void closeNagaDotoolPipe()
 	{
-		std::lock_guard<std::mutex> lock(dotoolPipeMutex);
-		if (dotoolPipe)
+		std::lock_guard<std::mutex> lock(nagaDotoolPipeMutex);
+		if (nagaDotoolPipe)
 		{
-			pclose(dotoolPipe);
-			dotoolPipe = nullptr;
+			pclose(nagaDotoolPipe);
+			nagaDotoolPipe = nullptr;
 		}
 	}
 
-	inline void writeDotoolCommand(std::string_view command)
+	inline void writeNagaDotoolCommand(std::string_view command)
 	{
-		std::lock_guard<std::mutex> lock(dotoolPipeMutex);
-		if (fwrite(command.data(), 1, command.size(), dotoolPipe) != command.size() ||
-			fputc('\n', dotoolPipe) == EOF)
+		std::lock_guard<std::mutex> lock(nagaDotoolPipeMutex);
+		if (fwrite(command.data(), 1, command.size(), nagaDotoolPipe) != command.size() ||
+			fputc('\n', nagaDotoolPipe) == EOF)
 		{
 			throw std::runtime_error("Failed to write command to nagaDotoolc");
 		}
 
-		if (fflush(dotoolPipe) == EOF)
+		if (fflush(nagaDotoolPipe) == EOF)
 		{
 			throw std::runtime_error("Failed to flush nagaDotoolc");
 		}
 	}
 
-	inline void initDotoolPipe()
+	inline void initNagaDotoolPipe()
 	{
-		std::lock_guard<std::mutex> lock(dotoolPipeMutex);
-		if (dotoolPipe)
+		std::lock_guard<std::mutex> lock(nagaDotoolPipeMutex);
+		if (nagaDotoolPipe)
 		{
 			return;
 		}
 
-		dotoolPipe = popen("nagaDotoolc", "w");
-		if (!dotoolPipe)
+		nagaDotoolPipe = popen("nagaDotoolc", "w");
+		if (!nagaDotoolPipe)
 		{
 			throw std::runtime_error("Failed to start nagaDotoolc");
 		}
-		setvbuf(dotoolPipe, nullptr, _IOLBF, 0);
-		atexit(closeDotoolPipe);
+		setvbuf(nagaDotoolPipe, nullptr, _IOLBF, 0);
+		atexit(closeNagaDotoolPipe);
 	}
 }
