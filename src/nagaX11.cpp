@@ -783,7 +783,7 @@ namespace NagaDaemon
 				nukeWhitespaces(commandContent);
 				iteratedConfig = &macroEventKeyMaps[commandContent];
 				(*configSwitcher::configWindowAndLockMap)[commandContent] = new WindowConfigLock{false, new string("")};
-				configSwitcher::notifySendMap.emplace(commandContent, (new string("notify-send -a Naga \"Profile : " + commandContent + "\""))->c_str());
+				configSwitcher::notifySendMap.emplace(commandContent, (new string("notify-send -a Naga -t 300 \"Profile : " + commandContent + "\""))->c_str());
 			}
 			else if (commandContent.substr(0, 7) == "config=")
 			{
@@ -791,7 +791,7 @@ namespace NagaDaemon
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
 				iteratedConfig = &macroEventKeyMaps[commandContent];
-				configSwitcher::notifySendMap.emplace(commandContent, (new string("notify-send -a Naga \"Profile : " + commandContent + "\""))->c_str());
+				configSwitcher::notifySendMap.emplace(commandContent, (new string("notify-send -a Naga -t 300 \"Profile : " + commandContent + "\""))->c_str());
 			}
 		}
 		in.close();
