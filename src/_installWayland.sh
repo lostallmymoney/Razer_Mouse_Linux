@@ -62,13 +62,20 @@ fi
 
 sed -i 's/dotool "\$@"/nagaDotool "\$@"/' "$dotool_stage/bin/dotoold"
 # shellcheck disable=SC2016
-sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\$HOME\/.naga\/protected\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
+sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\/run\/.nagaProtected\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
 # shellcheck disable=SC2016
-sed -i 's/\/tmp\/dotool-pipe/\$HOME\/.naga\/protected\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
+sed -i 's/\/tmp\/dotool-pipe/\/run\/.nagaProtected\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
 
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotool" /usr/local/bin/nagaDotool
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoolc" /usr/local/bin/nagaDotoolc
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoold" /usr/local/bin/nagaDotoold
+
+# Create systemd-tmpfiles.d config for persistent /run/.nagaProtected
+cat <<EOF | sudo tee /etc/tmpfiles.d/nagaProtected.conf >/dev/null
+d /run/.nagaProtected 0770 root razerInputGroup -
+EOF
+sudo systemd-tmpfiles --create
+
 
 cleanup_dotool_stage
 trap - EXIT INT TERM
