@@ -241,8 +241,6 @@ functionEnd
 - **Loops can include other loops**: Inside a `loop=` or `loop2=` definition, you can call other loops using `loop=anotherLoop=start`, `loop=anotherLoop=stop`, or negative numbers like `loop=anotherLoop=-5` (for fixed-count loops without auto-stop).
 - **All press-phase actions compatible with functions are also compatible with loops**, including nested `loop` / `loop2` calls.
 
-Release-triggered bindings require nesting within a function if you need them inside loops.
-
 **Example:**
 ```txt
 loop=burstRotation
