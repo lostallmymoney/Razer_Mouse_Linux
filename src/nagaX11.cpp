@@ -5,6 +5,7 @@
 #include "fakeKeysX11.hpp"
 #include "getactivewindowX11.hpp"
 #include <iostream>
+#include <condition_variable>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -259,7 +260,7 @@ struct WindowConfigLock
 namespace configSwitcher
 {
 	using WindowConfigMap = map<const string, WindowConfigLock *>;
-	
+
 	static bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false, notifyOnNextLoad = false;
 	static const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
 	static string lastLoggedWindow;
@@ -301,7 +302,7 @@ namespace configSwitcher
 			if (configWindow != configWindowAndLockMap->end())
 			{
 				const string &windowName = configWindow->first;
-				WindowConfigLock * const &windowConfigLock = configWindow->second;
+				WindowConfigLock *const &windowConfigLock = configWindow->second;
 				currentWindowConfigPtr = configWindow;
 				if (!winConfigActive)
 					bckConfName = currentConfigName;
@@ -326,7 +327,7 @@ namespace configSwitcher
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (scheduledUnlock)
 		{
-			WindowConfigLock * const &windowConfigLock = scheduledUnlockWindowCfgPtr->second;
+			WindowConfigLock *const &windowConfigLock = scheduledUnlockWindowCfgPtr->second;
 			windowConfigLock->isLocked = scheduledUnlock = false;
 			forceRecheck = notifyOnNextLoad = true;
 		}
@@ -342,7 +343,7 @@ namespace configSwitcher
 		lock_guard<mutex> guard(configSwitcherMutex);
 		if (winConfigActive)
 		{
-			WindowConfigLock * const &windowConfigLock = currentWindowConfigPtr->second;
+			WindowConfigLock *const &windowConfigLock = currentWindowConfigPtr->second;
 			windowConfigLock->isLocked = forceRecheck = notifyOnNextLoad = true;
 			windowConfigLock->lockedConfigName = &reMapStr;
 		}
@@ -361,7 +362,7 @@ namespace configSwitcher
 			scheduledUnlockWindowCfgPtr = configWindowAndLockMap->find(unlockStr);
 			if (scheduledUnlockWindowCfgPtr != configWindowAndLockMap->end())
 			{
-				WindowConfigLock * const &windowConfigLock = scheduledUnlockWindowCfgPtr->second;
+				WindowConfigLock *const &windowConfigLock = scheduledUnlockWindowCfgPtr->second;
 				if (windowConfigLock->isLocked)
 				{
 					scheduledUnlock = shouldRecheck = true;
@@ -378,7 +379,6 @@ namespace NagaDaemon
 	static constexpr size_t BufferSize = 1024;
 
 	static map<string, nagaCommandClass *const> nagaCommandsMap;
-
 
 	static constexpr size_t input_event_size = sizeof(input_event);
 	static struct input_event side_ev[64];
@@ -661,12 +661,13 @@ namespace NagaDaemon
 						std::string modifiedConfigLine = configLine;
 						cleaveButtonNumber(modifiedConfigLine);
 
-					ParsedCommandList commands = parseCommand(modifiedConfigLine);
-					for (const ParsedCommand &command : commands)
-					{
-						(*iteratedConfig)[buttonNumberInt][command.isOnKeyPressed].emplace_back(&command.macroEvent);
-					}
-				};					if (commandContent.substr(0, 8) == "context=")
+						ParsedCommandList commands = parseCommand(modifiedConfigLine);
+						for (const ParsedCommand &command : commands)
+						{
+							(*iteratedConfig)[buttonNumberInt][command.isOnKeyPressed].emplace_back(&command.macroEvent);
+						}
+					};
+					if (commandContent.substr(0, 8) == "context=")
 					{
 						cleaveCommandType(commandContent);
 						nukeWhitespaces(commandContent);
@@ -798,7 +799,6 @@ namespace NagaDaemon
 	}
 
 	static int side_btn_fd, extra_btn_fd;
-	static fd_set readset;
 
 	static void writeStringNow(const string &macroContent)
 	{
@@ -909,66 +909,81 @@ namespace NagaDaemon
 		}
 	}
 
-	static void run()
+	static void sideBtnThreadFunc()
 	{
+		ssize_t bytesRead;
+		size_t eventCount;
+		bool checkedForWindowConfig = false;
 		while (true)
 		{
 			configSwitcher::remapRoutine();
-
-			FD_ZERO(&readset);
-			if (areSideBtnEnabled)
-				FD_SET(side_btn_fd, &readset);
-			if (areExtraBtnEnabled)
-				FD_SET(extra_btn_fd, &readset);
-			if (select(FD_SETSIZE, &readset, nullptr, nullptr, nullptr) == -1)
+			bytesRead = read(side_btn_fd, side_ev, side_ev_size);
+			if (bytesRead == -1)
 				exit(2);
-
-			if (areSideBtnEnabled && FD_ISSET(side_btn_fd, &readset)) // Side buttons
+			eventCount = bytesRead / input_event_size;
+			for (size_t i = 0; i < eventCount; ++i)
 			{
-				ssize_t bytesRead = read(side_btn_fd, side_ev, side_ev_size);
-				if (bytesRead == -1)
-					exit(2);
-				size_t eventCount = bytesRead / input_event_size;
-				for (size_t i = 0; i < eventCount; ++i)
-				{
-					const input_event &event = side_ev[i];
-					if (event.type != EV_KEY || event.code < 2 || event.code > 13 || (event.value != 0 && event.value != 1))
-					{
-						continue;
-					}
+				const input_event &event = side_ev[i];
+				if (event.type != EV_KEY || event.code < 2 || event.code > 13 || (event.value != 0 && event.value != 1))
+					continue;
 
+				if (!checkedForWindowConfig)
+				{
 					configSwitcher::checkForWindowConfig();
-					thread(runActions, &(*configSwitcher::currentConfigPtr)[event.code][event.value == 1]).detach();
+					checkedForWindowConfig = true;
 				}
+				thread(runActions, &(*configSwitcher::currentConfigPtr)[event.code][event.value == 1]).detach();
 			}
-			if (areExtraBtnEnabled && FD_ISSET(extra_btn_fd, &readset)) // Extra buttons
-			{
-				ssize_t bytesRead = read(extra_btn_fd, extra_ev, extra_ev_size);
-				if (bytesRead == -1)
-					exit(2);
-				size_t eventCount = bytesRead / input_event_size;
-				for (size_t i = 0; i < eventCount; ++i)
-				{
-					const input_event &event = extra_ev[i];
-					if (event.type == EV_KEY)
-					{
-						if (event.code == 275 || event.code == 276)
-						{
-							configSwitcher::checkForWindowConfig();
-							thread(runActions, &(*configSwitcher::currentConfigPtr)[event.code - 261][event.value == 1]).detach();
-						}
-						else if (extraDeviceGrabbed && extraForwarder)
-						{
-							extraForwarder->forward(event);
-						}
-					}
-					else if (extraDeviceGrabbed && extraForwarder)
-					{
-						extraForwarder->forward(event);
-					}
-				}
-			}
+			checkedForWindowConfig = false;
 		}
+	}
+
+	static void extraBtnThreadFunc()
+	{
+		ssize_t bytesRead;
+		size_t eventCount;
+		bool checkedForWindowConfig = false;
+		while (true)
+		{
+			configSwitcher::remapRoutine();
+			bytesRead = read(extra_btn_fd, extra_ev, extra_ev_size);
+			if (bytesRead == -1)
+				exit(2);
+			eventCount = bytesRead / input_event_size;
+			for (size_t i = 0; i < eventCount; ++i)
+			{
+				const input_event &event = extra_ev[i];
+				if (event.type == EV_KEY && (event.code == 275 || event.code == 276))
+				{
+					if (!checkedForWindowConfig)
+					{
+						configSwitcher::checkForWindowConfig();
+						checkedForWindowConfig = true;
+					}
+					thread(runActions, &(*configSwitcher::currentConfigPtr)[event.code - 261][event.value == 1]).detach();
+					continue;
+				}
+				if (extraDeviceGrabbed && extraForwarder)
+				{
+					extraForwarder->forward(event);
+				}
+			}
+			checkedForWindowConfig = false;
+		}
+	}
+
+	static void run()
+	{
+		if (areSideBtnEnabled)
+			std::thread(sideBtnThreadFunc).detach();
+		if (areExtraBtnEnabled)
+			std::thread(extraBtnThreadFunc).detach();
+		// Main thread blocks forever
+		static std::mutex mtx;
+		static std::condition_variable cv;
+		std::unique_lock<std::mutex> lock(mtx);
+		cv.wait(lock, []
+				{ return false; });
 	}
 
 	static void emplaceConfigKey(const string &nagaCommand, bool onKeyPressed, void (*functionPtr)(const string &), const string &prefix = "", const string &suffix = "")
@@ -1035,7 +1050,9 @@ namespace NagaDaemon
 			ioctl(side_btn_fd, EVIOCGRAB, 1);
 			// Flush any pending events to prevent stuck keys/buttons (not enough)
 			fcntl(side_btn_fd, F_SETFL, O_NONBLOCK);
-			while (read(side_btn_fd, side_ev, side_ev_size) > 0) {}
+			while (read(side_btn_fd, side_ev, side_ev_size) > 0)
+			{
+			}
 			fcntl(side_btn_fd, F_SETFL, 0);
 		}
 
@@ -1058,7 +1075,9 @@ namespace NagaDaemon
 				clog << "[naga-x11] extra buttons grabbed; pointer events forwarded via uinput." << endl;
 				// Flush any pending events to prevent stuck keys/buttons (not enough)
 				fcntl(extra_btn_fd, F_SETFL, O_NONBLOCK);
-				while (read(extra_btn_fd, extra_ev, extra_ev_size) > 0) {}
+				while (read(extra_btn_fd, extra_ev, extra_ev_size) > 0)
+				{
+				}
 				fcntl(extra_btn_fd, F_SETFL, 0);
 			}
 		}
@@ -1110,12 +1129,11 @@ namespace NagaDaemon
 
 		initConf();
 
+		configSwitcher::scheduleReMap(mapConfig);
+		configSwitcher::loadConf();
 
-	configSwitcher::scheduleReMap(mapConfig);
-	configSwitcher::loadConf();
-
-	run();
-}
+		run();
+	}
 }
 
 void stopD()
