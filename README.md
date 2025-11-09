@@ -53,7 +53,7 @@ Tested & confirmed 99% compatible with:
 - **Naga X** – (thanks [bgrabow](https://github.com/bgrabow))  
 - **Naga 2014** – Ubuntu  
 
-> **Disclaimer:** Make sure to have at least **300KB of free RAM** to run this daemon seamlessly.
+> **Disclaimer:** Make sure to have at least **2MB of free RAM** to run this daemon seamlessly.
 ---
 
 ## ⚙️ Commands
