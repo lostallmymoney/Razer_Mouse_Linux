@@ -7,8 +7,18 @@ fi
 
 printf "Installing requirements...\n"
 
-if ! sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps libglib2.0-dev; then
-    printf "\033[0;31mFailed while installing apt packages.\033[0m\n" >&2
+
+# Try to detect and use the available package manager
+if command -v apt >/dev/null 2>&1; then
+    sudo apt install -y libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps libglib2.0-dev scdoc || { printf "\033[0;31mFailed while installing apt packages.\033[0m\n" >&2; exit 1; }
+elif command -v zypper >/dev/null 2>&1; then
+    sudo zypper --non-interactive install gcc-c++ nano polkit procps wget gnome-shell-extension-prefs dbus-1 curl dbus-1-devel libxkbcommon-devel go scdoc || { printf "\033[0;31mFailed while installing zypper packages.\033[0m\n" >&2; exit 1; }
+elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y libX11-devel xdotool xinput gcc-c++ libXtst-devel libXmu-devel nano polkit procps-ng glib2-devel scdoc || { printf "\033[0;31mFailed while installing dnf packages.\033[0m\n" >&2; exit 1; }
+elif command -v pacman >/dev/null 2>&1; then
+    sudo pacman -Sy --noconfirm libx11 xdotool xorg-xinput gcc libxtst libxmu nano polkit procps-ng glib2 scdoc || { printf "\033[0;31mFailed while installing pacman packages.\033[0m\n" >&2; exit 1; }
+else
+    printf "\033[0;31mNo supported package manager found (apt, dnf, zypper, pacman).\033[0m\n" >&2
     exit 1
 fi
 

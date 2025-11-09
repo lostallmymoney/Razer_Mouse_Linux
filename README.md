@@ -53,7 +53,7 @@ Tested & confirmed 99% compatible with:
 - **Naga X** – (thanks [bgrabow](https://github.com/bgrabow))  
 - **Naga 2014** – Ubuntu  
 
-> **Disclaimer:** Make sure to have at least **1MB of free RAM** to run this daemon seamlessly.
+> **Disclaimer:** Make sure to have at least **300KB of free RAM** to run this daemon seamlessly.
 ---
 
 ## ⚙️ Commands
@@ -118,6 +118,7 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `chmapRelease` – Switch config on key release
 - `unlockChmap` – Unlocks auto window-based configs  
 - `sleep` / `sleepRelease` – Put system to sleep
+- `randomSleep` / `randomSleepRelease` – Sleep for a random duration (0 to N ms, where N is the argument)
 - `string` / `stringRelease` – Type a literal string
 - `key` – Press + release a key
 - `keyPressOnPress` – Hold key on button press

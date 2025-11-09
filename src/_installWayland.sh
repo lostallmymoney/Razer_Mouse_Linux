@@ -2,8 +2,18 @@
 
 printf "Installing requirements...\n"
 
-if ! sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev libxkbcommon-dev golang-go scdoc; then
-    printf "\033[0;31mFailed while installing apt packages.\033[0m\n" >&2
+
+# Try to detect and use the available package manager
+if command -v apt >/dev/null 2>&1; then
+    sudo apt install -y g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev libxkbcommon-dev golang-go scdoc || { printf "\033[0;31mFailed while installing apt packages.\033[0m\n" >&2; exit 1; }
+elif command -v zypper >/dev/null 2>&1; then
+    sudo zypper --non-interactive install gcc-c++ nano polkit procps wget gnome-shell-extension-prefs dbus-1 curl dbus-1-devel libxkbcommon-devel go scdoc || { printf "\033[0;31mFailed while installing zypper packages.\033[0m\n" >&2; exit 1; }
+elif command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y gcc-c++ nano polkit procps-ng wget gnome-shell-extension-prefs dbus-x11 curl dbus-devel libxkbcommon-devel golang scdoc || { printf "\033[0;31mFailed while installing dnf packages.\033[0m\n" >&2; exit 1; }
+elif command -v pacman >/dev/null 2>&1; then
+    sudo pacman -Sy --noconfirm base-devel nano polkit procps-ng wget gnome-shell-extension-prefs dbus curl libxkbcommon go scdoc || { printf "\033[0;31mFailed while installing pacman packages.\033[0m\n" >&2; exit 1; }
+else
+    printf "\033[0;31mNo supported package manager found (apt, dnf, zypper, pacman).\033[0m\n" >&2
     exit 1
 fi
 

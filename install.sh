@@ -135,8 +135,7 @@ printf "\033[0;32mService started !\nStop with naga service stop\nStart with nag
 printf "Star the repo here 😁 :\n"
 printf "\033[0;35mhttps://github.com/lostallmymoney/Razer_Mouse_Linux\033[0m\n\n"
 
-xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1
-
+(setsid xdg-open https://github.com/lostallmymoney/Razer_Mouse_Linux >/dev/null 2>&1) &
 if [ "$WAYLANDTYPE" = true ]; then
     printf "\033[0;31mRELOGGING NECESSARY (for auto profiles.. Press ctrl+c to skip) \033[0m\n"
     printf "Press ENTER to log out (reboot)..."
