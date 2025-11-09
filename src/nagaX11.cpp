@@ -1002,6 +1002,7 @@ namespace NagaDaemon
 		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-event-mouse");
 		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse");
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_HyperSpeed_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_HyperSpeed_000000000000-event-mouse");	// Naga Hyperspeed USB MODE (add bluetooth files above this one)
 
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");		 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
