@@ -40,19 +40,22 @@ sh install.sh wayland
 Tested & confirmed 99% compatible with:
 
 - **Naga Epic Chroma** – CentOS 7  
-- **Naga Epic (pre-2014)** – Ubuntu 14.04–15.10  
-- **Naga (RZ01-0028)** – Ubuntu 14.04 (thanks [khornem](https://github.com/khornem))  
-- **Naga Chroma** – Manjaro (thanks [felipeacsi](https://github.com/felipeacsi))  
-- **Naga Molten** – Linux Mint 17.02 (thanks noobxgockel)
-- **Naga 2012 (RZ01-0058)** – Arch, Ubuntu 16.04 (thanks [violet-fish](https://github.com/violet-fish), [brianfreytag](https://github.com/brianfreytag))  
-- **Naga Chroma** – Linux Mint KDE 18.1 (thanks [ipsod](https://github.com/ipsod))  
+- **Naga Epic (pre-2014)** - (thanks unknown early collaborator)
+- **Naga (RZ01-0028)** – (thanks [khornem](https://github.com/khornem))  
+- **Naga Chroma** – (thanks [felipeacsi](https://github.com/felipeacsi))  
+- **Naga Molten** – (thanks noobxgockel)
+- **Naga 2012 (RZ01-0058)** – Arch, Ubuntu (thanks [violet-fish](https://github.com/violet-fish), [brianfreytag](https://github.com/brianfreytag))  
+- **Naga Chroma** – (thanks [ipsod](https://github.com/ipsod))  
 - **Naga Trinity** – (thanks [haringsrob](https://github.com/haringsrob), [ws141](https://github.com/ws141))  
 - **Naga Pro Wireless** – (thanks [Stibax](https://github.com/Stibax))  
 - **Naga V2** – (thanks [ibarrick](https://github.com/ibarrick))  
 - **Naga Left-Handed** – (thanks [Izaya-San](https://github.com/Izaya-San))  
 - **Naga X** – (thanks [bgrabow](https://github.com/bgrabow))
 - **Naga HyperSpeed** – (thanks [khornem](https://github.com/khornem)) (Bluetooth files still unknown, USB working)
-- **Naga 2014** – Ubuntu  
+- **Naga 2014** –
+
+On theses systems : 
+Ubuntu, Manjaro, Linux Mint, CentOS, ArchLinux, and more..
 
 > **Disclaimer:** Make sure to have at least **2MB of free RAM** to run this daemon seamlessly.
 ---
