@@ -5,7 +5,7 @@ A lightweight tool to map and manage macros for Razer Naga and other devices on 
 ✅ Supports **Ubuntu, its flavors, and most other distros** (with dependencies installed)  
 ✅ Includes **per-app auto profiles**  
 
-Want support for another device? Just [add the files](https://github.com/lostallmymoney/Razer_Mouse_Linux/issues/55) or [contact me](#).  
+Want support for another device? Just [add the files](https://github.com/lostallmymoney/Razer_Mouse_Linux/issues/55) or [contact me](https://github.com/lostallmymoney/Razer_Mouse_Linux/discussions).  
 
 ---
 
