@@ -22,13 +22,13 @@
 #include <string>
 #include "extraButtonCapture.hpp"
 #include "nagaDotoolLib.hpp"
-#include "waylandWindowExtLib.hpp"
+#include "getactivewindowWayland.hpp"
 // #include "nagaUsbUnbindRebind.hpp" //todo, when sudo-rs is updated to allow systemctl to use sudoers or if a workaround is found
 using namespace std;
 using nagaDotool::closeNagaDotoolPipe;
 using nagaDotool::initNagaDotoolPipe;
 using nagaDotool::writeNagaDotoolCommand;
-using nagaWaylandWindowExt::getTitle;
+using getactivewindowWayland::getTitle;
 
 static mutex configSwitcherMutex;
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";

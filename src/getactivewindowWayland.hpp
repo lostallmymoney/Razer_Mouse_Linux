@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-namespace nagaWaylandWindowExt
+namespace getactivewindowWayland
 {
 	inline constexpr const char *DB_INTERFACE = "org.gnome.Shell.Extensions.WindowsExt";
 	inline constexpr const char *DB_DESTINATION = "org.gnome.Shell";
