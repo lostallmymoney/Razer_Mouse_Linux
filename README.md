@@ -51,7 +51,7 @@ Tested & confirmed 99% compatible with:
 - **Naga V2** – (thanks [ibarrick](https://github.com/ibarrick))  
 - **Naga Left-Handed** – (thanks [Izaya-San](https://github.com/Izaya-San))  
 - **Naga X** – (thanks [bgrabow](https://github.com/bgrabow))
-- **Naga HyperSpeed** – (thanks [khornem](https://github.com/khornem))
+- **Naga HyperSpeed** – (thanks [khornem](https://github.com/khornem)) (Bluetooth files still unknown, USB working)
 - **Naga 2014** – Ubuntu  
 
 > **Disclaimer:** Make sure to have at least **2MB of free RAM** to run this daemon seamlessly.
