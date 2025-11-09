@@ -40,7 +40,7 @@ sh install.sh wayland
 Tested & confirmed 99% compatible with:
 
 - **Naga Epic Chroma** – CentOS 7  
-- **Naga Epic (pre-2014)** - (thanks unknown early collaborator)
+- **Naga Epic (pre-2014)** - (thanks unknown early contributor)
 - **Naga (RZ01-0028)** – (thanks [khornem](https://github.com/khornem))  
 - **Naga Chroma** – (thanks [felipeacsi](https://github.com/felipeacsi))  
 - **Naga Molten** – (thanks noobxgockel)
