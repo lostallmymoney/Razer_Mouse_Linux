@@ -617,7 +617,7 @@ namespace NagaDaemon
 
 		string commandContent, commandContent2;
 		IMacroEventKeyMap *iteratedConfig;
-		bool isIteratingConfig = false, isIteratingLoop = false, isIteratingFunction = false, isIteratingContext = false;
+		bool isIteratingConfig = false, isIteratingLoop = false, isIteratingFunction = false, isIteratingContext = false, isWindowConfig = false;
 
 		ifstream in(conf_file.c_str(), ios::in);
 		if (!in)
@@ -765,13 +765,13 @@ namespace NagaDaemon
 					}
 				}
 			}
-			else if (commandContent.substr(0, 13) == "configWindow=" || commandContent.substr(0, 7) == "config=")
+			else if ((isWindowConfig = (commandContent.substr(0, 13) == "configWindow=")) || commandContent.substr(0, 7) == "config=")
 			{
 				isIteratingConfig = true;
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
 				iteratedConfig = &IMacroEventKeyMaps[commandContent];
-				if (commandContent.substr(0, 13) == "configWindow=")
+				if (isWindowConfig)
 					(*configSwitcher::configWindowAndLockMap)[commandContent] = new WindowConfigLock{false, new string("")};
 				configSwitcher::notifySendMap.emplace(commandContent, (new string("notify-send -a Naga -t 300 \"Profile : " + commandContent + "\""))->c_str());
 			}
