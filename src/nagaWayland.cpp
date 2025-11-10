@@ -81,6 +81,7 @@ class loop
 private:
 	mutable std::atomic<uint32_t> generation{0};
 	mutable std::atomic<bool> globalStop{false};
+	mutable std::atomic<bool> toggled{false};
 	size_t eventCount{0};
 	std::vector<IMacroEvent *> eventList;
 
@@ -113,6 +114,16 @@ public:
 
 			if (globalStop.load(std::memory_order_acquire) || generation.load(std::memory_order_acquire) != myGen)
 				break;
+		}
+	}
+	// Toggle the loop: if toggled, stop; if stopped, set toggled and start directly (no threading)
+	void toggle() const {
+		if (toggled.load(std::memory_order_acquire)) {
+			this->stop();
+		} else {
+			toggled.store(true, std::memory_order_release);
+			this->run();
+			toggled.store(false, std::memory_order_release);
 		}
 	}
 
@@ -181,6 +192,11 @@ public:
 		{
 			loopAction = [&loopRef = aNagaLoop]()
 			{ loopRef.stop(); };
+		}
+		else if (taNagaLoopArgument == "toggle" || taNagaLoopArgument == "togglerelease")
+		{
+			loopAction = [&loopRef = aNagaLoop]()
+			{ loopRef.toggle(); };
 		}
 		else
 		{
@@ -421,21 +437,12 @@ namespace NagaDaemon
 
 		const std::function<int(const std::string &)> getButtonNumber = [](const std::string &configLine) -> int
 		{
-			std::string::size_type equalPos = configLine.find('=');
-			if (equalPos == std::string::npos)
-				return -1;
-
-			std::string beforeEqual = configLine.substr(0, equalPos);
-			std::string::size_type dashPos = beforeEqual.find('-');
+			std::string::size_type dashPos = configLine.find('-');
 			if (dashPos == std::string::npos)
 				return -1;
-
-			try
-			{
-				return std::stoi(beforeEqual.substr(0, dashPos)) + 1;
-			}
-			catch (...)
-			{
+			try {
+				return std::stoi(configLine.substr(0, dashPos)) + 1;
+			} catch (...) {
 				return -1;
 			}
 		};
@@ -444,31 +451,18 @@ namespace NagaDaemon
 		{
 			std::string::size_type equalPos = configLine.find('=');
 			if (equalPos == std::string::npos)
-				return "";
-
-			std::string beforeEqual = configLine.substr(0, equalPos);
-			std::string::size_type dashPos = beforeEqual.find('-');
-			if (dashPos == std::string::npos)
-				return beforeEqual; // No dash means button number already removed
-
-			return beforeEqual.substr(dashPos + 1);
+				return configLine;
+			return configLine.substr(0, equalPos);
 		};
 
 		const std::function<void(std::string &)> cleaveButtonNumber = [](std::string &configLine)
 		{
-			std::string::size_type equalPos = configLine.find('=');
-			if (equalPos == std::string::npos)
-				return;
-
-			std::string beforeEqual = configLine.substr(0, equalPos);
-			std::string::size_type dashPos = beforeEqual.find('-');
+			// Remove up to and including the first dash, then trim spaces after dash
+			std::string::size_type dashPos = configLine.find('-');
 			if (dashPos == std::string::npos)
 				return;
-
-			// Remove the button number and dash, keep everything after the dash
-			std::string afterDash = beforeEqual.substr(dashPos + 1);
-			std::string afterEqual = configLine.substr(equalPos);
-			configLine = afterDash + afterEqual;
+			configLine = configLine.substr(dashPos + 1);
+			configLine.erase(0, configLine.find_first_not_of(' '));
 		};
 
 		const std::function<void(std::string &)> cleaveCommandType = [](std::string &configLine)
@@ -503,16 +497,12 @@ namespace NagaDaemon
 
 			if (nagaCommandsMap.contains(commandType))
 			{
-				commandContent = nagaCommandsMap[commandType]->generateCommand(commandContent);
-				result.emplace_back(ParsedCommand{nagaCommandsMap[commandType]->IsOnKeyPressed(),
-												  *(new MacroEvent(*nagaCommandsMap[commandType], *(new std::string(commandContent))))});
+				result.emplace_back(ParsedCommand{nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent)))});
 			}
 			else if (commandType == "key")
 			{
-				std::string commandContent2 = nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent);
-				commandContent = nagaCommandsMap["keypressonpress"]->generateCommand(commandContent);
-				result.emplace_back(ParsedCommand{true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], *(new std::string(commandContent))))});
-				result.emplace_back(ParsedCommand{false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], *(new std::string(commandContent2))))});
+				result.emplace_back(ParsedCommand{true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], nagaCommandsMap["keypressonpress"]->generateCommand(commandContent)))});
+				result.emplace_back(ParsedCommand{false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent)))});
 			}
 			else if (commandType == "loop" || commandType == "loop2")
 			{
@@ -542,6 +532,16 @@ namespace NagaDaemon
 					}
 					else if (pressArgument == "start" || pressArgument == "stop")
 					{
+						actualArgument = pressArgument;
+					}
+					else if (pressArgument == "toggle")
+					{
+						isOnPress = true;
+						actualArgument = pressArgument;
+					}
+					else if (pressArgument == "togglerelease")
+					{
+						isOnPress = false;
 						actualArgument = pressArgument;
 					}
 					else

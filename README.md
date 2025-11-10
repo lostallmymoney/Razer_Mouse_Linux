@@ -39,12 +39,11 @@ sh install.sh wayland
 ## 🖱️ Supported Devices
 Tested & confirmed 99% compatible with:
 
-- **Naga Epic Chroma** – CentOS 7  
 - **Naga Epic (pre-2014)** - (thanks unknown early contributor)
 - **Naga (RZ01-0028)** – (thanks [khornem](https://github.com/khornem))  
 - **Naga Chroma** – (thanks [felipeacsi](https://github.com/felipeacsi))  
 - **Naga Molten** – (thanks noobxgockel)
-- **Naga 2012 (RZ01-0058)** – Arch, Ubuntu (thanks [violet-fish](https://github.com/violet-fish), [brianfreytag](https://github.com/brianfreytag))  
+- **Naga 2012 (RZ01-0058)** – (thanks [violet-fish](https://github.com/violet-fish), [brianfreytag](https://github.com/brianfreytag))  
 - **Naga Chroma** – (thanks [ipsod](https://github.com/ipsod))  
 - **Naga Trinity** – (thanks [haringsrob](https://github.com/haringsrob), [ws141](https://github.com/ws141))  
 - **Naga Pro Wireless** – (thanks [Stibax](https://github.com/Stibax))  
@@ -53,6 +52,7 @@ Tested & confirmed 99% compatible with:
 - **Naga X** – (thanks [bgrabow](https://github.com/bgrabow))
 - **Naga HyperSpeed** – (thanks [khornem](https://github.com/khornem)) (Bluetooth files still unknown, USB working)
 - **Naga 2014** –
+- **Naga Epic Chroma** –   
 
 On theses systems : 
 Ubuntu, Manjaro, Linux Mint, CentOS, ArchLinux, and more..
@@ -242,6 +242,8 @@ functionEnd
 	- `loop=myLoop=5` runs exactly 5 cycles; `loop=myLoop=-3` runs 3 cycles without waiting for stop.
 	- `loop=myLoop=startOnRelease` begins loop on key release.
 	- `loop=myLoop=stopOnRelease` stops loop on key release.
+	- `loop=myLoop=toggle` toggles the loop on/off with each press.
+	- `loop=myLoop=togglerelease` toggles the loop on/off with each release.
 - **Only one instance per loop**: Each loop can have only one running instance at a time. Starting a loop while it's already running will stop the old instance and start a new one.
 - **Loops can include other loops**: Inside a `loop=` or `loop2=` definition, you can call other loops using `loop=anotherLoop=start`, `loop=anotherLoop=stop`, or negative numbers like `loop=anotherLoop=-5` (for fixed-count loops without auto-stop).
 - **All press-phase actions compatible with functions are also compatible with loops**, including nested `loop` / `loop2` calls.
