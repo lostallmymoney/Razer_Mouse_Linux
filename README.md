@@ -142,7 +142,7 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `function` / `functionRelease` – Call a predefined function
 - `loop` – Start/stop a predefined loop inline (synchronous)
 - `loop2` – Start a predefined loop in a detached thread (asynchronous)
-- Wayland-only `dotool` / `dotoolrelease` / `dotoolRelease` – Send the full command string directly to the nagaDotool pipe [see DoTool man page](https://git.sr.ht/~geb/dotool/tree/master/doc/dotool.1.scd)
+- Wayland-only `dotool` / `dotoolrelease` – Send the full command string directly to the nagaDotool pipe [see DoTool man page](https://git.sr.ht/~geb/dotool/tree/master/doc/dotool.1.scd)
 - Wayland-only `click` – Press mouse click (left | center | right)
 - Wayland-only `clickRelease` – Press mouse click (left | center | right) on release
 - X11-only `xdotoolType` / `xdotoolTypeRelease` – Type a string via xdotool (fallback)
