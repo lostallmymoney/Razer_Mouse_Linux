@@ -954,6 +954,11 @@ namespace NagaDaemon
 		thread(runAndWrite, std::ref(macroContent)).detach();
 	}
 
+	static void dotoolRaw(const string &macroContent)
+	{
+		writeNagaDotoolCommand(macroContent);
+	}
+
 	static void executeNow(const string &macroContent)
 	{
 		std::ignore = system(macroContent.c_str());
@@ -1117,6 +1122,9 @@ namespace NagaDaemon
 
 		emplaceConfigKey("string", ONKEYPRESSED, nagaDotoolType);
 		emplaceConfigKey("stringrelease", ONKEYRELEASED, nagaDotoolType);
+
+		emplaceConfigKey("dotool", ONKEYPRESSED, dotoolRaw);
+		emplaceConfigKey("dotoolrelease", ONKEYRELEASED, dotoolRaw);
 
 		initConf();
 
