@@ -800,6 +800,11 @@ namespace NagaDaemon
 			for (size_t i = 0; i < eventCount; ++i)
 			{
 				const input_event &event = side_ev[i];
+				// Log every event code for side buttons, only if type == EV_KEY
+				if (event.type == EV_KEY) {
+					std::clog << "[naga] SideBtn event: code=" << event.code
+							  << ", value=" << event.value << std::endl;
+				}
 				if (event.type != EV_KEY || event.code < 2 || event.code > 13 || (event.value != 0 && event.value != 1))
 					continue;
 
@@ -832,6 +837,11 @@ namespace NagaDaemon
 			for (size_t i = 0; i < eventCount; ++i)
 			{
 				const input_event &event = extra_ev[i];
+				// Log every event code for extra buttons, only if type == EV_KEY and code != 0/1
+				if (event.type == EV_KEY && event.code != 0 && event.code != 1) {
+					std::clog << "[naga] ExtraBtn event: code=" << event.code
+							  << ", value=" << event.value << std::endl;
+				}
 				if (event.type == EV_KEY && (event.code == 275 || event.code == 276))
 				{
 					if (!checkedForWindowConfig)
@@ -842,6 +852,7 @@ namespace NagaDaemon
 					thread(runActions, std::ref((*configSwitcher::currentConfigPtr)[event.code - 261][event.value == 1])).detach();
 					continue;
 				}
+                
 				if (extraDeviceGrabbed && extraForwarder)
 				{
 					extraForwarder->forward(event);
