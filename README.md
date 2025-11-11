@@ -19,5 +19,5 @@ sudo apt install unzip wget -y \
 && echo "Open either src/nagaX11.cpp or src/nagaWayland.cpp in an editor (in Razer_Mouse_Linux-log-events)." \
 && echo "At the section with devices.emplace_back, update the device file paths using the output above." \
 && echo "The correct files are probably those containing if02 and event-mouse." \
-&& echo "Build and run the project as required."
+&& echo "Build and run the project as required using sh install.sh."
 ```
