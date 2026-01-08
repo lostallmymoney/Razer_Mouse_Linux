@@ -42,9 +42,9 @@ sudo chmod 755 /usr/local/bin/nagaWayland
 printf "Installing dotool :\n"
 
 sleep 0.1
-wget https://git.sr.ht/~geb/dotool/archive/1fea2c210fcb25522c4ff5c900ef7522c197f5ed.tar.gz -O dotool.tar.gz
+wget https://git.sr.ht/~geb/dotool/archive/fc9ad94ab508fe8753db77dbcd95c867c1f91782.tar.gz -O dotool.tar.gz
 tar -xf dotool.tar.gz >/dev/null
-mv -fu dotool-1fea2c210fcb25522c4ff5c900ef7522c197f5ed dotool >/dev/null
+mv -fu dotool-fc9ad94ab508fe8753db77dbcd95c867c1f91782 dotool >/dev/null
 sleep 0.1
 cd dotool || exit 1
 ./build.sh
