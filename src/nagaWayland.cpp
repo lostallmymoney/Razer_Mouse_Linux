@@ -426,6 +426,17 @@ namespace NagaDaemon
 									   { return std::isspace(c); }),
 						value.end());
 		};
+		const std::function<void(std::string &)> trimSpaces = [](std::string &value)
+		{
+			const std::string::size_type start = value.find_first_not_of(" \t\r\n");
+			if (start == std::string::npos)
+			{
+				value.clear();
+				return;
+			}
+			const std::string::size_type end = value.find_last_not_of(" \t\r\n");
+			value = value.substr(start, end - start + 1);
+		};
 
 		const std::function<void(std::string &)> normalizeCommandType = [&nukeWhitespaces](std::string &value)
 		{
@@ -762,7 +773,7 @@ namespace NagaDaemon
 				isIteratingConfig = true;
 				// Save the original line for type check, but use cleaned name as key
 				cleaveCommandType(commandContent);
-				nukeWhitespaces(commandContent);
+				trimSpaces(commandContent);
 				iteratedConfig = &IMacroEventKeyMaps[commandContent];
 				if (isWindowConfig)
 					(*configSwitcher::configWindowAndLockMap)[commandContent] = new WindowConfigLock{false, new string("")};

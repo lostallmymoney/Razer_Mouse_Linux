@@ -64,7 +64,7 @@ context=test
 14 - key=forward
 configEnd
 
-configWindow=com.mojang.minecraft.java-edition
+configWindow=Minecraft* 1.21.11
 1 - key=1
 2 - key=2
 3 - key=3
@@ -79,7 +79,7 @@ configWindow=com.mojang.minecraft.java-edition
 12 - loop=rightClickLoop
 configEnd
 
-configWindow=Minecraft2
+config=Minecraft2
 context=multimedia
 1 - key=1
 2 - key=2
@@ -87,7 +87,7 @@ context=multimedia
 4 - key=4
 5 - key=5
 6 - key=6
-8 - unlockChmap=com.mojang.minecraft.java-edition
+8 - unlockChmap=Minecraft* 1.21.11
 11 - key=playpause
 configEnd
 

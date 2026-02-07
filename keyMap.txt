@@ -65,7 +65,7 @@ context=test
 14 - key=XF86Forward
 configEnd
 
-configWindow=com.mojang.minecraft.java-edition
+configWindow=Minecraft* 1.21.11
 1 - key=1
 2 - key=2
 3 - key=3
