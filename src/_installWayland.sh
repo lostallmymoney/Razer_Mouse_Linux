@@ -42,12 +42,12 @@ sudo chmod 755 /usr/local/bin/nagaWayland
 printf "Installing dotool :\n"
 
 sleep 0.1
-wget https://git.sr.ht/~geb/dotool/archive/fc9ad94ab508fe8753db77dbcd95c867c1f91782.tar.gz -O dotool.tar.gz
+wget https://git.sr.ht/~geb/dotool/archive/27ec57e52012ffcb1e8c6419278fbf4b6311e2c2.tar.gz -O dotool.tar.gz
 tar -xf dotool.tar.gz >/dev/null
-mv -fu dotool-fc9ad94ab508fe8753db77dbcd95c867c1f91782 dotool >/dev/null
+mv -fu dotool-27ec57e52012ffcb1e8c6419278fbf4b6311e2c2 dotool >/dev/null
 sleep 0.1
 cd dotool || exit 1
-./build.sh
+GOFLAGS="${GOFLAGS:+$GOFLAGS }-buildvcs=false" ./build.sh
 dotool_stage="$(mktemp -d)"
 if [ ! -d "$dotool_stage" ]; then
     printf "\033[0;31mFailed to create staging directory for dotool.\033[0m\n" >&2
@@ -58,7 +58,7 @@ cleanup_dotool_stage() {
 }
 trap cleanup_dotool_stage EXIT INT TERM
 
-if ! DOTOOL_DESTDIR="$dotool_stage" DOTOOL_BINDIR=bin DOTOOL_UDEV_RULES_DIR=udev ./build.sh install; then
+if ! GOFLAGS="${GOFLAGS:+$GOFLAGS }-buildvcs=false" DOTOOL_DESTDIR="$dotool_stage" DOTOOL_BINDIR=bin DOTOOL_UDEV_RULES_DIR=udev ./build.sh install; then
     printf "\033[0;31mFailed to stage dotool binaries.\033[0m\n" >&2
     exit 1
 fi

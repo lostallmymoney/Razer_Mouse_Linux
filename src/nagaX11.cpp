@@ -81,6 +81,7 @@ private:
 	mutable std::atomic<bool> toggled{false};
 	size_t eventCount{0};
 	std::vector<IMacroEvent *> eventList;
+	std::vector<IMacroEvent *> exitEventList;
 
 public:
 	void addEvent(IMacroEvent *const newEvent)
@@ -89,8 +90,17 @@ public:
 		++eventCount; // not atomic; safe since no concurrent adds
 	}
 
+	void addExitEvent(IMacroEvent *const newEvent)
+	{
+		exitEventList.emplace_back(newEvent);
+	}
+
 	void stop() const noexcept
 	{
+		for (IMacroEvent *const exitEvent : exitEventList)
+		{
+			exitEvent->runInternal();
+		}
 		globalStop.store(true, std::memory_order_release);
 	}
 
@@ -254,9 +264,16 @@ struct ParsedCommand
 {
 	bool isOnKeyPressed;
 	IMacroEvent &macroEvent;
+	bool allowedOnReleaseAtLoopExit;
+
+	ParsedCommand(const bool tisOnKeyPressed, IMacroEvent &tmacroEvent, const bool tallowedOnReleaseInLoop = false)
+		: isOnKeyPressed(tisOnKeyPressed), macroEvent(tmacroEvent), allowedOnReleaseAtLoopExit(tallowedOnReleaseInLoop)
+	{
+	}
 };
 
 using ParsedCommandList = vector<ParsedCommand>;
+using ParsedCommandPointerList = vector<const ParsedCommand *>;
 
 static map<string, IMacroEventKeyMap> IMacroEventKeyMaps;
 static map<string, loop *> loopsMap;
@@ -416,6 +433,17 @@ namespace NagaDaemon
 
 	static void initConf()
 	{
+		string commandContent, commandContent2;
+		IMacroEventKeyMap *iteratedConfig;
+		bool isIteratingConfig = false, isIteratingLoop = false, isIteratingFunction = false, isIteratingContext = false, isWindowConfig = false;
+
+		ifstream in(conf_file.c_str(), ios::in);
+		if (!in)
+		{
+			std::cerr << "Cannot open " << conf_file << ". Exiting.\n";
+			std::exit(1);
+		}
+
 		bool (*const shouldIgnoreLine)(const string &) = [](const string &line) -> bool
 		{
 			const string::size_type first = line.find_first_not_of(' ');
@@ -489,14 +517,25 @@ namespace NagaDaemon
 			configLine = configLine.substr(equalPos + 1);
 		};
 
-		const std::function<bool(const ParsedCommandList &)> hasAnyCommandOnKeyRelease = [](const ParsedCommandList &commands) -> bool
+		const std::function<ParsedCommandPointerList(const ParsedCommandList &)> getOnReleaseCommands = [](const ParsedCommandList &commands) -> ParsedCommandPointerList
 		{
+			ParsedCommandPointerList result;
 			for (const ParsedCommand &command : commands)
 			{
 				if (!command.isOnKeyPressed)
-					return true;
+					result.emplace_back(&command);
 			}
-			return false;
+			return result;
+		};
+
+		const std::function<void(const std::string &)> skipAfter = [&](const std::string &endMarker)
+		{
+			while (getline(in, commandContent2))
+			{
+				trimSpaces(commandContent2);
+				if (commandContent2 == endMarker)
+					break;
+			}
 		};
 
 		std::function<ParsedCommandList(std::string)> parseCommand = [&](std::string commandContent) -> ParsedCommandList
@@ -511,12 +550,12 @@ namespace NagaDaemon
 
 			if (nagaCommandsMap.contains(commandType))
 			{
-				result.emplace_back(ParsedCommand{nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent)))});
+				result.emplace_back(nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent))));
 			}
 			else if (commandType == "key")
 			{
-				result.emplace_back(ParsedCommand{true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], nagaCommandsMap["keypressonpress"]->generateCommand(commandContent)))});
-				result.emplace_back(ParsedCommand{false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent)))});
+				result.emplace_back(true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], nagaCommandsMap["keypressonpress"]->generateCommand(commandContent))));
+				result.emplace_back(false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent))));
 			}
 			else if (commandType == "specialkey")
 			{
@@ -525,8 +564,8 @@ namespace NagaDaemon
 
 				if (specialPress != nagaCommandsMap.end() && specialRelease != nagaCommandsMap.end())
 				{
-					result.emplace_back(ParsedCommand{true, *(new MacroEvent(*specialPress->second, *(new std::string(commandContent))))});
-					result.emplace_back(ParsedCommand{false, *(new MacroEvent(*specialRelease->second, *(new std::string(commandContent))))});
+					result.emplace_back(true, *(new MacroEvent(*specialPress->second, *(new std::string(commandContent)))));
+					result.emplace_back(false, *(new MacroEvent(*specialRelease->second, *(new std::string(commandContent)))));
 				}
 			}
 			else if (commandType == "loop" || commandType == "loop2")
@@ -605,9 +644,9 @@ namespace NagaDaemon
 				else
 					makeLoopEvent = [&](const std::string &arg)
 					{ return new loopMacroEvent(loopRef, *(new std::string(arg))); };
-				result.emplace_back(ParsedCommand{isOnPress, *makeLoopEvent(actualArgument)});
+				result.emplace_back(isOnPress, *makeLoopEvent(actualArgument));
 				if (shouldAddStop)
-					result.emplace_back(ParsedCommand{false, *makeLoopEvent("stop")});
+					result.emplace_back(false, *makeLoopEvent("stop"), /*allowedOnReleaseAtLoopExit=*/true);
 			}
 			else if (commandType == "function" || commandType == "functionrelease")
 			{
@@ -621,7 +660,7 @@ namespace NagaDaemon
 				bool isOnKeyPressed = commandType == "function";
 				for (IMacroEvent *const funcEvent : functionIt->second->eventList)
 				{
-					result.emplace_back(ParsedCommand{isOnKeyPressed, *funcEvent});
+					result.emplace_back(isOnKeyPressed, *funcEvent);
 				}
 			}
 			else
@@ -631,17 +670,6 @@ namespace NagaDaemon
 
 			return result;
 		};
-
-		string commandContent, commandContent2;
-		IMacroEventKeyMap *iteratedConfig;
-		bool isIteratingConfig = false, isIteratingLoop = false, isIteratingFunction = false, isIteratingContext = false, isWindowConfig = false;
-
-		ifstream in(conf_file.c_str(), ios::in);
-		if (!in)
-		{
-			std::cerr << "Cannot open " << conf_file << ". Exiting.\n";
-			std::exit(1);
-		}
 
 		while (getline(in, commandContent))
 		{
@@ -691,6 +719,12 @@ namespace NagaDaemon
 			{
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
+				if (functionsMap.contains(commandContent))
+				{
+					clog << "Skipping duplicate function named : " << commandContent << '\n';
+					skipAfter("functionEnd");
+					continue;
+				}
 				nagaFunction *newFunction = new nagaFunction();
 				functionsMap.emplace(string(commandContent), newFunction);
 				isIteratingFunction = true;
@@ -707,7 +741,7 @@ namespace NagaDaemon
 						ParsedCommandList commands = parseCommand(commandContent2);
 
 						// Check if any command is onKeyReleased - if so, discard the whole vector for functions
-						if (hasAnyCommandOnKeyRelease(commands))
+						if (!getOnReleaseCommands(commands).empty())
 						{
 							clog << "Discarding in function (contains onKeyReleased): " << commandContent2 << '\n';
 							continue;
@@ -723,6 +757,12 @@ namespace NagaDaemon
 			{
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
+				if (loopsMap.contains(commandContent))
+				{
+					clog << "Skipping duplicate loop named : " << commandContent << '\n';
+					skipAfter("loopEnd");
+					continue;
+				}
 				loop *newLoop = new loop();
 				loopsMap.emplace(string(commandContent), newLoop);
 				isIteratingLoop = true;
@@ -738,16 +778,25 @@ namespace NagaDaemon
 					{
 						ParsedCommandList commands = parseCommand(commandContent2);
 
-						// Check if any command is onKeyReleased - if so, discard the whole vector for loops
-						if (hasAnyCommandOnKeyRelease(commands))
-						{
-							clog << "Discarding in loop (contains onKeyReleased): " << commandContent2 << '\n';
-							continue;
-						} // Add all events from the vector to the loop
-						for (const ParsedCommand &command : commands)
-						{
-							newLoop->addEvent(&command.macroEvent);
-						}
+						// Check if any command is onKeyReleased
+						ParsedCommandPointerList onReleaseCommands = getOnReleaseCommands(commands);
+						bool shouldDiscardLine = false;
+						for (const ParsedCommand *const rcommand : onReleaseCommands)
+							if (!rcommand->allowedOnReleaseAtLoopExit)
+							{
+								clog << "Discarding in loop (contains onKeyReleased): " << commandContent2 << '\n';
+								shouldDiscardLine = true;
+								break;
+							}
+
+						if (!shouldDiscardLine) // Add all events from the vector to the loop
+							for (const ParsedCommand &command : commands)
+							{
+								if (command.isOnKeyPressed)
+									newLoop->addEvent(&command.macroEvent);
+								else if (command.allowedOnReleaseAtLoopExit)
+									newLoop->addExitEvent(&command.macroEvent);
+							}
 					}
 				}
 			}
@@ -755,6 +804,12 @@ namespace NagaDaemon
 			{
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
+				if (contextMap.contains(commandContent))
+				{
+					clog << "Skipping duplicate context named : " << commandContent << '\n';
+					skipAfter("contextEnd");
+					continue;
+				}
 				vector<string> newContext = vector<string>();
 				contextMap.emplace(string(commandContent), newContext);
 				isIteratingContext = true;
@@ -784,9 +839,15 @@ namespace NagaDaemon
 			}
 			else if ((isWindowConfig = (commandContent.substr(0, 13) == "configWindow=")) || commandContent.substr(0, 7) == "config=")
 			{
-				isIteratingConfig = true;
 				cleaveCommandType(commandContent);
 				trimSpaces(commandContent);
+				if (IMacroEventKeyMaps.contains(commandContent))
+				{
+					clog << "Skipping duplicate profile named : " << commandContent << '\n';
+					skipAfter("configEnd");
+					continue;
+				}
+				isIteratingConfig = true;
 				iteratedConfig = &IMacroEventKeyMaps[commandContent];
 				if (isWindowConfig)
 					(*configSwitcher::configWindowAndLockMap)[commandContent] = new WindowConfigLock{false, new string("")};

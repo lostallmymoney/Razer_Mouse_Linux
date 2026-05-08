@@ -25,10 +25,10 @@
 #include "getactivewindowWayland.hpp"
 // #include "nagaUsbUnbindRebind.hpp" //todo, when sudo-rs is updated to allow systemctl to use sudoers or if a workaround is found
 using namespace std;
+using getactivewindowWayland::getTitle;
 using nagaDotool::closeNagaDotoolPipe;
 using nagaDotool::initNagaDotoolPipe;
 using nagaDotool::writeNagaDotoolCommand;
-using getactivewindowWayland::getTitle;
 
 static mutex configSwitcherMutex;
 static const string conf_file = string(getenv("HOME")) + "/.naga/keyMapWayland.txt";
@@ -51,10 +51,11 @@ public:
 	bool IsOnKeyPressed() const { return onKeyPressed; }
 	void run(const string &content) const { internalFunction(content); }
 
-	std::string generateCommand(const std::string &commandContent) const {
+	std::string generateCommand(const std::string &commandContent) const
+	{
 		return prefix + commandContent + suffix;
 	}
-	
+
 	nagaCommandClass(const bool tonKeyPressed, void (*const tinternalF)(const string &cc), const string &tprefix = "", const string &tsuffix = "") : prefix(tprefix), suffix(tsuffix), onKeyPressed(tonKeyPressed), internalFunction(tinternalF)
 	{
 	}
@@ -84,6 +85,7 @@ private:
 	mutable std::atomic<bool> toggled{false};
 	size_t eventCount{0};
 	std::vector<IMacroEvent *> eventList;
+	std::vector<IMacroEvent *> exitEventList;
 
 public:
 	void addEvent(IMacroEvent *const newEvent)
@@ -92,8 +94,17 @@ public:
 		++eventCount;
 	}
 
+	void addExitEvent(IMacroEvent *const newEvent)
+	{
+		exitEventList.emplace_back(newEvent);
+	}
+
 	void stop() const noexcept
 	{
+		for (IMacroEvent *const exitEvent : exitEventList)
+		{
+			exitEvent->runInternal();
+		}
 		globalStop.store(true, std::memory_order_release);
 	}
 
@@ -117,10 +128,14 @@ public:
 		}
 	}
 	// Toggle the loop: if toggled, stop; if stopped, set toggled and start directly (no threading)
-	void toggle() const {
-		if (toggled.load(std::memory_order_acquire)) {
+	void toggle() const
+	{
+		if (toggled.load(std::memory_order_acquire))
+		{
 			this->stop();
-		} else {
+		}
+		else
+		{
 			toggled.store(true, std::memory_order_release);
 			this->run();
 			toggled.store(false, std::memory_order_release);
@@ -251,9 +266,16 @@ struct ParsedCommand
 {
 	bool isOnKeyPressed;
 	IMacroEvent &macroEvent;
+	bool allowedOnReleaseAtLoopExit;
+
+	ParsedCommand(const bool tisOnKeyPressed, IMacroEvent &tmacroEvent, const bool tallowedOnReleaseInLoop = false)
+		: isOnKeyPressed(tisOnKeyPressed), macroEvent(tmacroEvent), allowedOnReleaseAtLoopExit(tallowedOnReleaseInLoop)
+	{
+	}
 };
 
 using ParsedCommandList = vector<ParsedCommand>;
+using ParsedCommandPointerList = vector<const ParsedCommand *>;
 
 static map<string, IMacroEventKeyMap> IMacroEventKeyMaps;
 static map<string, loop *> loopsMap;
@@ -413,6 +435,17 @@ namespace NagaDaemon
 
 	static void initConf()
 	{
+		string commandContent, commandContent2;
+		IMacroEventKeyMap *iteratedConfig;
+		bool isIteratingConfig = false, isIteratingLoop = false, isIteratingFunction = false, isIteratingContext = false, isWindowConfig = false;
+
+		ifstream in(conf_file.c_str(), ios::in);
+		if (!in)
+		{
+			std::cerr << "Cannot open " << conf_file << ". Exiting.\n";
+			std::exit(1);
+		}
+
 		bool (*const shouldIgnoreLine)(const string &) = [](const string &line) -> bool
 		{
 			const string::size_type first = line.find_first_not_of(' ');
@@ -451,9 +484,12 @@ namespace NagaDaemon
 			std::string::size_type dashPos = configLine.find('-');
 			if (dashPos == std::string::npos)
 				return -1;
-			try {
+			try
+			{
 				return std::stoi(configLine.substr(0, dashPos)) + 1;
-			} catch (...) {
+			}
+			catch (...)
+			{
 				return -1;
 			}
 		};
@@ -486,14 +522,25 @@ namespace NagaDaemon
 			configLine = configLine.substr(equalPos + 1);
 		};
 
-		const std::function<bool(const ParsedCommandList &)> hasAnyCommandOnKeyRelease = [](const ParsedCommandList &commands) -> bool
+		const std::function<ParsedCommandPointerList(const ParsedCommandList &)> getOnReleaseCommands = [](const ParsedCommandList &commands) -> ParsedCommandPointerList
 		{
+			ParsedCommandPointerList result;
 			for (const ParsedCommand &command : commands)
 			{
 				if (!command.isOnKeyPressed)
-					return true;
+					result.emplace_back(&command);
 			}
-			return false;
+			return result;
+		};
+
+		const std::function<void(const std::string &)> skipAfter = [&](const std::string &endMarker)
+		{
+			while (getline(in, commandContent2))
+			{
+				trimSpaces(commandContent2);
+				if (commandContent2 == endMarker)
+					break;
+			}
 		};
 
 		std::function<ParsedCommandList(std::string)> parseCommand = [&](std::string commandContent) -> ParsedCommandList
@@ -508,12 +555,12 @@ namespace NagaDaemon
 
 			if (nagaCommandsMap.contains(commandType))
 			{
-				result.emplace_back(ParsedCommand{nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent)))});
+				result.emplace_back(nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent))));
 			}
 			else if (commandType == "key")
 			{
-				result.emplace_back(ParsedCommand{true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], nagaCommandsMap["keypressonpress"]->generateCommand(commandContent)))});
-				result.emplace_back(ParsedCommand{false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent)))});
+				result.emplace_back(true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], nagaCommandsMap["keypressonpress"]->generateCommand(commandContent))));
+				result.emplace_back(false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent))));
 			}
 			else if (commandType == "loop" || commandType == "loop2")
 			{
@@ -591,9 +638,9 @@ namespace NagaDaemon
 				else
 					makeLoopEvent = [&](const std::string &arg)
 					{ return new loopMacroEvent(loopRef, *(new std::string(arg))); };
-				result.emplace_back(ParsedCommand{isOnPress, *makeLoopEvent(actualArgument)});
+				result.emplace_back(isOnPress, *makeLoopEvent(actualArgument));
 				if (shouldAddStop)
-					result.emplace_back(ParsedCommand{false, *makeLoopEvent("stop")});
+					result.emplace_back(false, *makeLoopEvent("stop"), /*allowedOnReleaseAtLoopExit=*/true);
 			}
 			else if (commandType == "function" || commandType == "functionrelease")
 			{
@@ -607,7 +654,7 @@ namespace NagaDaemon
 				bool isOnKeyPressed = commandType == "function";
 				for (IMacroEvent *const funcEvent : functionIt->second->eventList)
 				{
-					result.emplace_back(ParsedCommand{isOnKeyPressed, *funcEvent});
+					result.emplace_back(isOnKeyPressed, *funcEvent);
 				}
 			}
 			else
@@ -617,17 +664,6 @@ namespace NagaDaemon
 
 			return result;
 		};
-
-		string commandContent, commandContent2;
-		IMacroEventKeyMap *iteratedConfig;
-		bool isIteratingConfig = false, isIteratingLoop = false, isIteratingFunction = false, isIteratingContext = false, isWindowConfig = false;
-
-		ifstream in(conf_file.c_str(), ios::in);
-		if (!in)
-		{
-			std::cerr << "Cannot open " << conf_file << ". Exiting.\n";
-			std::exit(1);
-		}
 
 		while (getline(in, commandContent))
 		{
@@ -677,6 +713,12 @@ namespace NagaDaemon
 			{
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
+				if (functionsMap.contains(commandContent))
+				{
+					clog << "Skipping duplicate function named : " << commandContent << '\n';
+					skipAfter("functionEnd");
+					continue;
+				}
 				nagaFunction *newFunction = new nagaFunction();
 				functionsMap.emplace(string(commandContent), newFunction);
 				isIteratingFunction = true;
@@ -693,7 +735,7 @@ namespace NagaDaemon
 						ParsedCommandList commands = parseCommand(commandContent2);
 
 						// Check if any command is onKeyReleased - if so, discard the whole vector for functions
-						if (hasAnyCommandOnKeyRelease(commands))
+						if (!getOnReleaseCommands(commands).empty())
 						{
 							clog << "Discarding in function (contains onKeyReleased): " << commandContent2 << '\n';
 							continue;
@@ -709,6 +751,12 @@ namespace NagaDaemon
 			{
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
+				if (loopsMap.contains(commandContent))
+				{
+					clog << "Skipping duplicate loop named : " << commandContent << '\n';
+					skipAfter("loopEnd");
+					continue;
+				}
 				loop *newLoop = new loop();
 				loopsMap.emplace(string(commandContent), newLoop);
 				isIteratingLoop = true;
@@ -724,16 +772,25 @@ namespace NagaDaemon
 					{
 						ParsedCommandList commands = parseCommand(commandContent2);
 
-						// Check if any command is onKeyReleased - if so, discard the whole vector for loops
-						if (hasAnyCommandOnKeyRelease(commands))
-						{
-							clog << "Discarding in loop (contains onKeyReleased): " << commandContent2 << '\n';
-							continue;
-						} // Add all events from the vector to the loop
-						for (const ParsedCommand &command : commands)
-						{
-							newLoop->addEvent(&command.macroEvent);
-						}
+						// Check if any command is onKeyReleased
+						ParsedCommandPointerList onReleaseCommands = getOnReleaseCommands(commands);
+						bool shouldDiscardLine = false;
+						for (const ParsedCommand *const rcommand : onReleaseCommands)
+							if (!rcommand->allowedOnReleaseAtLoopExit)
+							{
+								clog << "Discarding in loop (contains onKeyReleased): " << commandContent2 << '\n';
+								shouldDiscardLine = true;
+								break;
+							}
+
+						if (!shouldDiscardLine) // Add all events from the vector to the loop
+							for (const ParsedCommand &command : commands)
+							{
+								if (command.isOnKeyPressed)
+									newLoop->addEvent(&command.macroEvent);
+								else if (command.allowedOnReleaseAtLoopExit)
+									newLoop->addExitEvent(&command.macroEvent);
+							}
 					}
 				}
 			}
@@ -741,6 +798,12 @@ namespace NagaDaemon
 			{
 				cleaveCommandType(commandContent);
 				nukeWhitespaces(commandContent);
+				if (contextMap.contains(commandContent))
+				{
+					clog << "Skipping duplicate context named : " << commandContent << '\n';
+					skipAfter("contextEnd");
+					continue;
+				}
 				vector<string> newContext = vector<string>();
 				contextMap.emplace(string(commandContent), newContext);
 				isIteratingContext = true;
@@ -770,10 +833,16 @@ namespace NagaDaemon
 			}
 			else if ((isWindowConfig = (commandContent.substr(0, 13) == "configWindow=")) || commandContent.substr(0, 7) == "config=")
 			{
-				isIteratingConfig = true;
 				// Save the original line for type check, but use cleaned name as key
 				cleaveCommandType(commandContent);
 				trimSpaces(commandContent);
+				if (IMacroEventKeyMaps.contains(commandContent))
+				{
+					clog << "Skipping duplicate profile named : " << commandContent << '\n';
+					skipAfter("configEnd");
+					continue;
+				}
+				isIteratingConfig = true;
 				iteratedConfig = &IMacroEventKeyMaps[commandContent];
 				if (isWindowConfig)
 					(*configSwitcher::configWindowAndLockMap)[commandContent] = new WindowConfigLock{false, new string("")};
@@ -995,23 +1064,23 @@ namespace NagaDaemon
 		// Seed RNG for randomSleep
 		srand((unsigned int)time(NULL) ^ (unsigned int)getpid());
 		// modulable device files list
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic-event-mouse");								 // NAGA EPIC
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-event-mouse");						 // NAGA EPIC DOCK
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_2014-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_2014-event-mouse");								 // NAGA 2014
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga-event-mouse");											 // NAGA MOLTEN
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma-event-mouse");					 // NAGA EPIC CHROMA
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma_Dock-event-mouse");		 // NAGA EPIC CHROMA DOCK
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Chroma-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Chroma-event-mouse");							 // NAGA CHROMA
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Hex-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Hex-event-mouse");									 // NAGA HEX
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Hex_V2-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Hex_V2-event-mouse");							 // NAGA HEX v2
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Trinity_00000000001A-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Trinity_00000000001A-event-mouse"); // NAGA Trinity
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");	 // NAGA Left Handed THANKS TO https://github.com/Izaya-San
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse");		 // NAGA PRO WIRELESS
-		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");			 // NAGA PRO
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-event-mouse");							 // NAGA V2 THANKS TO https://github.com/ibarrick
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse");										 // NAGA X THANKS TO https://github.com/bgrabow
-		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_HyperSpeed_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_HyperSpeed_000000000000-event-mouse");	// Naga Hyperspeed USB MODE (add bluetooth files above this one)
-		
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic-event-mouse");											 // NAGA EPIC
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Dock-event-mouse");									 // NAGA EPIC DOCK
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_2014-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_2014-event-mouse");											 // NAGA 2014
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga-event-mouse");														 // NAGA MOLTEN
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma-event-mouse");								 // NAGA EPIC CHROMA
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma_Dock-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Epic_Chroma_Dock-event-mouse");					 // NAGA EPIC CHROMA DOCK
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Chroma-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Chroma-event-mouse");										 // NAGA CHROMA
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Hex-if01-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Hex-event-mouse");												 // NAGA HEX
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Hex_V2-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Hex_V2-event-mouse");										 // NAGA HEX v2
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Trinity_00000000001A-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Trinity_00000000001A-event-mouse");			 // NAGA Trinity
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Left_Handed_Edition-event-mouse");				 // NAGA Left Handed THANKS TO https://github.com/Izaya-San
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_Pro_000000000000-event-mouse");					 // NAGA PRO WIRELESS
+		devices.emplace_back("/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-if02-event-kbd", "/dev/input/by-id/usb-1532_Razer_Naga_Pro_000000000000-event-mouse");						 // NAGA PRO
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_Pro-event-mouse");										 // NAGA V2 THANKS TO https://github.com/ibarrick
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_X-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_X-event-mouse");													 // NAGA X THANKS TO https://github.com/bgrabow
+		devices.emplace_back("/dev/input/by-id/usb-Razer_Razer_Naga_V2_HyperSpeed_000000000000-if02-event-kbd", "/dev/input/by-id/usb-Razer_Razer_Naga_V2_HyperSpeed_000000000000-event-mouse"); // Naga Hyperspeed USB MODE (add bluetooth files above this one)
+
 		// devices.emplace_back("/dev/input/by-id/YOUR_DEVICE_FILE", "/dev/input/by-id/YOUR_DEVICE_FILE#2");		 // DUMMY EXAMPLE, ONE CAN BE EMPTY LIKE SUCH : ""  (for devices with no extra buttons)
 
 		bool isThereADevice = false;
