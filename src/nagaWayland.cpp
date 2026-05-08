@@ -1272,6 +1272,51 @@ int main(const int argc, const char *const argv[])
 		{
 			std::ignore = system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; " + (argc > 2 ? string(argv[2]) : "sudo nano -m") + " " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
 		}
+		else if (strstr(argv[1], "vendor"))
+		{
+			std::ignore = system("lsusb | sed -E 's/ID ([0-9a-fA-F]{4}):([0-9a-fA-F]{4})/ID \\x1b[38;5;208m\\1\\x1b[0m:\\2/g'");
+
+			std::string vendorId;
+
+			while (true)
+			{
+				std::cout << "Enter vendor ID (or empty for razer (1532)): ";
+				std::getline(std::cin, vendorId);
+
+				if (vendorId.empty())
+				{
+					vendorId = "1532";
+					break;
+				}
+
+				std::transform(vendorId.begin(), vendorId.end(), vendorId.begin(),
+							   [](unsigned char c)
+							   { return std::tolower(c); });
+
+				if (vendorId.rfind("0x", 0) == 0)
+					vendorId = vendorId.substr(2);
+
+				if (vendorId.size() == 4 &&
+					std::all_of(vendorId.begin(), vendorId.end(),
+								[](unsigned char c)
+								{ return std::isxdigit(c); }))
+					break;
+
+				std::cout << "Invalid vendor ID (4 hex chars, e.g. 046d).\n";
+			}
+
+			std::ignore = system(("printf 'KERNEL==\"event[0-9]*\",SUBSYSTEM==\"input\", ATTRS{idVendor}==\"" +
+								  vendorId +
+								  "\", GROUP=\"razerInputGroup\", MODE=\"0660\"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null")
+									 .c_str());
+
+			clog << "Restarting naga daemon service... PLEASE run "
+				 << "\033[38;5;208msudo udevadm control --reload-rules && sudo udevadm trigger\033[0m"
+				 << " or restart.\n";
+
+			usleep(100000);
+			std::ignore = system("sudo systemctl restart naga");
+		}
 		else if (strstr(argv[1], "uninstall"))
 		{
 			string answer;

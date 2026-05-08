@@ -63,7 +63,7 @@ printf "Installing requirements...\n"
 
 # Udev rule for Razer input devices (side/extra buttons)
 sudo sh -c '> /etc/udev/rules.d/80-naga.rules'
-printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input", GROUP="razerInputGroup", MODE="0660"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
+printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input", ATTRS{idVendor}=="1532", GROUP="razerInputGroup", MODE="0660"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
 
 
 warn_connectivity

@@ -32,7 +32,12 @@ sh install.sh X11
 ```bash
 sh install.sh wayland
 ```
+### Configuring Naga Service for Non-Razer Devices
 
+The Naga service uses a udev rule based on USB vendor ID. By default it is set to Razer (`1532`), but it can be changed for other devices using :
+```bash
+naga vendor
+```
 
 ---
 
