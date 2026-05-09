@@ -251,7 +251,7 @@ functionEnd
 	- `loop=myLoop=toggle` toggles the loop on/off with each press.
 	- `loop=myLoop=togglerelease` toggles the loop on/off with each release.
 - **Only one instance per loop**: Each loop can have only one running instance at a time. Starting a loop while it's already running will stop the old instance and start a new one.
-- **Loops can include other loops**: Inside a `loop=` or `loop2=` definition, you can call other loops using `loop=anotherLoop=start`, `loop=anotherLoop=stop`, or negative numbers like `loop=anotherLoop=-5` (for fixed-count loops without auto-stop).
+- **Loops can include other loops**: Inside a `loop=` or `loop2=` definition, you can call other loops using `loop=anotherLoop=start`, `loop=anotherLoop=stop`, or negative numbers like `loop=anotherLoop=-5` (for fixed-count loops without auto-stop). You can also have a plain loop or loop2 inside a loop or loop2, all nested loops will stop with their mother loop.
 - **All press-phase actions compatible with functions are also compatible with loops**, including nested `loop` / `loop2` calls.
 
 **Example:**
