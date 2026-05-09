@@ -126,7 +126,7 @@ std::string print_window_class(Display *d, Window w)
     return result;
 }
 
-std::string getActiveWindow()
+std::string getActiveWindowTitle()
 {
     Display *d;
     Window w;
