@@ -2,7 +2,6 @@
 // RaulPPelaez, et. al wrote the original file.  As long as you retain this notice you
 // can do whatever you want with this stuff.
 
-#ifndef NAGA_CORE_HPP
 #define NAGA_CORE_HPP
 
 #include "extraButtonCapture.hpp"
@@ -260,12 +259,12 @@ public:
 				}
 				else
 				{
-					clog << "Invalid loop argument (zero): " << taNagaLoopArgument << '\n';
+					clog << "\033[93mWarning : Invalid loop argument (zero): " << taNagaLoopArgument << "\033[0m" << '\n';
 				}
 			}
 			catch (...)
 			{
-				clog << "Invalid loop argument: " << taNagaLoopArgument << '\n';
+				clog << "\033[93mWarning : Invalid loop argument: " << taNagaLoopArgument << "\033[0m" << '\n';
 			}
 		}
 	}
@@ -374,7 +373,7 @@ namespace configSwitcher
 		unordered_map<std::string, IMacroEventKeyMap>::iterator scheduledConfig = IMacroEventKeyMaps.find(*scheduledReMapName);
 		if (scheduledConfig == IMacroEventKeyMaps.end())
 		{
-			clog << "Undefined profile : " << *scheduledReMapName << '\n';
+			clog << "\033[93mWarning : Undefined profile : " << *scheduledReMapName << "\033[0m" << '\n';
 			return;
 		}
 		currentConfigName = scheduledReMapName;
@@ -388,7 +387,7 @@ namespace configSwitcher
 		const string currAppClass(getActiveWindowTitle());
 		if (currAppClass != lastLoggedWindow)
 		{
-			clog << "WindowNameLog : " << currAppClass << '\n';
+			clog << "\033[35mInfo : WindowName : " << currAppClass << "\033[0m" << '\n';
 			lastLoggedWindow = currAppClass;
 		}
 		lock_guard<mutex> guard(configSwitcherMutex);
@@ -585,7 +584,7 @@ namespace NagaDaemon
 		ifstream in(conf_file.c_str(), ios::in);
 		if (!in)
 		{
-			std::cerr << "Cannot open " << conf_file << ". Exiting.\n";
+			std::cerr << "\033[91mError : Cannot open " << conf_file << ". Exiting.\033[0m\n";
 			std::exit(1);
 		}
 
@@ -693,9 +692,9 @@ namespace NagaDaemon
 			cleaveCommandType(commandContent);
 			normalizeCommandType(commandType);
 
-            if (nagaCommandsMap.contains(commandType))
+			if (nagaCommandsMap.contains(commandType))
 			{
-                result.emplace_back(nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent))));
+				result.emplace_back(nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent))));
 			}
 			else if (commandType == "key")
 			{
@@ -774,7 +773,7 @@ namespace NagaDaemon
 				unordered_map<std::string, loop *>::iterator loopIt = loopsMap.find(loopName);
 				if (loopIt == loopsMap.end())
 				{
-					std::cerr << "Discarding loop binding, undefined loop: " << loopName << '\n';
+					clog << "\033[38;5;208mDiscarding loop binding, undefined loop: " << loopName << "\033[0m\n";
 					return result;
 				}
 
@@ -796,7 +795,7 @@ namespace NagaDaemon
 				unordered_map<std::string, nagaFunction *>::iterator functionIt = functionsMap.find(commandContent);
 				if (functionIt == functionsMap.end())
 				{
-					std::cerr << "Discarding function binding, undefined function: " << commandContent << '\n';
+					clog << "\033[38;5;208mDiscarding function binding, undefined function: " << commandContent << "\033[0m\n";
 					return result;
 				}
 				bool isOnKeyPressed = commandType == "function";
@@ -805,7 +804,7 @@ namespace NagaDaemon
 			}
 			else
 			{
-				std::cerr << "Discarding : " << commandType << "=" << commandContent << '\n';
+				clog << "\033[38;5;208mDiscarding : " << commandType << "=" << commandContent << "\033[0m\n";
 			}
 
 			return result;
@@ -856,7 +855,7 @@ namespace NagaDaemon
 				nukeWhitespaces(commandContent);
 				if (functionsMap.contains(commandContent))
 				{
-					clog << "Skipping duplicate function named : " << commandContent << '\n';
+					clog << "\033[38;5;208mSkipping duplicate function named : " << commandContent << "\033[0m\n";
 					skipAfter("functionEnd");
 					continue;
 				}
@@ -876,7 +875,7 @@ namespace NagaDaemon
 						ParsedCommandList commands = parseCommand(commandContent2);
 						if (!getOnReleaseCommands(commands).empty())
 						{
-							clog << "Discarding in function (contains onKeyReleased): " << commandContent2 << '\n';
+							clog << "\033[38;5;208mDiscarding in function (contains onKeyReleased): " << commandContent2 << "\033[0m\n";
 							continue;
 						}
 						for (const ParsedCommand &command : commands)
@@ -890,7 +889,7 @@ namespace NagaDaemon
 				nukeWhitespaces(commandContent);
 				if (loopsMap.contains(commandContent))
 				{
-					clog << "Skipping duplicate loop named : " << commandContent << '\n';
+					clog << "\033[38;5;208mSkipping duplicate loop named : " << commandContent << "\033[0m\n";
 					skipAfter("loopEnd");
 					continue;
 				}
@@ -913,7 +912,7 @@ namespace NagaDaemon
 						for (const ParsedCommand *const rcommand : onReleaseCommands)
 							if (!rcommand->allowedOnReleaseAtLoopExit)
 							{
-								clog << "Discarding in loop (contains onKeyReleased): " << commandContent2 << '\n';
+								clog << "\033[38;5;208mDiscarding in loop (contains onKeyReleased): " << commandContent2 << "\033[0m\n";
 								shouldDiscardLine = true;
 								break;
 							}
@@ -935,7 +934,7 @@ namespace NagaDaemon
 				nukeWhitespaces(commandContent);
 				if (contextMap.contains(commandContent))
 				{
-					clog << "Skipping duplicate context named : " << commandContent << '\n';
+					clog << "\033[38;5;208mSkipping duplicate context named : " << commandContent << "\033[0m\n";
 					skipAfter("contextEnd");
 					continue;
 				}
@@ -970,7 +969,7 @@ namespace NagaDaemon
 				trimSpaces(commandContent);
 				if (IMacroEventKeyMaps.contains(commandContent))
 				{
-					clog << "Skipping duplicate profile named : " << commandContent << '\n';
+					clog << "\033[38;5;208mSkipping duplicate profile named : " << commandContent << "\033[0m\n";
 					skipAfter("configEnd");
 					continue;
 				}
@@ -1001,7 +1000,7 @@ namespace NagaDaemon
 			bytesRead = read(side_btn_fd, side_ev, side_ev_size);
 			if (bytesRead == -1)
 			{
-				std::cerr << "Error reading from side button device.\n";
+				std::cerr << "\033[31mError reading from side button device.\n\033[0m";
 				std::exit(2);
 			}
 			eventCount = bytesRead / input_event_size;
@@ -1033,7 +1032,7 @@ namespace NagaDaemon
 			bytesRead = read(extra_btn_fd, extra_ev, extra_ev_size);
 			if (bytesRead == -1)
 			{
-				std::cerr << "Error reading from extra button device.\n";
+				std::cerr << "\033[31mError reading from extra button device.\n\033[0m";
 				std::exit(2);
 			}
 			eventCount = bytesRead / input_event_size;
@@ -1083,17 +1082,17 @@ namespace NagaDaemon
 			{
 				if (side_btn_fd == -1)
 				{
-					clog << "Reading from: " << device.second << '\n';
+					clog << "Reading from: \033[32m" << device.second << "\033[0m\n";
 					areSideBtnEnabled = false;
 				}
 				else if (extra_btn_fd == -1)
 				{
-					clog << "Reading from: " << device.first << '\n';
+					clog << "Reading from: \033[32m" << device.first << "\033[0m\n";
 					areExtraBtnEnabled = false;
 				}
 				else
 				{
-					clog << "Reading from: " << device.first << "\n and " << device.second << '\n';
+					clog << "Reading from: \033[32m" << device.first << "\033[0m" << "\n and \033[32m" << device.second << "\033[0m\n";
 				}
 				isThereADevice = true;
 				break;
@@ -1126,7 +1125,7 @@ namespace NagaDaemon
 			}
 			else if (ioctl(extra_btn_fd, EVIOCGRAB, 1) == -1)
 			{
-				clog << "[naga] failed to grab extra button device: " << strerror(errno) << '\n';
+				clog << "\033[31m[naga] failed to grab extra button device: " << strerror(errno) << "\033[0m\n";
 				extraForwarder.reset();
 			}
 			else
@@ -1179,7 +1178,7 @@ static int nagaMain(const int argc, const char *const argv[])
 		else if (strstr(argv[1], "debug"))
 		{
 			clog << "Starting naga debug, logs :\n";
-			std::ignore = system((argc > 2 ? ("journalctl " + string(argv[2]) + " naga") : "journalctl -fu naga").c_str());
+			std::ignore = system((argc > 2 ? ("journalctl -o cat " + std::string(argv[2]) + " naga") : "journalctl -o cat -fu naga").c_str());
 		}
 		else if (strstr(argv[1], "kill"))
 		{
@@ -1272,5 +1271,3 @@ static int nagaMain(const int argc, const char *const argv[])
 	}
 	return 0;
 }
-
-#endif // NAGA_CORE_HPP

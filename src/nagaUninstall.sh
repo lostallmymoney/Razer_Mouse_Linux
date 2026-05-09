@@ -1,7 +1,7 @@
 #!/bin/sh
 sh /usr/local/bin/Naga_Linux/nagaKillroot.sh
-sleep 0.3 >/dev/null 2>&1 &
-echo "Deleting app"
+sleep 0.3
+printf '%s\n' "Deleting app"
 #Deleting nagaDotool wrappers
 sudo rm -vf /usr/local/bin/nagaDotool /usr/local/bin/nagaDotoolc /usr/local/bin/nagaDotoold
 sudo rm -vf /run/.nagaProtected/nagadotool-pipe
@@ -19,8 +19,8 @@ sudo rm -vf /etc/systemd/system/naga.service
 sudo setsid rm -rvf /usr/local/bin/Naga_Linux/
 
 # Attempt to remove Naga sudoers includes
-if [ -f /etc/sudoers.d/naga ] ; then
-	echo "Removing Naga sudoers.d entries..."
+if [ -f /etc/sudoers.d/naga ]; then
+	printf '%s\n' "Removing Naga sudoers.d entries..."
 	sudo rm -vf /etc/sudoers.d/naga
 fi
 
@@ -28,8 +28,8 @@ sudo visudo -c
 
 # Remove alias naga from .bash_aliases
 if [ -f "$HOME/.bash_aliases" ]; then
-    sed -i "/alias naga=/d" "$HOME/.bash_aliases"
-    echo "Removed alias naga from .bash_aliases."
+	sed -i "/alias naga=/d" "$HOME/.bash_aliases"
+	printf '%s\n' "Removed alias naga from .bash_aliases."
 fi
 
 # Remove environment and autostart lines from ~/.profile
@@ -41,5 +41,5 @@ fi
 # Remove ~/.naga/envSetup if present
 if [ -f "$HOME/.naga/envSetup" ]; then
 	rm -f "$HOME/.naga/envSetup"
-	echo "Removed ~/.naga/envSetup."
+	printf '%s\n' "Removed ~/.naga/envSetup."
 fi

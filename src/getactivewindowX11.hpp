@@ -13,7 +13,7 @@ Display *open_display()
     Display *d = XOpenDisplay(nullptr);
     if (d == nullptr)
     {
-        printf("fail\n");
+        printf("\033[91mError : Failed to open X11 display\033[0m\n");
         exit(EXIT_FAILURE);
     }
     return d;
@@ -21,7 +21,7 @@ Display *open_display()
 
 int handle_error([[maybe_unused]] Display *display, [[maybe_unused]] XErrorEvent *error)
 {
-    printf("ERROR: X11 error\n");
+    printf("\033[91mError : X11 error\033[0m\n");
     xerror = True;
     return 1;
 }
@@ -33,12 +33,12 @@ Window get_focus_window(Display *d)
     XGetInputFocus(d, &w, &revert_to); // see man
     if (xerror)
     {
-        printf("fail\n");
+        printf("\033[91mError : Failed to get input focus\033[0m\n");
         return 0;
     }
     else if (w == None)
     {
-        printf("no focus window\n");
+        printf("\033[93mWarning : No focused window found\033[0m\n");
         return 0;
     }
     else
@@ -69,7 +69,7 @@ Window get_top_window(Display *d, Window start)
 
         if (xerror)
         {
-            printf("fail\n");
+            printf("\033[91mError : Failed to query window tree\033[0m\n");
             return 0;
         }
     }
@@ -93,7 +93,7 @@ std::string print_window_class(Display *d, Window w)
     clas = XAllocClassHint(); // see man
     if (!clas)
     {
-        printf("ERROR: XAllocClassHint\n");
+        printf("\033[91mError : XAllocClassHint failed\033[0m\n");
         XCloseDisplay(d);
         return "E";
     }
@@ -114,7 +114,7 @@ std::string print_window_class(Display *d, Window w)
     }
     else
     {
-        printf("ERROR: XGetClassHint\n");
+        printf("\033[91mError : XGetClassHint failed\033[0m\n");
     }
 
     if (clas->res_name)

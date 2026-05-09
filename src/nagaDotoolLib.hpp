@@ -27,12 +27,12 @@ namespace nagaDotool
 		if (fwrite(command.data(), 1, command.size(), nagaDotoolPipe) != command.size() ||
 			fputc('\n', nagaDotoolPipe) == EOF)
 		{
-			throw std::runtime_error("Failed to write command to nagaDotoolc");
+			throw std::runtime_error("\033[91mError : Failed to write command to nagaDotoolc\033[0m");
 		}
 
 		if (fflush(nagaDotoolPipe) == EOF)
 		{
-			throw std::runtime_error("Failed to flush nagaDotoolc");
+			throw std::runtime_error("\033[91mError : Failed to flush nagaDotoolc\033[0m");
 		}
 	}
 
@@ -47,7 +47,7 @@ namespace nagaDotool
 		nagaDotoolPipe = popen("nagaDotoolc", "w");
 		if (!nagaDotoolPipe)
 		{
-			throw std::runtime_error("Failed to start nagaDotoolc");
+			throw std::runtime_error("\033[91mError : Failed to start nagaDotoolc\033[0m");
 		}
 		setvbuf(nagaDotoolPipe, nullptr, _IOLBF, 0);
 		atexit(closeNagaDotoolPipe);

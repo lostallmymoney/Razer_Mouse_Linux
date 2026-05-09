@@ -102,7 +102,6 @@ d /run/.nagaProtected 0770 root razerInputGroup -
 EOF
 sudo systemd-tmpfiles --create
 
-
 cleanup_dotool_stage
 trap - EXIT INT TERM
 dotool_stage=""
@@ -111,7 +110,6 @@ cd ..
 sleep 0.1
 rm -rf dotool* >/dev/null
 sleep 0.1
-
 
 sudo gnome-extensions disable window-calls-extended@hseliger.eu >/dev/null
 sudo gnome-extensions uninstall -q window-calls-extended@hseliger.eu
@@ -125,7 +123,6 @@ mkdir -p "$EXT_DIR"
 # 2️⃣ Unzip extension into the folder
 unzip -o "$EXT_ZIP" -d "$EXT_DIR"
 
-
 # 4️⃣ Fix permissions
 chown -R "$USER:$USER" "$EXT_DIR"
 chmod -R 644 "$EXT_DIR"/*.js "$EXT_DIR"/metadata.json 2>/dev/null || true
@@ -133,7 +130,6 @@ find "$EXT_DIR" -type d -exec chmod 755 {} \;
 
 # 5️⃣ Enable the extension
 gnome-extensions enable window-calls-extended@hseliger.eu
-
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
@@ -145,6 +141,5 @@ sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 
 sudo sh -c '> /etc/udev/rules.d/80-nagaWayland.rules'
 printf 'KERNEL=="uinput", GROUP="razerInputGroup", MODE="0620", OPTIONS+="static_node=uinput"' | sudo tee /etc/udev/rules.d/80-nagaWayland.rules >/dev/null
-
 
 clear -x

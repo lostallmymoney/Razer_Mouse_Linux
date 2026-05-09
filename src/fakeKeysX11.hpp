@@ -88,7 +88,6 @@ static int utf8_to_ucs4(const unsigned char *src_orig, unsigned int *dst, int le
 	return src - src_orig;
 }
 
-
 FakeKey *fakekey_init(Display *xdpy)
 {
 	FakeKey *fk = nullptr;

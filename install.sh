@@ -23,6 +23,8 @@ if [ "$(id -u)" = "0" ]; then
     abort_install 1
 fi
 
+sudo systemctl disable naga >/dev/null 2>&1
+sudo systemctl stop naga >/dev/null 2>&1
 sudo sh src/nagaKillroot.sh >/dev/null
 
 printf "Copying files...\n"
@@ -65,7 +67,6 @@ printf "Installing requirements...\n"
 sudo sh -c '> /etc/udev/rules.d/80-naga.rules'
 printf 'KERNEL=="event[0-9]*",SUBSYSTEM=="input", ATTRS{idVendor}=="1532", GROUP="razerInputGroup", MODE="0660"' | sudo tee /etc/udev/rules.d/80-naga.rules >/dev/null
 
-
 warn_connectivity
 
 run_sub_install() {
@@ -76,26 +77,25 @@ run_sub_install() {
     fi
 }
 
-
 case "$1" in
-    X11|x11)
-        run_sub_install ./src/_installX11.sh
+X11 | x11)
+    run_sub_install ./src/_installX11.sh
     ;;
-    Wayland|wayland)
+Wayland | wayland)
+    run_sub_install ./src/_installWayland.sh
+    ;;
+*)
+    # shellcheck disable=SC2046
+    if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
+        WAYLANDTYPE=true
         run_sub_install ./src/_installWayland.sh
-    ;;
-    *)
-        # shellcheck disable=SC2046
-        if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
-            WAYLANDTYPE=true
-            run_sub_install ./src/_installWayland.sh
-            sed -i '/alias naga=/d' ~/.bash_aliases
-            grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases >/dev/null
-        else
-            run_sub_install ./src/_installX11.sh
-            sed -i '/alias naga=/d' ~/.bash_aliases
-            grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases >/dev/null
-        fi
+        sed -i '/alias naga=/d' ~/.bash_aliases
+        grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases >/dev/null
+    else
+        run_sub_install ./src/_installX11.sh
+        sed -i '/alias naga=/d' ~/.bash_aliases
+        grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases >/dev/null
+    fi
     ;;
 esac
 
@@ -117,15 +117,16 @@ sleep 0.5
 
 # Add sudoers.d drop-in for passwordless systemctl start naga (best practice)
 sudo rm /etc/sudoers.d/naga 2>/dev/null
-echo '# Allow systemctl start naga without password for the current user' | sudo tee /etc/sudoers.d/naga >/dev/null
-echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl start naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
-echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
-echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
-echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
-echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl disable naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+
+printf '%s\n' '# Allow systemctl start naga without password for the current user' | sudo tee /etc/sudoers.d/naga >/dev/null
+printf '%s\n' "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl start naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+printf '%s\n' "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+printf '%s\n' "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+printf '%s\n' "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl enable naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
+printf '%s\n' "$USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl disable naga" | sudo tee -a /etc/sudoers.d/naga >/dev/null
 
 sudo chmod 0440 /etc/sudoers.d/naga
-echo 'Added /etc/sudoers.d/naga for passwordless systemctl start naga.'
+printf '%s\n' 'Added /etc/sudoers.d/naga for passwordless systemctl start naga.'
 sudo visudo -c
 
 sudo systemctl enable naga

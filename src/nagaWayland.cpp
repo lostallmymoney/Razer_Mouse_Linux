@@ -17,7 +17,7 @@ void platformRunAndWrite(const string &macroContent)
 	unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent.c_str(), "r"), &pclose);
 	if (!pipe)
 	{
-		throw runtime_error("runAndWrite execution Failed !");
+		throw runtime_error("\033[91mError : runAndWrite execution Failed !\033[0m");
 	}
 
 	constexpr size_t DotoolCommandSizeLimit = 65536;

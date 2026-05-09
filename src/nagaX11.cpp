@@ -62,7 +62,7 @@ static void specialReleaseNow(const string &macroContent)
 			return;
 		}
 	}
-	clog << "No candidate for key release\n";
+	clog << "\033[93mWarning : No candidate for key release\033[0m\n";
 }
 
 void platformRunAndWrite(const string &macroContent)
@@ -70,7 +70,7 @@ void platformRunAndWrite(const string &macroContent)
 	unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent.c_str(), "r"), &pclose);
 	if (!pipe)
 	{
-		throw runtime_error("runAndWrite Failed !");
+		throw runtime_error("\033[91mError : runAndWrite Failed !\033[0m");
 	}
 
 	constexpr size_t BufferSize = 1024;
@@ -95,10 +95,8 @@ void initAndRegisterPlatformCommands()
 	NagaDaemon::emplaceConfigKey("keyreleaseonrelease", NagaDaemon::OnKeyReleased, NagaDaemon::executeThreadNow, "xdotool keyup --window getactivewindow ");
 	NagaDaemon::emplaceConfigKey("keyclick", NagaDaemon::OnKeyPressed, NagaDaemon::executeThreadNow, "xdotool key --window getactivewindow ");
 	NagaDaemon::emplaceConfigKey("keyclickrelease", NagaDaemon::OnKeyReleased, NagaDaemon::executeThreadNow, "xdotool key --window getactivewindow ");
-
 	NagaDaemon::emplaceConfigKey("string", NagaDaemon::OnKeyPressed, writeStringNow);
 	NagaDaemon::emplaceConfigKey("stringrelease", NagaDaemon::OnKeyReleased, writeStringNow);
-
 	NagaDaemon::emplaceConfigKey("specialpressonpress", NagaDaemon::OnKeyPressed, specialPressNow);
 	NagaDaemon::emplaceConfigKey("specialpressonrelease", NagaDaemon::OnKeyReleased, specialPressNow);
 	NagaDaemon::emplaceConfigKey("specialreleaseonpress", NagaDaemon::OnKeyPressed, specialReleaseNow);

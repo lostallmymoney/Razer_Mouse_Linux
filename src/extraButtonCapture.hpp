@@ -28,7 +28,7 @@ private:
 
 	bool fail(const char *step)
 	{
-		std::clog << "[naga] uinput " << step << " failed: " << std::strerror(errno) << std::endl;
+		std::clog << "\033[91mError : [naga] uinput " << step << " failed: " << std::strerror(errno) << "\033[0m" << std::endl;
 		if (fd >= 0)
 		{
 			ioctl(fd, UI_DEV_DESTROY);
@@ -53,7 +53,7 @@ public:
 		fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
 		if (fd < 0)
 		{
-			std::clog << "[naga] unable to open /dev/uinput: " << std::strerror(errno) << std::endl;
+			std::clog << "\033[91mError : [naga] unable to open /dev/uinput: " << std::strerror(errno) << "\033[0m" << std::endl;
 			return false;
 		}
 
@@ -191,7 +191,7 @@ public:
 		if (write(fd, &ev, sizeof(ev)) != sizeof(ev) && !warned)
 		{
 			warned = true;
-			std::clog << "[naga] failed to forward pointer event: " << std::strerror(errno) << std::endl;
+			std::clog << "\033[93mWarning : [naga] failed to forward pointer event: " << std::strerror(errno) << "\033[0m" << std::endl;
 		}
 	}
 };
