@@ -4,52 +4,71 @@
 #include <iostream>
 #include <string>
 
-namespace getactivewindowWayland
-{
-	inline constexpr const char *DB_INTERFACE = "org.gnome.Shell.Extensions.WindowsExt";
-	inline constexpr const char *DB_DESTINATION = "org.gnome.Shell";
-	inline constexpr const char *DB_PATH = "/org/gnome/Shell/Extensions/WindowsExt";
-	inline constexpr const char *DB_METHOD = "FocusClass";
-
-}
-
 inline std::string getActiveWindowTitle()
 {
-	DBusError error;
-	dbus_error_init(&error);
+    constexpr const char* DB_INTERFACE  = "org.gnome.Shell.Extensions.WindowsExt";
+    constexpr const char* DB_DESTINATION = "org.gnome.Shell";
+    constexpr const char* DB_PATH        = "/org/gnome/Shell/Extensions/WindowsExt";
+    constexpr const char* DB_METHOD      = "FocusClass";
 
-	DBusConnection *connection = dbus_bus_get(DBUS_BUS_SESSION, &error);
-	if (dbus_error_is_set(&error))
-	{
-		std::cerr << "Error connecting to bus: " << error.message << std::endl;
-		dbus_error_free(&error);
-		return "";
-	}
+    DBusError error;
+    dbus_error_init(&error);
 
-	DBusMessage *message = dbus_message_new_method_call(getactivewindowWayland::DB_DESTINATION, getactivewindowWayland::DB_PATH, getactivewindowWayland::DB_INTERFACE, getactivewindowWayland::DB_METHOD);
-	if (message == nullptr)
-	{
-		std::cerr << "Error creating message" << std::endl;
-		return "";
-	}
+    DBusConnection* connection = dbus_bus_get(DBUS_BUS_SESSION, &error);
+    if (dbus_error_is_set(&error))
+    {
+        std::cerr << "Error connecting to bus: " << error.message << '\n';
+        dbus_error_free(&error);
+        return {};
+    }
 
-	DBusMessage *reply = dbus_connection_send_with_reply_and_block(connection, message, -1, &error);
-	if (dbus_error_is_set(&error))
-	{
-		std::cerr << "Error calling method: " << error.message << std::endl;
-		dbus_error_free(&error);
-		return "";
-	}
+    DBusMessage* message = dbus_message_new_method_call(
+        DB_DESTINATION,
+        DB_PATH,
+        DB_INTERFACE,
+        DB_METHOD
+    );
 
-	char *result;
-	if (!dbus_message_get_args(reply, &error, DBUS_TYPE_STRING, &result, DBUS_TYPE_INVALID))
-	{
-		std::cerr << "Error reading reply: " << error.message << std::endl;
-		dbus_error_free(&error);
-		return "";
-	}
+    if (!message)
+    {
+        std::cerr << "Error creating message\n";
+        return {};
+    }
 
-	dbus_message_unref(message);
-	dbus_message_unref(reply);
-	return result;
+    DBusMessage* reply = dbus_connection_send_with_reply_and_block(
+        connection,
+        message,
+        -1,
+        &error
+    );
+
+    dbus_message_unref(message);
+
+    if (dbus_error_is_set(&error))
+    {
+        std::cerr << "Error calling method: " << error.message << '\n';
+        dbus_error_free(&error);
+        return {};
+    }
+
+    char* result = nullptr;
+
+    if (!dbus_message_get_args(
+            reply,
+            &error,
+            DBUS_TYPE_STRING,
+            &result,
+            DBUS_TYPE_INVALID))
+    {
+        std::cerr << "Error reading reply: " << error.message << '\n';
+        dbus_error_free(&error);
+        dbus_message_unref(reply);
+        return {};
+    }
+
+    std::string output = result ? result : "";
+
+    dbus_message_unref(reply);
+
+    return output;
 }
