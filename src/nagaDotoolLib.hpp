@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <mutex>
 #include <stdexcept>
-#include <string_view>
+#include <string>
 
 namespace nagaDotool
 {
@@ -21,7 +21,7 @@ namespace nagaDotool
 		}
 	}
 
-	inline void writeNagaDotoolCommand(std::string_view command)
+	inline void writeNagaDotoolCommand(const std::string &command)
 	{
 		std::lock_guard<std::mutex> lock(nagaDotoolPipeMutex);
 		if (fwrite(command.data(), 1, command.size(), nagaDotoolPipe) != command.size() ||
