@@ -1,3 +1,4 @@
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/lostallmymoney?label=Sponsor&logo=GitHub)](https://github.com/sponsors/lostallmymoney)
 # Razer Mouse Linux – Easy Macro Utility
 A lightweight tool to map and manage macros for Razer Naga and other devices on Linux.
 
