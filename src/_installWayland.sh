@@ -5,7 +5,7 @@ printf "Installing requirements...\n"
 # Try to detect and use the available package manager
 if command -v apt >/dev/null 2>&1; then
     sudo apt install -y \
-        g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl \
+        g++ nano pkexec procps wget gnome-shell-extension-manager dbus-x11 curl \
         libdbus-1-dev libxkbcommon-dev golang-go scdoc || {
         printf "\033[0;31mAPT install failed. Aborting.\033[0m\n" >&2
         exit 1
@@ -109,27 +109,10 @@ dotool_stage=""
 cd ..
 sleep 0.1
 rm -rf dotool* >/dev/null
-sleep 0.1
-
-sudo gnome-extensions disable window-calls-extended@hseliger.eu >/dev/null
-sudo gnome-extensions uninstall -q window-calls-extended@hseliger.eu
 
 EXT_ZIP="./src/window-calls-extended@hseliger.eu.shell-extension.zip"
-EXT_DIR="$HOME/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu"
-
-# 1️⃣ Create the extension folder
-mkdir -p "$EXT_DIR"
-
-# 2️⃣ Unzip extension into the folder
-unzip -o "$EXT_ZIP" -d "$EXT_DIR"
-
-# 4️⃣ Fix permissions
-chown -R "$USER:$USER" "$EXT_DIR"
-chmod -R 644 "$EXT_DIR"/*.js "$EXT_DIR"/metadata.json 2>/dev/null || true
-find "$EXT_DIR" -type d -exec chmod 755 {} \;
-
-# 5️⃣ Enable the extension
-gnome-extensions enable window-calls-extended@hseliger.eu
+gnome-extensions enable window-calls-extended@hseliger.eu >/dev/null 2>&1
+gnome-extensions install "$EXT_ZIP" --force
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
