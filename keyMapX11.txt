@@ -55,7 +55,6 @@ context=test
 2 - loop=leftClickLoop
 4 - function=spotifyOpenOnlyOnce
 5 - run=x-terminal-emulator
-6 - key=Kpminus
 8 - chmap=defaultConfig2
 11 - key=XF86AudioPlay
 13 - key=XF86Back
@@ -75,7 +74,7 @@ configEnd
 config=Minecraft2
 context=1to6
 8 - unlockChmap=Minecraft* 1.21.11
-11 - key=playpause
+11 - key=XF86AudioPlay
 context=multimedia
 configEnd
 
