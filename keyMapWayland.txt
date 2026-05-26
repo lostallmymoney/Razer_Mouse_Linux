@@ -1,16 +1,29 @@
 #Minimum loop sleep recommended around 35 ms when interacting with dotool
+#Declare functions, contexts and loops before using them.
+#Functions, contexts and loops can use previously declared functions, contexts, and loops.
 
-#Declare functions before using them.
-
-#Functions can contain previous functions
 function=spotifyOpenOnlyOnce
 run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
 functionEnd
 
-#Declare loops before using them.
 function=testfunction
 string=Testing, test... Success !!
 functionEnd
+
+loop=testloop 
+function=testfunction
+sleep=400
+loopEnd
+
+#Negative number forces the loop to run 3 times.
+loop=testloop2
+loop=testloop=-3
+sleep=750
+loopEnd
+
+context=test
+3 - loop=testloop2
+contextEnd
 
 loop=leftClickLoop
 click=left
@@ -22,34 +35,14 @@ click=right
 sleep=50
 loopEnd
 
-loop=testloop 
-function=testfunction
-sleep=400
-loopEnd
-
-#Nested loops, negative number forces the loop to run 3 times.
-loop=testloop2
-loop=testloop=-3
-sleep=750
-loopEnd
-
-context=test
-3 - loop=testloop2
-contextEnd
-
-context=multiupdown
+context=multimedia
 7 - key=volumedown
 9 - key=volumeup
-contextEnd
-
-#Nested contexts
-context=multimedia
-context=multiupdown
 10 - key=previoussong
 12 - key=nextsong
 contextEnd
 
-#Declare configs after functions and loop are declared for it.
+# ----> PROFILES HERE <----
 config=defaultConfig
 context=multimedia
 context=test
@@ -58,45 +51,16 @@ context=test
 4 - function=spotifyOpenOnlyOnce
 5 - run=ptyxis
 6 - key=Kpminus
-8 - chmap=defaultConfig2
+8 - chmap=nonDefaultConfig
 11 - key=playpause
 13 - key=back
 14 - key=forward
 configEnd
 
-configWindow=Minecraft* 1.21.11
-1 - key=1
-2 - key=2
-3 - key=3
-4 - key=4
-5 - key=5
-6 - key=6
-7 - key=7
-8 - key=8
-9 - key=9
-10 - loop=leftClickLoop
-11 - chmap=Minecraft2
-12 - loop=rightClickLoop
-configEnd
-
-config=Minecraft2
-context=multimedia
-1 - key=1
-2 - key=2
-3 - key=3
-4 - key=4
-5 - key=5
-6 - key=6
-8 - unlockChmap=Minecraft* 1.21.11
-11 - key=playpause
-configEnd
-
-config=defaultConfig2
+config=nonDefaultConfig
 context=multimedia
 1 - key=mute
 2 - key=2
-3 - run=ptyxis
-3 - sleep=1000
 3 - run=ptyxis
 4 - key=4
 5 - key=5
@@ -106,11 +70,23 @@ context=multimedia
 13 - key=playpause
 configEnd
 
+context=1to6
+1 - key=1
+2 - key=2
+3 - key=3
+4 - key=4
+5 - key=5
+6 - key=6
+contextEnd
+
 configWindow=Spotify
 context=multimedia
-1 - key=mute
-3 - string=spotify@music.com
-5 - runRelease=ptyxis
+1 - string=Travis Scott
+2 - string=Central Cee
+3 - string=Migos
+4 - string=OBOY
+5 - string=Bob Marley
+6 - string=Pink Floyd
 8 - key=playpause
 11 - key=playpause
 configEnd
@@ -120,11 +96,11 @@ context=multimedia
 1 - key=mute
 4 - function=spotifyOpenOnlyOnce
 5 - run=ptyxis
-8 - chmap=Gnome-terminal-Chmap
+8 - chmap=Alternative-Terminal-Profile
 11 - key=playpause
 configEnd
 
-config=Gnome-terminal-Chmap
+config=Alternative-Terminal-Profile
 context=multimedia
 1 - key=mute
 3 - string=gnome@terminal.com Alternative
@@ -132,4 +108,21 @@ context=multimedia
 5 - run=ptyxis
 8 - unlockChmap=org.gnome.Ptyxis
 11 - key=playpause
+configEnd
+
+configWindow=Minecraft* 1.21.11
+context=1to6
+7 - key=7
+8 - key=8
+9 - key=9
+10 - loop=leftClickLoop
+11 - chmap=Minecraft2
+12 - loop=rightClickLoop
+configEnd
+
+config=Minecraft2
+context=1to6
+8 - unlockChmap=Minecraft* 1.21.11
+11 - key=playpause
+context=multimedia
 configEnd
