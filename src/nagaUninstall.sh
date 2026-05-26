@@ -4,7 +4,7 @@ sleep 0.3
 printf '%s\n' "Deleting app"
 #Deleting nagaDotool wrappers
 sudo rm -vf /usr/local/bin/nagaDotool /usr/local/bin/nagaDotoolc /usr/local/bin/nagaDotoold
-sudo rm -vf /run/.nagaProtected/nagadotool-pipe
+sudo rm -rvf /run/.nagaProtected
 sudo rm -vf /etc/tmpfiles.d/nagaProtected.conf
 
 sudo gnome-extensions disable window-calls-extended@hseliger.eu

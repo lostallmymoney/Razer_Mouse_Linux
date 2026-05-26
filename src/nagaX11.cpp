@@ -9,7 +9,7 @@
 using namespace std;
 
 static mutex fakeKeyFollowUpsMutex;
-string conf_file = string(getenv("HOME")) + "/.naga/keyMap.txt";
+string conf_file = string(getenv("HOME")) + "/.naga/keyMapX11.txt";
 
 static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
 
@@ -94,13 +94,27 @@ void initAndRegisterPlatformCommands()
 	NagaDaemon::emplaceConfigKey("keyreleaseonpress", NagaDaemon::OnKeyPressed, NagaDaemon::executeThreadNow, "xdotool keyup --window getactivewindow ");
 	NagaDaemon::emplaceConfigKey("keyreleaseonrelease", NagaDaemon::OnKeyReleased, NagaDaemon::executeThreadNow, "xdotool keyup --window getactivewindow ");
 	NagaDaemon::emplaceConfigKey("keyclick", NagaDaemon::OnKeyPressed, NagaDaemon::executeThreadNow, "xdotool key --window getactivewindow ");
-	NagaDaemon::emplaceConfigKey("keyclickrelease", NagaDaemon::OnKeyReleased, NagaDaemon::executeThreadNow, "xdotool key --window getactivewindow ");
+	NagaDaemon::emplaceConfigKey("keyclickonrelease", NagaDaemon::OnKeyReleased, NagaDaemon::executeThreadNow, "xdotool key --window getactivewindow ");
 	NagaDaemon::emplaceConfigKey("string", NagaDaemon::OnKeyPressed, writeStringNow);
-	NagaDaemon::emplaceConfigKey("stringrelease", NagaDaemon::OnKeyReleased, writeStringNow);
+	NagaDaemon::emplaceConfigKey("stringonrelease", NagaDaemon::OnKeyReleased, writeStringNow);
 	NagaDaemon::emplaceConfigKey("specialpressonpress", NagaDaemon::OnKeyPressed, specialPressNow);
 	NagaDaemon::emplaceConfigKey("specialpressonrelease", NagaDaemon::OnKeyReleased, specialPressNow);
 	NagaDaemon::emplaceConfigKey("specialreleaseonpress", NagaDaemon::OnKeyPressed, specialReleaseNow);
 	NagaDaemon::emplaceConfigKey("specialreleaseonrelease", NagaDaemon::OnKeyReleased, specialReleaseNow);
+}
+
+// X11 ONLY COMBO-COMMANDS
+NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandContent)
+{
+	NagaDaemon::ParsedCommandList results;
+	std::unordered_map<std::string, NagaDaemon::nagaCommandClass *const>::iterator specialOnPress = NagaDaemon::nagaCommandsMap.find("specialpressonpress");
+	std::unordered_map<std::string, NagaDaemon::nagaCommandClass *const>::iterator specialOnRelease = NagaDaemon::nagaCommandsMap.find("specialreleaseonrelease");
+	if (specialOnPress != NagaDaemon::nagaCommandsMap.end() && specialOnRelease != NagaDaemon::nagaCommandsMap.end())
+	{
+		results.emplace_back(true, *(new NagaDaemon::MacroEvent(*specialOnPress->second, *(new string(commandContent)))));
+		results.emplace_back(false, *(new NagaDaemon::MacroEvent(*specialOnRelease->second, *(new string(commandContent)))));
+	}
+	return results;
 }
 
 int main(const int argc, const char *const argv[])

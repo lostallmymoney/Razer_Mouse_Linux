@@ -1,16 +1,29 @@
 #Minimum loop sleep recommended around 35 ms when interacting with xdotool
+#Declare functions, contexts and loops before using them.
+#Functions, contexts and loops can use previously declared functions, contexts, and loops.
 
-#Declare functions before using them.
-
-#Functions can contain previous functions
 function=spotifyOpenOnlyOnce
 run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
 functionEnd
 
-#Declare loops before using them.
 function=testfunction
 string=Testing, test... Success !!
 functionEnd
+
+loop=testloop 
+function=testfunction
+sleep=400
+loopEnd
+
+#Negative number forces the loop to run 3 times.
+loop=testloop2
+loop=testloop=-3
+sleep=750
+loopEnd
+
+context=test
+3 - loop=testloop2
+contextEnd
 
 loop=leftClickLoop
 run=xdotool click 1
@@ -21,21 +34,6 @@ loop=rightClickLoop
 run=xdotool click 3
 sleep=50
 loopEnd
-
-loop=testloop 
-function=testfunction
-sleep=400
-loopEnd
-
-#Nested loops, negative number forces the loop to run 3 times.
-loop=testloop2
-loop=testloop=-3
-sleep=750
-loopEnd
-
-context=test
-3 - loop=testloop2
-contextEnd
 
 context=multiupdown
 7 - key=XF86AudioLowerVolume
@@ -49,7 +47,7 @@ context=multiupdown
 12 - keyClick=XF86AudioNext
 contextEnd
 
-
+# ----> PROFILES HERE <----
 config=defaultConfig
 context=multimedia
 context=test
@@ -57,8 +55,7 @@ context=test
 2 - loop=leftClickLoop
 4 - function=spotifyOpenOnlyOnce
 5 - run=x-terminal-emulator
-6 - specialPressOnPress=È
-6 - specialReleaseOnRelease=È
+6 - key=Kpminus
 8 - chmap=defaultConfig2
 11 - key=XF86AudioPlay
 13 - key=XF86Back
@@ -66,12 +63,7 @@ context=test
 configEnd
 
 configWindow=Minecraft* 1.21.11
-1 - key=1
-2 - key=2
-3 - key=3
-4 - key=4
-5 - key=5
-6 - key=6
+context=1to6
 7 - key=7
 8 - key=8
 9 - key=9
@@ -80,65 +72,55 @@ configWindow=Minecraft* 1.21.11
 12 - loop=rightClickLoop
 configEnd
 
+config=Minecraft2
+context=1to6
+8 - unlockChmap=Minecraft* 1.21.11
+11 - key=playpause
+context=multimedia
+configEnd
+
 config=defaultConfig2
+context=multimedia
 1 - key=XF86AudioMute
 3 - run=x-terminal-emulator
 3 - sleep=1000
 3 - run=x-terminal-emulator
-7 - key=XF86AudioLowerVolume
 8 - key=XF86AudioPlay
-9 - key=XF86AudioRaiseVolume
-10 - keyClick=XF86AudioPrev
 11 - chmap=defaultConfig
-12 - keyClick=XF86AudioNext
 13 - run=x-terminal-emulator
 14 - run=x-terminal-emulator
 configEnd
 
 configWindow=Spotify
-1 - key=XF86AudioMute
-3 - string=spotify@music.com
-5 - runRelease=x-terminal-emulator
-7 - key=XF86AudioLowerVolume
+context=multimedia
+1 - string=Travis Scott
+2 - string=Central Cee
+3 - string=Migos
+4 - string=OBOY
+5 - string=Bob Marley
+6 - string=Pink Floyd
 8 - key=XF86AudioPlay
-9 - key=XF86AudioRaiseVolume
-10 - keyClick=XF86AudioPrev
 11 - key=XF86AudioPlay
-12 - keyClick=XF86AudioNext
-13 - key=XF86AudioPrev
-14 - key=XF86AudioNext
 configEnd
 
 configWindow=Gnome-terminal
+context=multimedia
 1 - key=XF86AudioMute
 3 - string=gnome@terminal.com
 4 - function=spotifyOpenOnlyOnce
 5 - run=x-terminal-emulator
-6 - specialPressOnPress=`
-6 - specialReleaseOnRelease=`
-7 - key=XF86AudioLowerVolume
+6 - specialkey=`
 8 - chmap=Gnome-terminal-Chmap
-9 - key=XF86AudioRaiseVolume
-10 - keyClick=XF86AudioPrev
 11 - key=XF86AudioPlay
-12 - keyClick=XF86AudioNext
-13 - key=XF86AudioPrev
-14 - key=XF86AudioNext
 configEnd
 
 config=Gnome-terminal-Chmap
+context=multimedia
 1 - key=XF86AudioMute
 3 - string=gnome@terminal.com Alternative
 4 - function=spotifyOpenOnlyOnce
 5 - run=x-terminal-emulator
-6 - specialPressOnPress=|
-6 - specialReleaseOnRelease=|
-7 - key=XF86AudioLowerVolume
+6 - specialkey=|
 8 - unlockChmap=Gnome-terminal
-9 - key=XF86AudioRaiseVolume
-10 - keyClick=XF86AudioPrev
 11 - key=XF86AudioPlay
-12 - keyClick=XF86AudioNext
-13 - key=XF86AudioPrev
-14 - key=XF86AudioNext
 configEnd

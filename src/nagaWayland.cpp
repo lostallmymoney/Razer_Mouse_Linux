@@ -59,19 +59,26 @@ void platformRunAndWrite(const string &macroContent)
 void initAndRegisterPlatformCommands()
 {
 	initNagaDotoolPipe();
-
 	NagaDaemon::emplaceConfigKey("click", NagaDaemon::OnKeyPressed, writeNagaDotoolCommand, "click ");
-	NagaDaemon::emplaceConfigKey("clickrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "click ");
+	NagaDaemon::emplaceConfigKey("clickonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "click ");
 	NagaDaemon::emplaceConfigKey("keypressonpress", NagaDaemon::OnKeyPressed, writeNagaDotoolCommand, "keydown ");
 	NagaDaemon::emplaceConfigKey("keypressonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "keydown ");
 	NagaDaemon::emplaceConfigKey("keyreleaseonpress", NagaDaemon::OnKeyPressed, writeNagaDotoolCommand, "keyup ");
 	NagaDaemon::emplaceConfigKey("keyreleaseonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "keyup ");
 	NagaDaemon::emplaceConfigKey("keyclick", NagaDaemon::OnKeyPressed, writeNagaDotoolCommand, "key ");
-	NagaDaemon::emplaceConfigKey("keyclickrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "key ");
+	NagaDaemon::emplaceConfigKey("keyclickonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "key ");
 	NagaDaemon::emplaceConfigKey("string", NagaDaemon::OnKeyPressed, writeNagaDotoolCommand, "type ");
-	NagaDaemon::emplaceConfigKey("stringrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "type ");
+	NagaDaemon::emplaceConfigKey("stringonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "type ");
 	NagaDaemon::emplaceConfigKey("dotool", NagaDaemon::OnKeyPressed, writeNagaDotoolCommand);
-	NagaDaemon::emplaceConfigKey("dotoolrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand);
+	NagaDaemon::emplaceConfigKey("dotoolonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand);
+}
+
+// Wayland ONLY COMBO-COMMANDS (empty dummy)
+// X11 ONLY COMBO-COMMANDS
+NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandContent)
+{
+	NagaDaemon::ParsedCommandList results;
+	return results;
 }
 
 int main(const int argc, const char *const argv[])

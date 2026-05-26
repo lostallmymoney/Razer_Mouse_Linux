@@ -235,7 +235,7 @@ public:
 			loopAction = [&loopRef = aNagaLoop]()
 			{ loopRef.stop(); };
 		}
-		else if (taNagaLoopArgument == "toggle" || taNagaLoopArgument == "togglerelease")
+		else if (taNagaLoopArgument == "toggle" || taNagaLoopArgument == "toggleonrelease")
 		{
 			loopAction = [&loopRef = aNagaLoop]()
 			{ loopRef.toggle(); };
@@ -309,7 +309,6 @@ struct ParsedCommand
 	}
 };
 
-using ParsedCommandList = vector<ParsedCommand>;
 using ParsedCommandPointerList = vector<const ParsedCommand *>;
 
 // Global data structures for key mappings, loops, and functions
@@ -472,6 +471,9 @@ namespace configSwitcher
 
 namespace NagaDaemon
 {
+	using ParsedCommandList = vector<ParsedCommand>;
+	ParsedCommandList platformComboKeyParser(const std::string &);
+
 	static constexpr bool OnKeyPressed = true;
 	static constexpr bool OnKeyReleased = false;
 	static constexpr size_t BufferSize = 1024;
@@ -549,27 +551,27 @@ namespace NagaDaemon
 	static void registerCoreCommands()
 	{
 		emplaceConfigKey("chmap", OnKeyPressed, chmapNow);
-		emplaceConfigKey("chmaprelease", OnKeyReleased, chmapNow);
+		emplaceConfigKey("chmaponrelease", OnKeyReleased, chmapNow);
 
 		emplaceConfigKey("sleep", OnKeyPressed, sleepNow);
-		emplaceConfigKey("sleeprelease", OnKeyReleased, sleepNow);
+		emplaceConfigKey("sleeponrelease", OnKeyReleased, sleepNow);
 
 		emplaceConfigKey("randomsleep", OnKeyPressed, randomSleepNow);
-		emplaceConfigKey("randomsleeprelease", OnKeyReleased, randomSleepNow);
+		emplaceConfigKey("randomsleeponrelease", OnKeyReleased, randomSleepNow);
 
 		emplaceConfigKey("run", OnKeyPressed, executeThreadNow);
 		emplaceConfigKey("run2", OnKeyPressed, executeNow);
 
-		emplaceConfigKey("runrelease", OnKeyReleased, executeThreadNow);
-		emplaceConfigKey("runrelease2", OnKeyReleased, executeNow);
+		emplaceConfigKey("runonrelease", OnKeyReleased, executeThreadNow);
+		emplaceConfigKey("runonrelease2", OnKeyReleased, executeNow);
 
 		emplaceConfigKey("runandwrite", OnKeyPressed, runAndWriteThread);
 		emplaceConfigKey("runandwrite2", OnKeyPressed, platformRunAndWrite);
-		emplaceConfigKey("runandwriterelease", OnKeyReleased, runAndWriteThread);
-		emplaceConfigKey("runandwriterelease2", OnKeyReleased, platformRunAndWrite);
+		emplaceConfigKey("runandwriteonrelease", OnKeyReleased, runAndWriteThread);
+		emplaceConfigKey("runandwriteonrelease2", OnKeyReleased, platformRunAndWrite);
 
 		emplaceConfigKey("unlockchmap", OnKeyPressed, unlockChmap);
-		emplaceConfigKey("unlockchmaprelease", OnKeyReleased, unlockChmap);
+		emplaceConfigKey("unlockchmaponrelease", OnKeyReleased, unlockChmap);
 
 		emplaceConfigKey("launch", OnKeyReleased, executeThreadNow, "gtk-launch ");
 		emplaceConfigKey("launch2", OnKeyReleased, executeNow, "gtk-launch ");
@@ -696,20 +698,24 @@ namespace NagaDaemon
 			{
 				result.emplace_back(nagaCommandsMap[commandType]->IsOnKeyPressed(), *(new MacroEvent(*nagaCommandsMap[commandType], nagaCommandsMap[commandType]->generateCommand(commandContent))));
 			}
+			else if ([&result, &commandContent]() -> bool
+					 {
+				NagaDaemon::ParsedCommandList specialCommands =
+					NagaDaemon::platformComboKeyParser(commandContent);
+
+				if (specialCommands.empty())
+					return false;
+
+				for (auto &command : specialCommands)
+					result.emplace_back(std::move(command));
+
+				return true; }())
+			{
+			}
 			else if (commandType == "key")
 			{
 				result.emplace_back(true, *(new MacroEvent(*nagaCommandsMap["keypressonpress"], nagaCommandsMap["keypressonpress"]->generateCommand(commandContent))));
 				result.emplace_back(false, *(new MacroEvent(*nagaCommandsMap["keyreleaseonrelease"], nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent))));
-			}
-			else if (commandType == "specialkey")
-			{
-				unordered_map<std::string, nagaCommandClass *const>::iterator specialPress = nagaCommandsMap.find("specialpressonpress");
-				unordered_map<std::string, nagaCommandClass *const>::iterator specialRelease = nagaCommandsMap.find("specialreleaseonrelease");
-				if (specialPress != nagaCommandsMap.end() && specialRelease != nagaCommandsMap.end())
-				{
-					result.emplace_back(true, *(new MacroEvent(*specialPress->second, *(new std::string(commandContent)))));
-					result.emplace_back(false, *(new MacroEvent(*specialRelease->second, *(new std::string(commandContent)))));
-				}
 			}
 			else if (commandType == "loop" || commandType == "loop2")
 			{
@@ -745,7 +751,7 @@ namespace NagaDaemon
 						isOnPress = true;
 						actualArgument = pressArgument;
 					}
-					else if (pressArgument == "togglerelease")
+					else if (pressArgument == "toggleonrelease")
 					{
 						isOnPress = false;
 						actualArgument = pressArgument;
@@ -789,7 +795,7 @@ namespace NagaDaemon
 				if (shouldAddStop)
 					result.emplace_back(false, *makeLoopEvent("stop"), true);
 			}
-			else if (commandType == "function" || commandType == "functionrelease")
+			else if (commandType == "function" || commandType == "functiononrelease")
 			{
 				nukeWhitespaces(commandContent);
 				unordered_map<std::string, nagaFunction *>::iterator functionIt = functionsMap.find(commandContent);

@@ -88,17 +88,17 @@ fi
 
 sed -i 's/dotool "\$@"/nagaDotool "\$@"/' "$dotool_stage/bin/dotoold"
 # shellcheck disable=SC2016
-sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\/run\/.nagaProtected\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
+sed -i 's/\${DOTOOL_PIPE:-\/tmp\/dotool-pipe}/\${DOTOOL_PIPE:-\/run\/nagaProtected\/nagadotool-pipe}/g' "$dotool_stage/bin/dotoold"
 # shellcheck disable=SC2016
-sed -i 's/\/tmp\/dotool-pipe/\/run\/.nagaProtected\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
+sed -i 's/\/tmp\/dotool-pipe/\/run\/nagaProtected\/nagadotool-pipe/g' "$dotool_stage/bin/dotoolc"
 
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotool" /usr/local/bin/nagaDotool
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoolc" /usr/local/bin/nagaDotoolc
 sudo install -Dm750 -o root -g razerInputGroup "$dotool_stage/bin/dotoold" /usr/local/bin/nagaDotoold
 
-# Create systemd-tmpfiles.d config for persistent /run/.nagaProtected
+# Create systemd-tmpfiles.d config for persistent /run/nagaProtected
 cat <<EOF | sudo tee /etc/tmpfiles.d/nagaProtected.conf >/dev/null
-d /run/.nagaProtected 0770 root razerInputGroup -
+d /run/nagaProtected 0770 root razerInputGroup -
 EOF
 sudo systemd-tmpfiles --create
 
@@ -116,9 +116,6 @@ gnome-extensions install "$EXT_ZIP" --force
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
-mkdir -p "$_dir/protected"
-sudo chown root:razerInputGroup "$_dir/protected"
-sudo chmod 770 "$_dir/protected"
 sudo cp -r --update=none -v "keyMapWayland.txt" "$_dir"
 sudo chown -R "root:root" "$_dir"/keyMapWayland.txt
 

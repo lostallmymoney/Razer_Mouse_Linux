@@ -67,5 +67,5 @@ sudo chmod 755 /usr/local/bin/Naga_Linux/nagaXinputStart.sh
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"
-sudo cp -r --update=none -v "keyMap.txt" "$_dir"
-sudo chown -R "root:root" "$_dir"/keyMap.txt
+sudo cp -r --update=none -v "keyMapX11.txt" "$_dir"
+sudo chown -R "root:root" "$_dir"/keyMapX11.txt

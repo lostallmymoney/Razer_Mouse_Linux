@@ -105,7 +105,7 @@ If something fails to compile on your distro → install equivalents of these pa
 ---
 
 ## 🔧 Configuration
-The configuration file is stored in `~/.naga/keyMap.txt`.  
+The configuration file is stored in `~/.naga/keyMapWayland.txt` or `~/.naga/keyMapX11.txt`.  
 
 **Basic syntax:**
 ```
@@ -125,11 +125,11 @@ configEnd
 ### 📚 Full Option Reference
 Looking for higher-level building blocks? Check out [Functions, Loops & Contexts](#-functions-loops--contexts).
 - `chmap` – Switch to another config
-- `chmapRelease` – Switch config on key release
+- `chmapOnRelease` – Switch config on key release
 - `unlockChmap` – Unlocks auto window-based configs  
-- `sleep` / `sleepRelease` – Put system to sleep
-- `randomSleep` / `randomSleepRelease` – Sleep for a random duration (0 to N ms, where N is the argument)
-- `string` / `stringRelease` – Type a literal string
+- `sleep` / `sleepOnRelease` – Put system to sleep
+- `randomSleep` / `randomSleepOnRelease` – Sleep for a random duration (0 to N ms, where N is the argument)
+- `string` / `stringOnRelease` – Type a literal string
 - `key` – Press + release a key
 - `keyPressOnPress` – Hold key on button press
 - `keyReleaseOnRelease` – Release key on button release
@@ -137,20 +137,20 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `keyReleaseOnPress` – Release key on button press
 - `run` – Run a shell command asynchronously
 - `run2` – Run a shell command synchronously
-- `runRelease` – Run command on release
-- `runRelease2` – Same as above, synchronous
+- `runOnRelease` – Run command on release
+- `runOnRelease2` – Same as above, synchronous
 - `runAndWrite` – Run a command and write its output live to screen
 - `runAndWrite2` – Same as above, synchronous
-- `runAndWriteRelease` – Run a command and write its output live to screen on release
-- `runAndWriteRelease2` – Same as above, synchronous
+- `runAndWriteOnRelease` – Run a command and write its output live to screen on release
+- `runAndWriteOnRelease2` – Same as above, synchronous
 - `keyClick` – Press key once on press
-- `keyClickRelease` – Press key once on release
-- `function` / `functionRelease` – Call a predefined function
+- `keyClickOnRelease` – Press key once on release
+- `function` / `functionOnRelease` – Call a predefined function
 - `loop` – Start/stop a predefined loop inline (synchronous)
 - `loop2` – Start a predefined loop in a detached thread (asynchronous)
-- Wayland-only `dotool` / `dotoolrelease` – Send the full command string directly to the nagaDotool pipe [see DoTool man page](https://git.sr.ht/~geb/dotool/tree/master/doc/dotool.1.scd)
+- Wayland-only `dotool` / `dotoolOnRelease` – Send the full command string directly to the nagaDotool pipe [see DoTool man page](https://git.sr.ht/~geb/dotool/tree/master/doc/dotool.1.scd)
 - Wayland-only `click` – Press mouse click (left | center | right)
-- Wayland-only `clickRelease` – Press mouse click (left | center | right) on release
+- Wayland-only `clickOnRelease` – Press mouse click (left | center | right) on release
 - X11-only `xdotoolType` / `xdotoolTypeRelease` – Type a string via xdotool (fallback)
 - X11-only `specialKey` – Press + release a special key
 - X11-only `setWorkspace` – Switch workspace (via xdotool)
@@ -183,7 +183,7 @@ configEnd
 ```
 
 📌 Notes:  
-- If `~/.naga/keyMap.txt` is missing, the daemon **won’t start** (installer copies an example).  
+- If `~/.naga/keyMap*.txt` is missing, the daemon **won’t start** (installer copies an example).  
 - Multiple actions per key are allowed; they run sequentially or async depending on choice.  
 - Use `naga edit` to reload configs.  
 
@@ -237,7 +237,7 @@ functionEnd
 
 # Press to prep workspace, release to mute/unmute the mic
 4 - function=prepStandup
-4 - functionRelease=toggleMic
+4 - functionOnRelease=toggleMic
 ```
 
 ### 🔁 Loops
@@ -250,7 +250,7 @@ functionEnd
 	- `loop=myLoop=startOnRelease` begins loop on key release.
 	- `loop=myLoop=stopOnRelease` stops loop on key release.
 	- `loop=myLoop=toggle` toggles the loop on/off with each press.
-	- `loop=myLoop=togglerelease` toggles the loop on/off with each release.
+	- `loop=myLoop=toggleOnRelease` toggles the loop on/off with each release.
 - **Only one instance per loop**: Each loop can have only one running instance at a time. Starting a loop while it's already running will stop the old instance and start a new one.
 - **Loops can include other loops**: Inside a `loop=` or `loop2=` definition, you can call other loops using `loop=anotherLoop=start`, `loop=anotherLoop=stop`, or negative numbers like `loop=anotherLoop=-5` (for fixed-count loops without auto-stop). You can also have a plain loop or loop2 inside a loop or loop2, all nested loops will stop with their mother loop.
 - **All press-phase actions compatible with functions are also compatible with loops**, including nested `loop` / `loop2` calls.
