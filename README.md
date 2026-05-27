@@ -11,9 +11,18 @@ Want support for another device? Just [add the files](https://github.com/lostall
 ---
 
 ## 🚀 Quick Install
-Run this one-liner to install:  
+Run this one-liner to install with git :
 ```
-sudo apt install unzip wget -y && cd ~ && rm -rf ~/Razer_Mouse_Linux.zip && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -rf ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
+{ command -v git >/dev/null 2>&1 || sudo apt install git -y; } && git clone https://github.com/lostallmymoney/Razer_Mouse_Linux.git ~/Razer_Mouse_Linux-master && cd ~/Razer_Mouse_Linux-master && sh install.sh
+```
+Or without git :
+```
+{ { command -v unzip && command -v wget; } >/dev/null 2>&1 || sudo apt install unzip wget -y; } && cd ~ && rm -f ~/Razer_Mouse_Linux.zip && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -f ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
+```
+### ⚡ Quick update
+Run this to update (git install overwrite) :
+```
+{ command -v git >/dev/null 2>&1 || sudo apt install git -y; } && rm -rf ~/Razer_Mouse_Linux-master && git clone https://github.com/lostallmymoney/Razer_Mouse_Linux.git ~/Razer_Mouse_Linux-master && cd ~/Razer_Mouse_Linux-master && sh install.sh
 ```
 
 Or, clone the repo and run:
@@ -159,7 +168,8 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - X11-only `specialReleaseOnPress`  
 - X11-only `specialReleaseOnRelease`  
 
-👉 For valid key names, see [X11 keysym list](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h) (remove `XK_` prefix).  
+👉 For valid Wayland key names, see [Wayland input_event_codes](https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/include/uapi/linux/input-event-codes.h) (remove `KEY_` prefix).  
+👉 For valid X11 key names, see [X11 keysym list](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h) (remove `XK_` prefix).  
 
 ---
 
