@@ -3,126 +3,110 @@
 #Functions, contexts and loops can use previously declared functions, contexts, and loops.
 
 function=spotifyOpenOnlyOnce
-run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
-functionEnd
+    run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
 
 function=testfunction
-string=Testing, test... Success !!
-functionEnd
+    string=Testing, test... Success !!
 
 loop=testloop 
-function=testfunction
-sleep=400
-loopEnd
+    function=testfunction
+    sleep=400
 
 #Negative number forces the loop to run 3 times.
 loop=testloop2
-loop=testloop=-3
-sleep=750
-loopEnd
+    loop=testloop=-3
+    sleep=750
 
 context=test
-3 - loop=testloop2
-contextEnd
+    3 - loop=testloop2
 
 loop=leftClickLoop
-click=left
-sleep=50
-loopEnd
+    click=left
+    sleep=50
 
 loop=rightClickLoop
-click=right
-sleep=50
-loopEnd
+    click=right
+    sleep=50
 
 context=multimedia
-7 - key=volumedown
-9 - key=volumeup
-10 - key=previoussong
-12 - key=nextsong
-contextEnd
+    7 - key=volumedown
+    9 - key=volumeup
+    10 - key=previoussong
+    12 - key=nextsong
 
 # ----> PROFILES HERE <----
 config=defaultConfig
-context=multimedia
-context=test
-1 - keyClick=mute
-2 - loop=leftClickLoop
-4 - function=spotifyOpenOnlyOnce
-5 - run=ptyxis
-6 - key=Kpminus
-8 - chmap=nonDefaultConfig
-11 - key=playpause
-13 - key=back
-14 - key=forward
-configEnd
+    context=multimedia
+    context=test
+    1 - keyClick=mute
+    2 - loop=leftClickLoop
+    4 - function=spotifyOpenOnlyOnce
+    5 - run=ptyxis
+    6 - key=Kpminus
+    8 - chmap=nonDefaultConfig
+    11 - key=playpause
+    13 - key=back
+    14 - key=forward
 
 config=nonDefaultConfig
-context=multimedia
-1 - key=mute
-2 - key=2
-3 - run=ptyxis
-4 - key=4
-5 - key=5
-6 - key=6
-8 - key=playpause
-11 - chmap=defaultConfig
-13 - key=playpause
-configEnd
+    context=multimedia
+    1 - key=mute
+    2 - key=2
+    3 - run=ptyxis
+    4 - key=4
+    5 - key=5
+    6 - key=6
+    8 - key=playpause
+    11 - chmap=defaultConfig
+    13 - key=playpause
 
 context=1to6
-1 - key=1
-2 - key=2
-3 - key=3
-4 - key=4
-5 - key=5
-6 - key=6
-contextEnd
+    1 - key=1
+    2 - key=2
+    3 - key=3
+    4 - key=4
+    5 - key=5
+    6 - key=6
 
 configWindow=Spotify
-context=multimedia
-1 - string=Travis Scott
-2 - string=Central Cee
-3 - string=Migos
-4 - string=OBOY
-5 - string=Bob Marley
-6 - string=Pink Floyd
-8 - key=playpause
-11 - key=playpause
-configEnd
+    context=multimedia
+    1 - string=Travis Scott
+    2 - string=Central Cee
+    3 - string=Migos
+    4 - string=OBOY
+    5 - string=Bob Marley
+    6 - string=Pink Floyd
+    8 - key=playpause
+    11 - key=playpause
 
 configWindow=org.gnome.Ptyxis
-context=multimedia
-1 - key=mute
-4 - function=spotifyOpenOnlyOnce
-5 - run=ptyxis
-8 - chmap=Alternative-Terminal-Profile
-11 - key=playpause
-configEnd
+    context=multimedia
+    1 - key=mute
+    4 - function=spotifyOpenOnlyOnce
+    5 - run=ptyxis
+    8 - chmap=Alternative-Terminal-Profile
+    11 - key=playpause
 
 config=Alternative-Terminal-Profile
-context=multimedia
-1 - key=mute
-3 - string=gnome@terminal.com Alternative
-4 - function=spotifyOpenOnlyOnce
-5 - run=ptyxis
-8 - unlockChmap=org.gnome.Ptyxis
-11 - key=playpause
-configEnd
+    context=multimedia
+    1 - key=mute
+    3 - string=gnome@terminal.com Alternative
+    4 - function=spotifyOpenOnlyOnce
+    5 - run=ptyxis
+    8 - unlockChmap=org.gnome.Ptyxis
+    11 - key=playpause
 
 configWindow=Minecraft* 1.21.11
-context=1to6
-7 - key=7
-8 - key=8
-9 - key=9
-10 - loop=leftClickLoop
-11 - chmap=Minecraft2
-12 - loop=rightClickLoop
-configEnd
+    context=1to6
+    7 - key=7
+    8 - key=8
+    9 - key=9
+    10 - loop=leftClickLoop
+    11 - chmap=Minecraft2
+    12 - loop=rightClickLoop
 
 config=Minecraft2
-context=1to6
-8 - unlockChmap=Minecraft* 1.21.11
-11 - key=playpause
-context=multimedia
-configEnd
+    context=1to6
+    8 - unlockChmap=Minecraft* 1.21.11
+    11 - key=playpause
+    context=multimedia

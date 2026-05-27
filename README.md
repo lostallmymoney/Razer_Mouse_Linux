@@ -60,7 +60,7 @@ Tested & confirmed 99% compatible with:
 - **Naga 2014** –
 - **Naga Epic Chroma** –   
 
-On theses systems : 
+On theses systems :
 Ubuntu, Manjaro, Linux Mint, CentOS, ArchLinux, and more..
 
 > **Disclaimer:** Make sure to have at least **2MB of free RAM** to run this daemon seamlessly.
@@ -98,8 +98,6 @@ sudo apt install g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x1
 sudo apt install libx11-dev xdotool xinput g++ libxtst-dev libxmu-dev nano pkexec procps
 ```
 
-
-
 If something fails to compile on your distro → install equivalents of these packages.  
 
 ---
@@ -110,15 +108,14 @@ The configuration file is stored in `~/.naga/keyMapWayland.txt` or `~/.naga/keyM
 **Basic syntax:**
 ```
 config=<configName>
-<keyNumber> - <option>=<command>
-<keyNumber> - <option>=<command>
-<keyNumber> - <option>=<command>
-configEnd
+	<keyNumber> - <option>=<command>
+	<keyNumber> - <option>=<command>
+	<keyNumber> - <option>=<command>
 ```
 
-- `<keyNumber>`: 1–14 (12 keypad buttons + 2 top buttons)  
-- `<option>`: action type (see full list below)  
-- `<command>`: string, key, or shell command  
+* `<keyNumber>`: 1–14 (12 keypad buttons + 2 top buttons)  
+* `<option>`: action type (see full list below)  
+* `<command>`: string, key, or shell command  
 
 ---
 
@@ -170,16 +167,14 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 ```txt
 # Default config
 config=defaultConfig
-1 - key=XF86AudioPlay
-3 - chmap=WoWConfig
-4 - run=notify-send 'Button #4' 'Pressed'
-configEnd
+	1 - key=XF86AudioPlay
+	3 - chmap=WoWConfig
+	4 - run=notify-send 'Button #4' 'Pressed'
 
 # Custom WoW profile
 config=WoWConfig
-1 - run=sh ~/hacks.sh
-2 - chmap=defaultConfig
-configEnd
+	1 - run=sh ~/hacks.sh
+	2 - chmap=defaultConfig
 ```
 
 📌 Notes:  
@@ -199,9 +194,9 @@ configEnd
 These advanced building blocks let you share logic, create repeatable sequences, and keep large configs tidy.
 
 ### 🧩 Functions
-- Define reusable combos once with `function=<name>` … `functionEnd`.
-- Only press-phase actions are recorded; call them from a config using `function=<name>` or `functionRelease=<name>`.
-- Functions can call other functions (nesting is allowed) for modular setups.
+* Define reusable combos once with `function=<name>`.
+* Only press-phase actions are recorded; call them from a config using `function=<name>` or `functionRelease=<name>`.
+* Functions can call other functions (nesting is allowed) for modular setups.
 
 **Compatible press-phase actions** (usable in both functions and loops):
 - `function` (invoke another function)
@@ -224,16 +219,14 @@ These advanced building blocks let you share logic, create repeatable sequences,
 **Example:**
 ```txt
 function=prepStandup
-run=notify-send "Stand-up" "Time to share updates"
-sleep=150
-key=Super+N
-sleep=120
-string=Standup notes ready!
-functionEnd
+	run=notify-send "Stand-up" "Time to share updates"
+	sleep=150
+	key=Super+N
+	sleep=120
+	string=Standup notes ready!
 
 function=toggleMic
-key=XF86AudioMicMute
-functionEnd
+	key=XF86AudioMicMute
 
 # Press to prep workspace, release to mute/unmute the mic
 4 - function=prepStandup
@@ -241,9 +234,10 @@ functionEnd
 ```
 
 ### 🔁 Loops
-- Wrap repeating sequences with `loop=<name>` … `loopEnd`.
-- Bind them in configs via `loop=<name>` (runs inline) or `loop2=<name>` (runs in a detached thread).
-- Optional arguments let you control behavior:
+
+* Wrap repeating sequences with `loop=<name>`.
+* Bind them in configs via `loop=<name>` (runs inline) or `loop2=<name>` (runs in a detached thread).
+* - Optional arguments let you control behavior:
 	- `loop=myLoop=start` (default) begins the loop.
 	- `loop=myLoop=stop` stops it manually (auto-added on key release unless you pass a negative count).
 	- `loop=myLoop=5` runs exactly 5 cycles; `loop=myLoop=-3` runs 3 cycles without waiting for stop.
@@ -258,15 +252,13 @@ functionEnd
 **Example:**
 ```txt
 loop=burstRotation
-key=Ctrl+1
-sleep=150
-key=Ctrl+2
-loopEnd
+	key=Ctrl+1
+	sleep=150
+	key=Ctrl+2
 
 loop=autoFarm
-loop=burstRotation=-2    # negative count: run 2 cycles without auto-stop
-sleep=500
-loopEnd
+	loop=burstRotation=-2
+	sleep=500
 
 3 - loop=burstRotation        # hold to spam the rotation
 4 - loop2=burstRotation=5     # run 5 cycles in background
@@ -274,27 +266,25 @@ loopEnd
 ```
 
 ### 🗂️ Contexts
-- Use `context=<name>` … `contextEnd` to store shared lines (they can reference other contexts).
-- Inside a config, drop `context=<name>` and every line stored in that context is injected in place.
-- Great for repeating key layouts across multiple profiles or layering optional behaviors.
+
+* Use `context=<name>` to store shared lines (they can reference other contexts).
+* Inside a config, drop `context=<name>` and every line stored in that context is injected in place.
+* Great for repeating key layouts across multiple profiles or layering optional behaviors.
 
 **Example:**
 ```txt
 context=mediaOverlay
-1 - key=XF86AudioPlay
-2 - key=XF86AudioNext
-contextEnd
+	1 - key=XF86AudioPlay
+	2 - key=XF86AudioNext
 
 context=focusShortcuts
-context=mediaOverlay
-3 - key=Super+Left
-4 - key=Super+Right
-contextEnd
+	context=mediaOverlay
+	3 - key=Super+Left
+	4 - key=Super+Right
 
 config=focusMode
 context=focusShortcuts
-5 - run=notify-send "Focus mode engaged"
-configEnd
+	5 - run=notify-send "Focus mode engaged"
 ```
 
 ---
