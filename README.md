@@ -168,7 +168,7 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - X11-only `specialReleaseOnPress`  
 - X11-only `specialReleaseOnRelease`  
 
-👉 For valid Wayland key names, see [Wayland input_event_codes](https://github.com/torvalds/linux/blob/master/include/uapi/linux/input-event-codes.h) (remove `KEY_` prefix).  
+👉 For valid Wayland key names, see [Wayland input_event_codes](https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/include/uapi/linux/input-event-codes.h) (remove `KEY_` prefix).  
 👉 For valid X11 key names, see [X11 keysym list](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h) (remove `XK_` prefix).  
 
 ---
