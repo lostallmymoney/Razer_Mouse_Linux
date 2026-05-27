@@ -19,6 +19,11 @@ Or without git :
 ```
 { { command -v unzip && command -v wget; } >/dev/null 2>&1 || sudo apt install unzip wget -y; } && cd ~ && rm -f ~/Razer_Mouse_Linux.zip && wget https://codeload.github.com/lostallmymoney/Razer_Mouse_Linux/zip/refs/heads/master -O ~/Razer_Mouse_Linux.zip && unzip -o ~/Razer_Mouse_Linux.zip -d ~ && rm -f ~/Razer_Mouse_Linux.zip && cd ~/Razer_Mouse_Linux-master && sh install.sh
 ```
+## ⚡ Quick update
+Run this to update (git install overwrite) :
+```
+{ command -v git >/dev/null 2>&1 || sudo apt install git -y; } && rm -rf ~/Razer_Mouse_Linux-master && git clone https://github.com/lostallmymoney/Razer_Mouse_Linux.git ~/Razer_Mouse_Linux-master && cd ~/Razer_Mouse_Linux-master && sh install.sh
+```
 
 Or, clone the repo and run:
 ```bash
