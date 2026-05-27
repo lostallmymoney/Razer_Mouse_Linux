@@ -3,7 +3,7 @@
 #Functions, contexts and loops can use previously declared functions, contexts, and loops.
 
 function=spotifyOpenOnlyOnce
-    run=if [ $(pgrep -c spotify) -eq 0 ]; then sudo -Siu $USER bash -c "spotify&"; fi
+    userRun=bash -c "if [ $(pgrep -c spotify) -eq 0 ]; then spotify; fi"
 
 function=testfunction
     string=Testing, test... Success !!
@@ -41,7 +41,7 @@ config=defaultConfig
     1 - keyClick=mute
     2 - loop=leftClickLoop
     4 - function=spotifyOpenOnlyOnce
-    5 - run=sudo -Siu $USER bash -c "ptyxis --new-window &"
+    5 - userRun=ptyxis --new-window
     6 - key=Kpminus
     8 - chmap=nonDefaultConfig
     11 - key=playpause
@@ -52,7 +52,7 @@ config=nonDefaultConfig
     context=multimedia
     1 - key=mute
     2 - key=2
-    3 - run=sudo -Siu $USER bash -c "ptyxis --new-window &"
+    3 - userRun=ptyxis --new-window
     4 - key=4
     5 - key=5
     6 - key=6
@@ -83,7 +83,7 @@ configWindow=org.gnome.Ptyxis
     context=multimedia
     1 - key=mute
     4 - function=spotifyOpenOnlyOnce
-    5 - run=sudo -Siu $USER bash -c "ptyxis --new-window &"
+    5 - userRun=ptyxis --new-window
     8 - chmap=Alternative-Terminal-Profile
     11 - key=playpause
 
@@ -92,7 +92,7 @@ config=Alternative-Terminal-Profile
     1 - key=mute
     3 - string=gnome@terminal.com Alternative
     4 - function=spotifyOpenOnlyOnce
-    5 - run=sudo -Siu $USER bash -c "ptyxis --new-window &"
+    5 - userRun=ptyxis --new-window
     8 - unlockChmap=org.gnome.Ptyxis
     11 - key=playpause
 

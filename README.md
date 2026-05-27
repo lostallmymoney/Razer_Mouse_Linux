@@ -143,8 +143,12 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `keyReleaseOnPress` – Release key on button press
 - `run` – Run a shell command asynchronously
 - `run2` – Run a shell command synchronously
-- `runOnRelease` – Run command on release
-- `runOnRelease2` – Same as above, synchronous
+- `runOnRelease` – Run command on release asynchronously
+- `runOnRelease2` – Run command on release synchronously
+- `userRun` – Run a shell command asynchronously as the user
+- `userRun2` – Run a shell command synchronously as the user
+- `userRunOnRelease` – Run a shell command asynchronously as the user on release
+- `userRun2OnRelease` – Run a shell command synchronously as the user on release
 - `runAndWrite` – Run a command and write its output live to screen
 - `runAndWrite2` – Same as above, synchronous
 - `runAndWriteOnRelease` – Run a command and write its output live to screen on release
@@ -215,6 +219,8 @@ These advanced building blocks let you share logic, create repeatable sequences,
 - `sleep`
 - `run`
 - `run2`
+- `userRun`
+- `userRun2`
 - `runandwrite`
 - `runandwrite2`
 - `unlockChmap`

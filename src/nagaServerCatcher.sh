@@ -7,11 +7,28 @@ print_green() {
 	printf '\033[32m%s\033[0m\n' "$1"
 }
 
-# Detect Wayland explicitly
-if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+# --- Session detection (Wayland vs X11) ---
+
+SESSION="x11"
+
+# 1. Most reliable (runtime environment)
+if [ -n "$WAYLAND_DISPLAY" ]; then
 	SESSION="wayland"
+
+elif [ "$XDG_SESSION_TYPE" = "wayland" ]; then
+	SESSION="wayland"
+
 else
-	SESSION="x11"
+	# 2. Fallback: systemd session lookup (more stable than grepping loginctl)
+	SESSION_ID="$(loginctl | awk -v u="$(whoami)" '$3==u {print $1; exit}')"
+
+	if [ -n "$SESSION_ID" ]; then
+		SESSION_TYPE="$(loginctl show-session "$SESSION_ID" -p Type --value 2>/dev/null)"
+
+		if echo "$SESSION_TYPE" | grep -qi wayland; then
+			SESSION="wayland"
+		fi
+	fi
 fi
 
 # Start services

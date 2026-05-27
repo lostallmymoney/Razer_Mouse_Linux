@@ -561,6 +561,10 @@ namespace NagaDaemon
 
 		emplaceConfigKey("run", OnKeyPressed, executeThreadNow);
 		emplaceConfigKey("run2", OnKeyPressed, executeNow);
+		emplaceConfigKey("userrun", OnKeyPressed, executeThreadNow, "sudo -Siu $USER -- ");
+		emplaceConfigKey("userrunonrelease", OnKeyReleased, executeThreadNow, "sudo -Siu $USER -- ");
+		emplaceConfigKey("userrun2", OnKeyPressed, executeNow, "sudo -Siu $USER -- ");
+		emplaceConfigKey("userrun2onrelease", OnKeyReleased, executeNow, "sudo -Siu $USER -- ");
 
 		emplaceConfigKey("runonrelease", OnKeyReleased, executeThreadNow);
 		emplaceConfigKey("runonrelease2", OnKeyReleased, executeNow);
