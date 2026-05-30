@@ -22,7 +22,7 @@ Or without git :
 ### ⚡ Quick update
 Run this to update (git install overwrite) :
 ```
-{ command -v git >/dev/null 2>&1 || sudo apt install git -y; } && rm -rf ~/Razer_Mouse_Linux-master && git clone https://github.com/lostallmymoney/Razer_Mouse_Linux.git ~/Razer_Mouse_Linux-master && cd ~/Razer_Mouse_Linux-master && sh install.sh
+{ command -v git >/dev/null 2>&1 || sudo apt install git -y; } && cd ~ && rm -rf ~/Razer_Mouse_Linux-master && git clone https://github.com/lostallmymoney/Razer_Mouse_Linux.git ~/Razer_Mouse_Linux-master && cd ~/Razer_Mouse_Linux-master && sh install.sh
 ```
 
 Or, clone the repo and run:
