@@ -101,6 +101,8 @@ void initAndRegisterPlatformCommands()
 	NagaDaemon::emplaceConfigKey("specialpressonrelease", NagaDaemon::OnKeyReleased, specialPressNow);
 	NagaDaemon::emplaceConfigKey("specialreleaseonpress", NagaDaemon::OnKeyPressed, specialReleaseNow);
 	NagaDaemon::emplaceConfigKey("specialreleaseonrelease", NagaDaemon::OnKeyReleased, specialReleaseNow);
+	// Add more commands here if needed. emplaceConfigKey parameters are : command name, isOnKeyPressed, function pointer, optional prefix, optional suffix,
+	// and will pass a string to the function pointer in the form of prefix + command content + suffix.
 }
 
 // X11 ONLY COMBO-COMMANDS
@@ -114,6 +116,7 @@ NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::stri
 		results.emplace_back(true, *(new NagaDaemon::MacroEvent(*specialOnPress->second, *(new string(commandContent)))));
 		results.emplace_back(false, *(new NagaDaemon::MacroEvent(*specialOnRelease->second, *(new string(commandContent)))));
 	}
+	// Fit additionnal combo-commands here..
 	return results;
 }
 

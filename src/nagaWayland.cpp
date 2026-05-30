@@ -71,13 +71,15 @@ void initAndRegisterPlatformCommands()
 	NagaDaemon::emplaceConfigKey("stringonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand, "type ");
 	NagaDaemon::emplaceConfigKey("dotool", NagaDaemon::OnKeyPressed, writeNagaDotoolCommand);
 	NagaDaemon::emplaceConfigKey("dotoolonrelease", NagaDaemon::OnKeyReleased, writeNagaDotoolCommand);
+	// Add more commands here if needed. emplaceConfigKey parameters are : command name, isOnKeyPressed, function pointer, optional prefix, optional suffix,
+	// and will pass a string to the function pointer in the form of prefix + command content + suffix.
 }
 
 // Wayland ONLY COMBO-COMMANDS (empty dummy)
-// X11 ONLY COMBO-COMMANDS
 NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandContent)
 {
 	NagaDaemon::ParsedCommandList results;
+	// Fit additionnal combo-commands here.. See X11 for example.
 	return results;
 }
 
