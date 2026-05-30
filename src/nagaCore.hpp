@@ -747,7 +747,7 @@ namespace NagaDaemon
 			if (specialCommands.empty())
 				return false;
 
-			for (auto &command : specialCommands)
+			for (const ParsedCommand &command : specialCommands)
 				result.emplace_back(std::move(command));
 
 			return true; }())
