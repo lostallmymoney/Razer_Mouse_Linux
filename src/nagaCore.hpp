@@ -1298,6 +1298,22 @@ static void stopD()
 
 static int nagaMain(const int argc, const char *const argv[])
 {
+	static const std::function<void()> displayHelp = []()
+	{
+		clog << "Possible arguments : \n"
+			 << "  start          Starts the daemon in hidden mode. (stops it before)\n"
+			 << "  stop           Stops the daemon.\n"
+			 << "  enable         Enables the daemon.\n"
+			 << "  disable        Disables the daemon.\n"
+			 << "  edit           Lets you edit the config.\n"
+			 << "  debug          Shows logs.\n"
+			 << "  kill           Kills daemon processes.\n"
+			 << "  fix            Fixes dead keypad / USB input state.\n"
+			 << "  vendor         Configure vendor ID / udev rules.\n"
+			 << "  uninstall      Uninstalls the daemon.\n"
+			 << "  serviceHelper  Internal service bootstrap.\n";
+	};
+
 	if (argc > 1)
 	{
 		if (strstr(argv[1], "serviceHelper"))
@@ -1398,12 +1414,10 @@ static int nagaMain(const int argc, const char *const argv[])
 				std::ignore = system("/usr/local/bin/Naga_Linux/nagaUninstall.sh");
 			}
 		}
+		else
+			displayHelp();
 	}
 	else
-	{
-		clog << "Possible arguments : \n  start          Starts the daemon in hidden mode. (stops it before)\n  stop           Stops the daemon.\n  edit           Lets you edit the config.\n  debug\t\t Shows log.\n";
-		clog << "  fix            For dead keypad.\n";
-		clog << "  uninstall      Uninstalls the daemon.\n";
-	}
+		displayHelp();
 	return 0;
 }
