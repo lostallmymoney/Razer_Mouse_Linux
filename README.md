@@ -177,8 +177,8 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 
 ---
 
-### Multiline run* and userRun*
-If nothing is provided after =, the run commands switch into multiline mode. All indented lines that follow are grouped into a single script and executed together as one shell command, allowing full multi-line shell syntax.
+### Multi-lines run* and userRun*
+If nothing is provided after =, the run commands switch into multi-lines mode. All indented lines that follow are grouped into a single script and executed together as one shell command, allowing full multi-lines shell syntax.
 
 For Bash-specific features, use bash -c "..." since run executes using /bin/sh by default.
 
