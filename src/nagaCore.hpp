@@ -478,6 +478,7 @@ namespace NagaDaemon
 	static constexpr bool OnKeyReleased = false;
 	static constexpr size_t BufferSize = 1024;
 	static unordered_map<string, nagaCommandClass *const> nagaCommandsMap;
+	static std::map<std::string, bool> multilineEnabledList;
 
 	static constexpr size_t input_event_size = sizeof(input_event);
 	static struct input_event side_ev[64];
@@ -548,6 +549,12 @@ namespace NagaDaemon
 		nagaCommandsMap.emplace(nagaCommand, new nagaCommandClass(onKeyPressed, functionPtr, prefix, suffix));
 	}
 
+	static void emplaceMultilineConfigKey(const string &nagaCommand, bool onKeyPressed, void (*functionPtr)(const string &), const string &prefix = "", const string &suffix = "")
+	{
+		NagaDaemon::multilineEnabledList.emplace(nagaCommand, true);
+		emplaceConfigKey(nagaCommand, onKeyPressed, functionPtr, prefix, suffix);
+	}
+
 	static void registerCoreCommands()
 	{
 		emplaceConfigKey("chmap", OnKeyPressed, chmapNow);
@@ -559,32 +566,33 @@ namespace NagaDaemon
 		emplaceConfigKey("randomsleep", OnKeyPressed, randomSleepNow);
 		emplaceConfigKey("randomsleeponrelease", OnKeyReleased, randomSleepNow);
 
-		emplaceConfigKey("run", OnKeyPressed, executeThreadNow);
-		emplaceConfigKey("run2", OnKeyPressed, executeNow);
-		emplaceConfigKey("userrun", OnKeyPressed, executeThreadNow, "sudo -Siu $USER -- ");
-		emplaceConfigKey("userrunonrelease", OnKeyReleased, executeThreadNow, "sudo -Siu $USER -- ");
-		emplaceConfigKey("userrun2", OnKeyPressed, executeNow, "sudo -Siu $USER -- ");
-		emplaceConfigKey("userrun2onrelease", OnKeyReleased, executeNow, "sudo -Siu $USER -- ");
-
-		emplaceConfigKey("runonrelease", OnKeyReleased, executeThreadNow);
-		emplaceConfigKey("runonrelease2", OnKeyReleased, executeNow);
-
-		emplaceConfigKey("runandwrite", OnKeyPressed, runAndWriteThread);
-		emplaceConfigKey("runandwrite2", OnKeyPressed, platformRunAndWrite);
-		emplaceConfigKey("runandwriteonrelease", OnKeyReleased, runAndWriteThread);
-		emplaceConfigKey("runandwriteonrelease2", OnKeyReleased, platformRunAndWrite);
-
 		emplaceConfigKey("unlockchmap", OnKeyPressed, unlockChmap);
 		emplaceConfigKey("unlockchmaponrelease", OnKeyReleased, unlockChmap);
 
 		emplaceConfigKey("launch", OnKeyReleased, executeThreadNow, "gtk-launch ");
 		emplaceConfigKey("launch2", OnKeyReleased, executeNow, "gtk-launch ");
+
+		emplaceMultilineConfigKey("run", OnKeyPressed, executeThreadNow);
+		emplaceMultilineConfigKey("run2", OnKeyPressed, executeNow);
+		emplaceMultilineConfigKey("userrun", OnKeyPressed, executeThreadNow, "sudo -Siu $USER -- ");
+		emplaceMultilineConfigKey("userrunonrelease", OnKeyReleased, executeThreadNow, "sudo -Siu $USER -- ");
+		emplaceMultilineConfigKey("userrun2", OnKeyPressed, executeNow, "sudo -Siu $USER -- ");
+		emplaceMultilineConfigKey("userrun2onrelease", OnKeyReleased, executeNow, "sudo -Siu $USER -- ");
+
+		emplaceMultilineConfigKey("runonrelease", OnKeyReleased, executeThreadNow);
+		emplaceMultilineConfigKey("runonrelease2", OnKeyReleased, executeNow);
+
+		emplaceMultilineConfigKey("runandwrite", OnKeyPressed, runAndWriteThread);
+		emplaceMultilineConfigKey("runandwrite2", OnKeyPressed, platformRunAndWrite);
+		emplaceMultilineConfigKey("runandwriteonrelease", OnKeyReleased, runAndWriteThread);
+		emplaceMultilineConfigKey("runandwriteonrelease2", OnKeyReleased, platformRunAndWrite);
 	}
 
 	static void initConf()
 	{
 		string commandContent, commandContent2;
 		IMacroEventKeyMap *iteratedConfig;
+		int currentlyReadLine = 0, currentIndentLevel = 0;
 
 		nagaFunction *currentFunction = nullptr;
 		loop *currentLoop = nullptr;
@@ -617,7 +625,8 @@ namespace NagaDaemon
 
 		in.close();
 
-		std::vector<std::string> configLines;
+		std::vector<std::string_view> configLines;
+		configLines.reserve(std::count(fileContents.begin(), fileContents.end(), '\n') + 1);
 
 		std::size_t pos = 0;
 
@@ -628,13 +637,12 @@ namespace NagaDaemon
 			if (nextPos == std::string::npos)
 				nextPos = fileContents.size();
 
-			configLines.emplace_back(
-				fileContents.data() + pos,
-				nextPos - pos);
+			std::string_view line(fileContents.data() + pos, nextPos - pos);
 
-			if (!configLines.back().empty() &&
-				configLines.back().back() == '\r')
-				configLines.back().pop_back();
+			if (!line.empty() && line.back() == '\r')
+				line.remove_suffix(1);
+
+			configLines.emplace_back(line);
 
 			pos = nextPos + 1;
 		}
@@ -652,7 +660,7 @@ namespace NagaDaemon
 			for (char c : line)
 			{
 				if (c == '\t')
-					indent += 4;
+					indent += 8;
 				else if (c == ' ')
 					indent++;
 				else
@@ -766,12 +774,54 @@ namespace NagaDaemon
 			cleaveCommandType(commandContent);
 			normalizeCommandType(commandType);
 
-			if (nagaCommandsMap.contains(commandType))
+			if (NagaDaemon::multilineEnabledList.contains(commandType) && commandContent.empty())
+			{
+				std::string multilineCommand;
+				int lastValidLine = currentlyReadLine;
+				int minimumIndentLevel = currentIndentLevel + 4;
+
+				for (int lineIndex = currentlyReadLine + 1;
+					 lineIndex < configLines.size();
+					 ++lineIndex)
+				{
+					std::string currentLine(configLines[lineIndex]);
+
+					if (shouldIgnoreLine(currentLine))
+						continue;
+
+					int currentIndentLevel = getIndentLevel(currentLine);
+
+					if (currentIndentLevel < minimumIndentLevel)
+						break;
+
+					currentLine.erase(0, currentLine.find_first_not_of(" \t"));
+
+					multilineCommand += currentLine;
+					multilineCommand += "\n";
+
+					lastValidLine = lineIndex;
+				}
+
+				currentlyReadLine = lastValidLine;
+
+				// ✅ WRAP INTO SH HEREDOC USING nagaDelimiter1
+				std::string wrappedCommand =
+					"sh -s <<'nagaDelimiter1'\n" +
+					multilineCommand +
+					"nagaDelimiter1\n";
+
+				result.emplace_back(
+					nagaCommandsMap[commandType]->IsOnKeyPressed(),
+					make_shared<MacroEvent>(
+						*nagaCommandsMap[commandType],
+						nagaCommandsMap[commandType]->generateCommand(wrappedCommand)));
+			}
+			else if (nagaCommandsMap.contains(commandType))
 			{
 				result.emplace_back(
 					nagaCommandsMap[commandType]->IsOnKeyPressed(), make_shared<MacroEvent>(
-					*nagaCommandsMap[commandType],
-					nagaCommandsMap[commandType]->generateCommand(commandContent)));
+																		*nagaCommandsMap[commandType],
+																		nagaCommandsMap[commandType]->generateCommand(commandContent)));
 			}
 			else if ([&result, &commandType, &commandContent]() -> bool
 					 {
@@ -790,12 +840,12 @@ namespace NagaDaemon
 			else if (commandType == "key")
 			{
 				result.emplace_back(true, make_shared<MacroEvent>(
-					*nagaCommandsMap["keypressonpress"],
-					nagaCommandsMap["keypressonpress"]->generateCommand(commandContent)));
+											  *nagaCommandsMap["keypressonpress"],
+											  nagaCommandsMap["keypressonpress"]->generateCommand(commandContent)));
 
 				result.emplace_back(false, make_shared<MacroEvent>(
-					*nagaCommandsMap["keyreleaseonrelease"],
-					nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent)));
+											   *nagaCommandsMap["keyreleaseonrelease"],
+											   nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent)));
 			}
 			else if (commandType == "loop" || commandType == "loop2")
 			{
@@ -922,13 +972,15 @@ namespace NagaDaemon
 			return result;
 		};
 
-		for (const std::string &line : configLines)
+		for (; currentlyReadLine < configLines.size(); ++currentlyReadLine)
 		{
+			const std::string_view &line = configLines[currentlyReadLine];
+
 			commandContent = line;
 			if (shouldIgnoreLine(commandContent))
 				continue;
 
-			int currentIndentLevel = getIndentLevel(commandContent);
+			currentIndentLevel = getIndentLevel(commandContent);
 			commandContent.erase(0, commandContent.find_first_not_of(" \t"));
 
 			if (isIteratingConfig)

@@ -92,7 +92,22 @@ config=Alternative-Terminal-Profile
     1 - key=mute
     3 - string=gnome@terminal.com Alternative
     4 - function=spotifyOpenOnlyOnce
-    5 - userRun=ptyxis --new-window
+    5 - userRun=
+        x-terminal-emulator -e bash -c '
+            echo "=== NAGA SYSTEM INFO ==="
+            echo "Host   : $(hostname) | User: $(whoami) | $(uptime -p)"
+            echo "CPU    : $(top -bn1 | awk '\''/^%Cpu/{print "User: " $2 "% | Sys: " $4 "% | Idle: " $8 "%"}'\'')"
+            echo "Load   : $(cat /proc/loadavg | awk '\''{print "1m: " $1 " | 5m: " $2 " | 15m: " $3}'\'')"
+            echo "Memory : $(free -h | awk '\''/^Mem/{print "Used: " $3 " / " $2 " | Available: " $7}'\'')"
+            echo "Disk   : $(df -h / | awk '\''NR==2{print "Used: " $3 " / " $2 " | Free: " $4 " (" $5 ")"}'\'')"
+            echo "LAN    : $(ip -4 route get 1.1.1.1 2>/dev/null | awk '\''{print $7; exit}'\'')"
+            echo "WAN    : $(curl -4 -s https://ifconfig.me || echo "N/A")"
+            echo "---"
+            echo "Users  : $(w -h 2>/dev/null | awk '\''{print $1 " (" $2 ")"}'\'' | awk '\''BEGIN{ORS=","} {print}'\'' | awk '\''sub(/,$/, "")'\'' || echo "N/A")"
+            echo "Logins : $(loginctl list-sessions --no-legend 2>/dev/null | awk '\''{print $1}'\'' | while read sid; do loginctl show-session "$sid" 2>/dev/null | awk -F= '\''/^Name=/{name=$2} /^Timestamp=/{ts=$2} /^Service=/{svc=$2} END{if(name=="'$(whoami)'" && svc~/gdm|login/) print ts " (" name ")"}'\'' ; done | tail -3 | awk '\''BEGIN{ORS=" | "} {print}'\'' | awk '\''sub(/ \| $/, "")'\'')"
+            echo "Ports  : $(ss -tuln | tail -n +2 | awk '\''{n=split($5,a,":"); print a[n]}'\'' | grep -E '\''^[0-9]+$'\'' | sort -un | awk '\''BEGIN{ORS=","} {print}'\'' | awk '\''sub(/,$/, "")'\'')"
+            read -rsn1 -p "Press any key to close..."
+            '
     8 - unlockChmap=org.gnome.Ptyxis
     11 - key=playpause
 

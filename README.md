@@ -141,7 +141,7 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `keyReleaseOnRelease` – Release key on button release
 - `keyPressOnRelease` – Hold key on button release
 - `keyReleaseOnPress` – Release key on button press
-- `run` – Run a shell command asynchronously
+- `run` – Run a shell command asynchronously *see multiline
 - `run2` – Run a shell command synchronously
 - `runOnRelease` – Run command on release asynchronously
 - `runOnRelease2` – Run command on release synchronously
@@ -174,6 +174,13 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 
 👉 For valid Wayland key names, see [Wayland input_event_codes](https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/include/uapi/linux/input-event-codes.h) (remove `KEY_` prefix).  
 👉 For valid X11 key names, see [X11 keysym list](https://cgit.freedesktop.org/xorg/proto/x11proto/plain/keysymdef.h) (remove `XK_` prefix).  
+
+---
+
+### Multiline run* and userRun*
+If nothing is provided after =, the run commands switch into multiline mode. All indented lines that follow are grouped into a single script and executed together as one shell command, allowing full multi-line shell syntax.
+
+For Bash-specific features, use bash -c "..." since run executes using /bin/sh by default.
 
 ---
 
