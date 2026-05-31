@@ -76,10 +76,10 @@ void initAndRegisterPlatformCommands()
 }
 
 // Wayland ONLY COMBO-COMMANDS (empty dummy)
-NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandContent)
+NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandType, const std::string &commandContent)
 {
 	NagaDaemon::ParsedCommandList results;
-	// Fit additionnal combo-commands here.. See X11 for example.
+	// Fit additional combo-commands here.. See X11 for example.
 	return results;
 }
 

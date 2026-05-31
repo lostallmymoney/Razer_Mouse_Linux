@@ -106,15 +106,13 @@ void initAndRegisterPlatformCommands()
 }
 
 // X11 ONLY COMBO-COMMANDS
-NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandContent)
+NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandType, const std::string &commandContent)
 {
 	NagaDaemon::ParsedCommandList results;
-	std::unordered_map<std::string, NagaDaemon::nagaCommandClass *const>::iterator specialOnPress = NagaDaemon::nagaCommandsMap.find("specialpressonpress");
-	std::unordered_map<std::string, NagaDaemon::nagaCommandClass *const>::iterator specialOnRelease = NagaDaemon::nagaCommandsMap.find("specialreleaseonrelease");
-	if (specialOnPress != NagaDaemon::nagaCommandsMap.end() && specialOnRelease != NagaDaemon::nagaCommandsMap.end())
+	if(commandType == "specialkey")
 	{
-		results.emplace_back(true, *(new NagaDaemon::MacroEvent(*specialOnPress->second, *(new string(commandContent)))));
-		results.emplace_back(false, *(new NagaDaemon::MacroEvent(*specialOnRelease->second, *(new string(commandContent)))));
+		results.emplace_back(true, NagaDaemon::MacroEvent(*nagaCommandsMap["specialpressonpress"], *pressCmd->generateCommand(commandContent)));
+		results.emplace_back(false, NagaDaemon::MacroEvent(*nagaCommandsMap["specialreleaseonrelease"], *releaseCmd->generateCommand(commandContent)));
 	}
 	// Fit additionnal combo-commands here..
 	return results;
