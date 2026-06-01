@@ -84,6 +84,7 @@ Ubuntu, Manjaro, Linux Mint, CentOS, ArchLinux, and more..
 | `naga enable` | Enables the daemon |
 | `naga disable` | Disables the daemon |
 | `naga edit ($EDITOR)` | Edits config (&restarts daemon). Examples: `naga edit` or `naga edit vim` |
+| `naga settings ($EDITOR)` | Edits Naga settings (&restarts daemon). Examples: `naga settings` or `naga settings vim` |
 | `naga debug` | Show logs (realtime, pass args to override `journalctl`) |
 | `naga fix` | Restart USB services |
 | `naga uninstall` | Remove the tool completely |
@@ -113,6 +114,7 @@ If something fails to compile on your distro → install equivalents of these pa
 
 ## 🔧 Configuration
 The configuration file is stored in `~/.naga/keyMapWayland.txt` or `~/.naga/keyMapX11.txt`.  
+Naga settings are stored in `~/.naga/nagaSettings.txt`.
 
 **Basic syntax:**
 ```
@@ -201,7 +203,7 @@ config=WoWConfig
 📌 Notes:  
 - If `~/.naga/keyMap*.txt` is missing, the daemon **won’t start** (installer copies an example).  
 - Multiple actions per key are allowed; they run sequentially or async depending on choice.  
-- Use `naga edit` to reload configs.  
+- Use `naga edit` or `naga settings` to edit protected files and restart the daemon after changes.  
 
 ---
 

@@ -44,6 +44,14 @@ sudo groupadd -f razerInputGroup
 WAYLANDTYPE=false
 
 touch ~/.bash_aliases
+mkdir -p ~/.naga
+if [ ! -f ~/.naga/nagaSettings.txt ]; then
+    {
+        printf '%s\n' 'nagaEditCommand=sudo nano $nagaConfigFile'
+        printf '%s\n' 'nagaNotifyCommand=notify-send -a Naga -t 300 "Profile : $profileName"'
+    } > ~/.naga/nagaSettings.txt
+fi
+sudo chown "root:root" ~/.naga/nagaSettings.txt
 
 check_connectivity() {
     ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1 && return 0

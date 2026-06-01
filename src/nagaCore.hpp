@@ -5,6 +5,7 @@
 #define NAGA_CORE_HPP
 
 #include "extraButtonCapture.hpp"
+#include "nagaSettings.hpp"
 
 #include <iostream>
 #include <condition_variable>
@@ -361,7 +362,7 @@ namespace configSwitcher
 	WindowConfigMap *configWindowAndLockMap = new unordered_map<string, WindowConfigLock *>();
 	IMacroEventKeyMap *currentConfigPtr = nullptr;
 	WindowConfigMap::iterator currentWindowConfigPtr, scheduledUnlockWindowCfgPtr;
-	unordered_map<string, const char *> notifySendMap;
+	unordered_map<string, string> notifySendMap;
 
 	static void loadConf(bool silent = false)
 	{
@@ -377,8 +378,8 @@ namespace configSwitcher
 		}
 		currentConfigName = scheduledReMapName;
 		currentConfigPtr = &scheduledConfig->second;
-		if (!silent)
-			std::ignore = system(notifySendMap[*scheduledReMapName]);
+		if (!silent && !notifySendMap[*scheduledReMapName].empty())
+			std::ignore = system(notifySendMap[*scheduledReMapName].c_str());
 	}
 
 	static void checkForWindowConfig()
@@ -604,48 +605,9 @@ namespace NagaDaemon
 			 isIteratingContext = false,
 			 isWindowConfig = false;
 
-		ifstream in(conf_file.c_str(), ios::binary | ios::ate);
-
-		if (!in)
-		{
-			std::cerr << "\033[91mError : Cannot open " << conf_file << ". Exiting.\033[0m\n";
-			std::exit(1);
-		}
-
-		const std::streamsize fileSize = in.tellg();
-		in.seekg(0);
-
-		std::string fileContents(fileSize, '\0');
-
-		if (!in.read(fileContents.data(), fileSize))
-		{
-			std::cerr << "\033[91mError : Failed to read " << conf_file << ". Exiting.\033[0m\n";
-			std::exit(1);
-		}
-
-		in.close();
-
-		std::vector<std::string_view> configLines;
-		configLines.reserve(std::count(fileContents.begin(), fileContents.end(), '\n') + 1);
-
-		std::size_t pos = 0;
-
-		while (pos < fileContents.size())
-		{
-			std::size_t nextPos = fileContents.find('\n', pos);
-
-			if (nextPos == std::string::npos)
-				nextPos = fileContents.size();
-
-			std::string_view line(fileContents.data() + pos, nextPos - pos);
-
-			if (!line.empty() && line.back() == '\r')
-				line.remove_suffix(1);
-
-			configLines.emplace_back(line);
-
-			pos = nextPos + 1;
-		}
+		nagaSettings::TextFile configFile;
+		nagaSettings::readTextFile(conf_file, true, configFile);
+		const std::vector<std::string_view> &configLines = configFile.lines;
 
 		bool (*const shouldIgnoreLine)(const string &) = [](const string &line) -> bool
 		{
@@ -804,7 +766,7 @@ namespace NagaDaemon
 
 				currentlyReadLine = lastValidLine;
 
-				// ✅ WRAP INTO SH HEREDOC USING nagaDelimiter1
+				// WRAP INTO SH HEREDOC USING nagaDelimiter1
 				std::string wrappedCommand =
 					"sh -s <<'nagaDelimiter1'\n" +
 					multilineCommand +
@@ -1195,7 +1157,7 @@ namespace NagaDaemon
 
 				configSwitcher::notifySendMap.emplace(
 					commandContent,
-					(new string("notify-send -a Naga -t 300 \"Profile : " + commandContent + "\""))->c_str());
+					nagaSettings::buildNotifyCommand(commandContent));
 			}
 		}
 	}
@@ -1387,6 +1349,7 @@ static int nagaMain(const int argc, const char *const argv[])
 			 << "  enable         Enables the daemon.\n"
 			 << "  disable        Disables the daemon.\n"
 			 << "  edit           Lets you edit the config.\n"
+			 << "  settings       Lets you edit naga settings.\n"
 			 << "  debug          Shows logs.\n"
 			 << "  kill           Kills daemon processes.\n"
 			 << "  fix            Fixes dead keypad / USB input state.\n"
@@ -1440,7 +1403,11 @@ static int nagaMain(const int argc, const char *const argv[])
 		}
 		else if (strstr(argv[1], "edit"))
 		{
-			std::ignore = system(("sudo bash -c 'orig_sum=\"$(sudo md5sum " + conf_file + ")\"; " + (argc > 2 ? string(argv[2]) : "sudo nano -m") + " " + conf_file + "; [[ \"$(sudo md5sum " + conf_file + ")\" != \"$orig_sum\" ]] && sudo systemctl restart naga'").c_str());
+			return nagaSettings::editFile(argc, argv, conf_file);
+		}
+		else if (strstr(argv[1], "settings"))
+		{
+			return nagaSettings::editFile(argc, argv, nagaSettings::settingsPath());
 		}
 		else if (strstr(argv[1], "vendor"))
 		{
