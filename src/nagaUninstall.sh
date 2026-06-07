@@ -35,7 +35,7 @@ fi
 # Remove environment and autostart lines from ~/.profile
 if [ -f "$HOME/.profile" ]; then
 	sed -i '/env | tee \~\/\.naga\/envSetup/d' "$HOME/.profile"
-	sed -i '/sudo systemctl start naga/d' "$HOME/.profile"
+	sed -i '/( sudo -n systemctl start naga > \/dev\/null 2>&1 || true ) &/d' "$HOME/.profile"
 fi
 
 # Remove ~/.naga/envSetup if present
