@@ -509,6 +509,7 @@ namespace NagaDaemon
 	static unique_ptr<UInputForwarder> extraForwarder;
 	static bool extraDeviceGrabbed = false;
 	static int side_btn_fd, extra_btn_fd;
+	static const char *currentSideDevicePath, *currentExtraDevicePath;
 
 	static void chmapNow(const string &macroContent)
 	{
@@ -1168,6 +1169,39 @@ namespace NagaDaemon
 			macroEvent->runInternal();
 	}
 
+	static bool reopenDevice(const char *devicePath, int &fd, struct input_event *ev, size_t ev_size, bool checkGrab)
+	{
+		if (devicePath == nullptr)
+			return false;
+		
+		if (fd != -1)
+		{
+			if (checkGrab)
+				ioctl(fd, EVIOCGRAB, 0);
+			close(fd);
+		}
+		
+		fd = open(devicePath, O_RDONLY);
+		if (fd == -1)
+			return false;
+		
+		if (ioctl(fd, EVIOCGRAB, 1) == -1 && checkGrab)
+		{
+			close(fd);
+			fd = -1;
+			return false;
+		}
+		
+		fcntl(fd, F_SETFL, O_NONBLOCK);
+		while (read(fd, ev, ev_size) > 0)
+		{
+		}
+		fcntl(fd, F_SETFL, 0);
+		return true;
+	}
+
+
+
 	static void sideBtnThreadFunc()
 	{
 		ssize_t bytesRead;
@@ -1179,8 +1213,14 @@ namespace NagaDaemon
 			bytesRead = read(side_btn_fd, side_ev, side_ev_size);
 			if (bytesRead == -1)
 			{
-				std::cerr << "\033[31mError reading from side button device.\n\033[0m";
-				std::exit(2);
+				std::cerr << "\033[31mError reading from side button device. Retrying in 5 seconds...\n\033[0m";
+				sleep(5);
+				if (!reopenDevice(currentSideDevicePath, side_btn_fd, side_ev, side_ev_size, false))
+				{
+					std::cerr << "\033[31mFailed to reopen side button device. Retrying...\n\033[0m";
+				}
+				checkedForWindowConfig = false;
+				continue;
 			}
 			eventCount = bytesRead / input_event_size;
 			for (size_t i = 0; i < eventCount; ++i)
@@ -1211,8 +1251,14 @@ namespace NagaDaemon
 			bytesRead = read(extra_btn_fd, extra_ev, extra_ev_size);
 			if (bytesRead == -1)
 			{
-				std::cerr << "\033[31mError reading from extra button device.\n\033[0m";
-				std::exit(2);
+				std::cerr << "\033[31mError reading from extra button device. Retrying in 5 seconds...\n\033[0m";
+				sleep(5);
+				if (!reopenDevice(currentExtraDevicePath, extra_btn_fd, extra_ev, extra_ev_size, true))
+				{
+					std::cerr << "\033[31mFailed to reopen extra button device. Retrying...\n\033[0m";
+				}
+				checkedForWindowConfig = false;
+				continue;
 			}
 			eventCount = bytesRead / input_event_size;
 			for (size_t i = 0; i < eventCount; ++i)
@@ -1273,6 +1319,8 @@ namespace NagaDaemon
 				{
 					clog << "Reading from: \033[32m" << device.first << "\033[0m" << "\n and \033[32m" << device.second << "\033[0m\n";
 				}
+				currentSideDevicePath = device.first;
+				currentExtraDevicePath = device.second;
 				isThereADevice = true;
 				break;
 			}

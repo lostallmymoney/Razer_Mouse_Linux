@@ -111,8 +111,8 @@ esac
 sudo cp -f ./src/naga.service /etc/systemd/system/naga.service
 
 env | tee ~/.naga/envSetup >/dev/null
-grep -qF 'env | tee ~/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | tee ~/.naga/envSetup > /dev/null' >> ~/.profile
-grep -qF '( sudo -n systemctl start naga > /dev/null 2>&1 || true ) &' ~/.profile || printf '\n%s\n' '( sudo -n systemctl start naga > /dev/null 2>&1 || true ) &' >> ~/.profile
+grep -qF 'env | tee ~/.naga/envSetup' ~/.profile || printf '\n%s\n' 'env | tee ~/.naga/envSetup > /dev/null' | tee -a ~/.profile >/dev/null
+grep -qF '( sudo -n systemctl start naga > /dev/null 2>&1 || true ) &' ~/.profile || printf '\n%s\n' '( sudo -n systemctl start naga > /dev/null 2>&1 || true ) &' | tee -a ~/.profile >/dev/null
 
 printf "Environment=DISPLAY=%s\n" "$DISPLAY" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
 printf "User=%s\n" "$USER" | sudo tee -a /etc/systemd/system/naga.service >/dev/null
