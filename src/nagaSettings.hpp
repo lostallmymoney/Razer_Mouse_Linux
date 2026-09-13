@@ -268,26 +268,27 @@ namespace nagaSettings
 	// via sudo systemctl if the file content actually changed (md5sum compare).
 	inline int editFile(const int argc, const char *const argv[], const std::string &targetFile)
 	{
-		const std::string editor = argc > 2
+		const std::string editorCommand = argc > 2
 			? std::string(argv[2]) + " " + nagaText::shellQuote(targetFile)
 			: readSetting("nagaEditCommand", "nagaConfigFile", nagaText::shellQuote(targetFile));
-		if (editor.empty())
+		if (editorCommand.empty())
 		{
 			std::cerr << "\033[91mError : Missing nagaEditCommand in ~/.naga/nagaSettings.txt\033[0m\n";
 			return 1;
 		}
 
-		const std::string quotedTarget = nagaText::shellQuote(targetFile);
-		const std::string script = "last_sum=\"$(sudo md5sum " + quotedTarget +
-			" 2>/dev/null)\"; bash -c " + nagaText::shellQuote(editor) +
-			" & editor_pid=$!; while kill -0 \"$editor_pid\" 2>/dev/null; do "
-			"current_sum=\"$(sudo md5sum " + quotedTarget +
-			" 2>/dev/null)\"; if [[ \"$current_sum\" != \"$last_sum\" ]]; then "
-			"sudo systemctl restart naga; last_sum=\"$current_sum\"; fi; sleep 1; done; "
-			"current_sum=\"$(sudo md5sum " + quotedTarget +
-			" 2>/dev/null)\"; if [[ \"$current_sum\" != \"$last_sum\" ]]; then "
-			"sudo systemctl restart naga; fi; wait \"$editor_pid\"";
-		std::ignore = system(("sudo bash -c " + nagaText::shellQuote(script)).c_str());
+		const std::string quotedTargetFilePath = nagaText::shellQuote(targetFile);
+		const std::string editAndMonitorCommand =
+			"lastFileChecksum=\"$(sudo md5sum " + quotedTargetFilePath +
+			" 2>/dev/null)\"; bash -c " + nagaText::shellQuote(editorCommand) +
+			" & editorProcessId=$!; while kill -0 \"$editorProcessId\" 2>/dev/null; do "
+			"currentFileChecksum=\"$(sudo md5sum " + quotedTargetFilePath +
+			" 2>/dev/null)\"; if [[ \"$currentFileChecksum\" != \"$lastFileChecksum\" ]]; then "
+			"sudo systemctl restart naga; lastFileChecksum=\"$currentFileChecksum\"; fi; sleep 1; done; "
+			"currentFileChecksum=\"$(sudo md5sum " + quotedTargetFilePath +
+			" 2>/dev/null)\"; if [[ \"$currentFileChecksum\" != \"$lastFileChecksum\" ]]; then "
+			"sudo systemctl restart naga; fi; wait \"$editorProcessId\"";
+		std::ignore = system(("sudo bash -c " + nagaText::shellQuote(editAndMonitorCommand)).c_str());
 		return 0;
 	}
 
