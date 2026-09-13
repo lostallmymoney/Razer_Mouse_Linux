@@ -83,8 +83,8 @@ Ubuntu, Manjaro, Linux Mint, CentOS, ArchLinux, and more..
 | `naga kill` | Kills the daemon |
 | `naga enable` | Enables the daemon |
 | `naga disable` | Disables the daemon |
-| `naga edit ($EDITOR)` | Edits config (&restarts daemon). Examples: `naga edit` or `naga edit vim` |
-| `naga settings ($EDITOR)` | Edits Naga settings (&restarts daemon). Examples: `naga settings` or `naga settings vim` |
+| `naga edit ($EDITOR)` | Edits config and monitors saves, restarting the daemon after each change. Examples: `naga edit` or `naga edit vim` |
+| `naga settings ($EDITOR)` | Edits Naga settings and monitors saves, restarting the daemon after each change. Examples: `naga settings` or `naga settings vim` |
 | `naga debug` | Show logs (realtime, pass args to override `journalctl`) |
 | `naga fix` | Restart USB services |
 | `naga uninstall` | Remove the tool completely |
@@ -116,9 +116,19 @@ If something fails to compile on your distro → install equivalents of these pa
 The configuration file is stored in `~/.naga/keyMapWayland.txt` or `~/.naga/keyMapX11.txt`.  
 Naga settings are stored in `~/.naga/nagaSettings.txt`.
 
-Notifications use `notify-send` by default. Set `notification_enabled=false` to disable them, set `notification_disappear=false` to disable transient notifications, change `notification_timeout` to control the timeout in milliseconds, set `notification_icon` to an icon file path, or set `notification_icon_base64` to base64-encoded icon data. The configured path takes precedence; otherwise the base64 icon is written to `~/.naga/naga-notification-icon` at daemon startup. The icon is omitted when both icon settings are empty. Custom `nagaNotifyCommand` values support `$notifyOptions`, `$notifyStatus` (`Profile` or `Unlocked`), and `$profileName`.
+Notifications use `notify-send` by default:
+```text
+nagaNotifyCommand=notify-send -a Naga "$notifyStatus: $profileName"
+```
 
-To keep a settings variable literal, escape its dollar sign: `\$profileName`.
+Set `notification_enabled=false` to disable notifications, set `notification_disappear=false` to disable transient notifications, change `notification_timeout` to control the timeout in milliseconds, set `notification_icon` to an icon file path, or set `notification_icon_base64` to base64-encoded icon data. The configured path takes precedence; otherwise the base64 icon is written to `~/.naga/naga-notification-icon` at daemon startup. The icon is omitted when both icon settings are empty.
+
+`nagaNotifyCommand` accepts any executable followed by its arguments. For example:
+```text
+nagaNotifyCommand=anyOtherNotificationUtility --option 1 --option 2 "$notifyStatus: $profileName"
+```
+
+The supported substitutions are `$notifyOptions`, `$notifyStatus` (`Profile` or `Unlocked`), and `$profileName`. `$notifyOptions` expands to the configured timeout, dismiss behavior, and optional icon arguments. To keep a settings variable literal, escape its dollar sign, for example `\$profileName`.
 
 **Basic syntax:**
 ```
@@ -131,6 +141,46 @@ config=<configName>
 * `<keyNumber>`: 1–14 (12 keypad buttons + 2 top buttons)  
 * `<option>`: action type (see full list below)  
 * `<command>`: string, key, or shell command  
+
+---
+
+### 🪟 Automatic Window Profiles
+
+Profiles can be selected automatically from the focused window class. Add one
+or more window matches at the top level of a profile, before its indented key
+bindings:
+
+```txt
+# Exact match: case-sensitive and matches the whole window class
+config=TerminalProfile
+configWindow=org.gnome.Ptyxis
+	1 - key=Ctrl+Alt+T
+
+# Wildcard matches are case-insensitive; '*' matches any number of characters
+# and '?' matches exactly one character.
+configWindowExpr=Minecraft*
+	8 - chmap=MinecraftProfile
+
+config=MinecraftProfile
+configWindowExpr=Minecraft*
+	1 - key=1
+	2 - key=2
+	8 - unlockChmap=Minecraft*
+
+# Multiple matches can share a profile.
+config=MusicProfile
+configWindowExpr=*spotify*
+configWindowExpr=*ytmusic*
+	1 - key=XF86AudioPlay
+	2 - key=XF86AudioNext
+```
+
+The active window class is checked when focus changes. `configWindow=` uses an
+exact match; `configWindowExpr=` uses the wildcard rules above. An automatic
+window entry can switch to a separate profile with `chmap=<profileName>`.
+`unlockChmap=<same-window-match>` must be used on the origin profile to
+return control to automatic matching. Use the full wildcard expression when
+applicable.
 
 ---
 
@@ -207,7 +257,7 @@ config=WoWConfig
 📌 Notes:  
 - If `~/.naga/keyMap*.txt` is missing, the daemon **won’t start** (installer copies an example).  
 - Multiple actions per key are allowed; they run sequentially or async depending on choice.  
-- Use `naga edit` or `naga settings` to edit protected files and restart the daemon after changes.  
+- Use `naga edit` or `naga settings` to edit protected files. The command keeps monitoring the file while the editor is open and restarts the daemon after each detected save.
 
 ---
 
