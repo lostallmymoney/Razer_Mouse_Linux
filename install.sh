@@ -47,9 +47,35 @@ touch ~/.bash_aliases
 mkdir -p ~/.naga
 if [ ! -f ~/.naga/nagaSettings.txt ]; then
     {
-        printf '%s\n' 'nagaEditCommand=sudo nano $nagaConfigFile'
-        printf '%s\n' 'nagaNotifyCommand=notify-send -a Naga -t 300 "Profile : $profileName"'
+        printf '%s\n' "nagaEditCommand=sudo nano \$nagaConfigFile"
+        printf '%s\n' 'notification_enabled=true'
+        printf '%s\n' 'notification_disappear=true'
+        printf '%s\n' 'notification_timeout=1000'
+        printf '%s\n' 'notification_icon='
+        printf '%s\n' 'notification_icon_base64='
+        printf '%s\n' "nagaNotifyCommand=-a Naga \$notifyOptions \"Profile : \$profileName\""
     } > ~/.naga/nagaSettings.txt
+else
+    insert_missing_setting() {
+        setting_name="$1"
+        setting_line="$2"
+
+        if ! grep -Eq "^[[:space:]]*${setting_name}[[:space:]]*=" ~/.naga/nagaSettings.txt; then
+            if grep -Eq '^[[:space:]]*nagaNotifyCommand[[:space:]]*=' ~/.naga/nagaSettings.txt; then
+                sudo sed -i "/^[[:space:]]*nagaNotifyCommand[[:space:]]*=/i\\$setting_line" ~/.naga/nagaSettings.txt
+            else
+                printf '%s\n' "$setting_line" | sudo tee -a ~/.naga/nagaSettings.txt >/dev/null
+            fi
+        fi
+    }
+
+    insert_missing_setting 'nagaEditCommand' "nagaEditCommand=sudo nano \$nagaConfigFile"
+    insert_missing_setting 'notification_enabled' 'notification_enabled=true'
+    insert_missing_setting 'notification_disappear' 'notification_disappear=true'
+    insert_missing_setting 'notification_timeout' 'notification_timeout=1000'
+    insert_missing_setting 'notification_icon' 'notification_icon='
+    insert_missing_setting 'notification_icon_base64' 'notification_icon_base64='
+    insert_missing_setting 'nagaNotifyCommand' "nagaNotifyCommand=-a Naga \$notifyOptions \"Profile : \$profileName\""
 fi
 sudo chown "root:root" ~/.naga/nagaSettings.txt
 
