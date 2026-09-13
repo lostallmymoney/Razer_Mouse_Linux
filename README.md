@@ -116,7 +116,7 @@ If something fails to compile on your distro → install equivalents of these pa
 The configuration file is stored in `~/.naga/keyMapWayland.txt` or `~/.naga/keyMapX11.txt`.  
 Naga settings are stored in `~/.naga/nagaSettings.txt`.
 
-Notifications use `notify-send` by default. Set `notification_enabled=false` to disable them, set `notification_disappear=false` to disable transient notifications, change `notification_timeout` to control the timeout in milliseconds, set `notification_icon` to an icon file path, or set `notification_icon_base64` to base64-encoded icon data. The configured path takes precedence; otherwise the base64 icon is written to `~/.naga/naga-notification-icon` at daemon startup. The icon is omitted when both icon settings are empty. The `$notifyOptions` variable can be used in a custom `nagaNotifyCommand`.
+Notifications use `notify-send` by default. Set `notification_enabled=false` to disable them, set `notification_disappear=false` to disable transient notifications, change `notification_timeout` to control the timeout in milliseconds, set `notification_icon` to an icon file path, or set `notification_icon_base64` to base64-encoded icon data. The configured path takes precedence; otherwise the base64 icon is written to `~/.naga/naga-notification-icon` at daemon startup. The icon is omitted when both icon settings are empty. Custom `nagaNotifyCommand` values support `$notifyOptions`, `$notifyStatus` (`Profile` or `Unlocked`), and `$profileName`.
 
 To keep a settings variable literal, escape its dollar sign: `\$profileName`.
 

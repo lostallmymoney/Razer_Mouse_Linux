@@ -221,13 +221,14 @@ namespace nagaSettings
 
 		std::vector<std::string> migrated =
 			unstaleOptions(unstaled, "-e", "", false);
-		migrated.emplace_back("Profile : $profileName");
+		migrated.emplace_back("$notifyStatus : $profileName");
 		arguments = migrated;
 	}
 
 	// Final argv for one notification: parse config line → migrate legacy command →
-	// splice $notifyOptions → expand $profileName. Empty when disabled or config malformed.
-	inline std::vector<std::string> buildNotifyCommand(const std::string &profileName)
+	// splice $notifyOptions → expand $notifyStatus and $profileName.
+	inline std::vector<std::string> buildNotifyCommand(const std::string &profileName,
+	                                                   const std::string &notifyStatus = "Profile")
 	{
 		std::vector<std::string> arguments;
 		if (!isSettingTrue("notification_enabled", true))
@@ -253,22 +254,14 @@ namespace nagaSettings
 				continue;
 			}
 			expanded.emplace_back(nagaText::replaceVariables(argument,
-				{{"profileName", profileName}}));
+				{{"notifyStatus", notifyStatus}, {"profileName", profileName}}));
 		}
 		return expanded;
 	}
 
 	inline std::vector<std::string> buildUnlockedNotifyCommand(const std::string &profileName)
 	{
-		std::vector<std::string> arguments = buildNotifyCommand(profileName);
-		const std::string profileLabel = "Profile : " + profileName;
-		const std::string unlockedLabel = "Unlocked : " + profileName;
-		for (std::string &argument : arguments)
-		{
-			if (argument == profileLabel)
-				argument = unlockedLabel;
-		}
-		return arguments;
+		return buildNotifyCommand(profileName, "Unlocked");
 	}
 
 	// Open target in the editor ($nagaConfigFile or argv[2]); restart the naga service
@@ -299,5 +292,5 @@ namespace nagaSettings
 	// notification_disappear   - Expire notification on dismiss by appending the -e flag (true / false, defaults to true)
 	// notification_icon        - File path to the icon displayed in notifications (optional)
 	// notification_icon_base64 - Base64 encoded icon fallback written to ~/.naga/naga-notification-icon
-	// nagaNotifyCommand        - Custom command or arguments for notifications (supports $notifyOptions, $profileName)
+	// nagaNotifyCommand        - Custom command or arguments for notifications (supports $notifyOptions, $notifyStatus, $profileName)
 }

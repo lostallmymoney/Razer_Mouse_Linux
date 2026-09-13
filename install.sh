@@ -53,7 +53,7 @@ if [ ! -f ~/.naga/nagaSettings.txt ]; then
         printf '%s\n' 'notification_timeout=1000'
         printf '%s\n' 'notification_icon='
         printf '%s\n' 'notification_icon_base64='
-        printf '%s\n' "nagaNotifyCommand=-a Naga \$notifyOptions \"Profile : \$profileName\""
+        printf '%s\n' "nagaNotifyCommand=notify-send -a Naga \"\$notifyStatus: \$profileName\""
     } > ~/.naga/nagaSettings.txt
 else
     insert_missing_setting() {
@@ -75,7 +75,7 @@ else
     insert_missing_setting 'notification_timeout' 'notification_timeout=1000'
     insert_missing_setting 'notification_icon' 'notification_icon='
     insert_missing_setting 'notification_icon_base64' 'notification_icon_base64='
-    insert_missing_setting 'nagaNotifyCommand' "nagaNotifyCommand=-a Naga \$notifyOptions \"Profile : \$profileName\""
+    insert_missing_setting 'nagaNotifyCommand' "nagaNotifyCommand=notify-send -a Naga \"\$notifyStatus: \$profileName\""
 fi
 sudo chown "root:root" ~/.naga/nagaSettings.txt
 
