@@ -278,9 +278,15 @@ namespace nagaSettings
 		}
 
 		const std::string quotedTarget = nagaText::shellQuote(targetFile);
-		const std::string script = "orig_sum=\"$(sudo md5sum " + quotedTarget +
-			" 2>/dev/null)\"; " + editor + "; [[ \"$(sudo md5sum " +
-			quotedTarget + " 2>/dev/null)\" != \"$orig_sum\" ]] && sudo systemctl restart naga";
+		const std::string script = "last_sum=\"$(sudo md5sum " + quotedTarget +
+			" 2>/dev/null)\"; bash -c " + nagaText::shellQuote(editor) +
+			" & editor_pid=$!; while kill -0 \"$editor_pid\" 2>/dev/null; do "
+			"current_sum=\"$(sudo md5sum " + quotedTarget +
+			" 2>/dev/null)\"; if [[ \"$current_sum\" != \"$last_sum\" ]]; then "
+			"sudo systemctl restart naga; last_sum=\"$current_sum\"; fi; sleep 1; done; "
+			"current_sum=\"$(sudo md5sum " + quotedTarget +
+			" 2>/dev/null)\"; if [[ \"$current_sum\" != \"$last_sum\" ]]; then "
+			"sudo systemctl restart naga; fi; wait \"$editor_pid\"";
 		std::ignore = system(("sudo bash -c " + nagaText::shellQuote(script)).c_str());
 		return 0;
 	}
