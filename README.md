@@ -121,7 +121,7 @@ Notifications use `notify-send` by default:
 nagaNotifyCommand=notify-send -a Naga "$notifyStatus: $profileName"
 ```
 
-Set `notification_enabled=false` to disable notifications, set `notification_disappear=false` to disable transient notifications, change `notification_timeout` to control the timeout in milliseconds, set `notification_icon` to an icon file path, or set `notification_icon_base64` to base64-encoded icon data. The configured path takes precedence; otherwise the base64 icon is written to `~/.naga/naga-notification-icon` at daemon startup. The icon is omitted when both icon settings are empty.
+Set `notification_enabled=false` to disable notifications, set `notification_disappear=false` to disable transient notifications, change `notification_timeout` to control the timeout in milliseconds, set `notification_icon` to an icon file path, or set `notification_icon_base64` to base64-encoded icon data. `notification_icon_gzip_base64` is populated during installation from the `razer_mouse_linux_default_icon` asset in `nagaAssets.txt`. The configured path takes precedence, followed by the base64 setting and then the gzip-base64 setting. Encoded icons are written to `~/.naga/naga-notification-icon` at daemon startup. The icon is omitted when all icon settings are empty.
 
 `nagaNotifyCommand` accepts any executable followed by its arguments. For example:
 ```text

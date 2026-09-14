@@ -43,6 +43,11 @@ sudo groupadd -f razerInputGroup
 
 WAYLANDTYPE=false
 
+get_asset() {
+    asset_key="$1"
+    awk -F= -v key="$asset_key" '$1 == key { print substr($0, index($0, "=") + 1); exit }' ./nagaAssets.txt
+}
+
 touch ~/.bash_aliases
 mkdir -p ~/.naga
 if [ ! -f ~/.naga/nagaSettings.txt ]; then
@@ -53,6 +58,7 @@ if [ ! -f ~/.naga/nagaSettings.txt ]; then
         printf '%s\n' 'notification_timeout=1000'
         printf '%s\n' 'notification_icon='
         printf '%s\n' 'notification_icon_base64='
+        printf 'notification_icon_gzip_base64=%s\n' "$(get_asset razer_mouse_linux_default_icon)"
         printf '%s\n' "nagaNotifyCommand=notify-send -a Naga \"\$notifyStatus: \$profileName\""
     } > ~/.naga/nagaSettings.txt
 else
@@ -75,6 +81,7 @@ else
     insert_missing_setting 'notification_timeout' 'notification_timeout=1000'
     insert_missing_setting 'notification_icon' 'notification_icon='
     insert_missing_setting 'notification_icon_base64' 'notification_icon_base64='
+    insert_missing_setting 'notification_icon_gzip_base64' "notification_icon_gzip_base64=$(get_asset razer_mouse_linux_default_icon)"
     insert_missing_setting 'nagaNotifyCommand' "nagaNotifyCommand=notify-send -a Naga \"\$notifyStatus: \$profileName\""
 fi
 sudo chown "root:root" ~/.naga/nagaSettings.txt

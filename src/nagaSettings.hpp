@@ -135,8 +135,8 @@ namespace nagaSettings
 		}
 	}
 
-	// Use notification_icon path, else base64-decode notification_icon_base64 once into
-	// "<settings dir>/naga-notification-icon". system() is injection-safe via shellQuote.
+	// Use notification_icon path, then base64, then the named gzip-base64 asset.
+	// Encoded values are decoded once into "<settings dir>/naga-notification-icon".
 	inline const std::string &notificationIconPath()
 	{
 		static const std::string path = []()
@@ -145,7 +145,13 @@ namespace nagaSettings
 			if (!configured.empty())
 				return configured;
 
-			const std::string encoded = readSetting("notification_icon_base64");
+			std::string encoded = readSetting("notification_icon_base64");
+			std::string decodeCommand = "base64 -d";
+			if (encoded.empty())
+			{
+				encoded = readSetting("notification_icon_gzip_base64");
+				decodeCommand = "base64 -d | gzip -dc";
+			}
 			const std::string settingsFile = settingsPath();
 			if (encoded.empty() || settingsFile.empty())
 				return std::string();
@@ -153,7 +159,7 @@ namespace nagaSettings
 			const std::string iconPath = settingsFile.substr(0, settingsFile.rfind('/') + 1) +
 				"naga-notification-icon";
 			const std::string command = "printf %s " + nagaText::shellQuote(encoded) +
-				" | base64 -d > " + nagaText::shellQuote(iconPath);
+				" | " + decodeCommand + " > " + nagaText::shellQuote(iconPath);
 			return system(command.c_str()) == 0 ? iconPath : std::string();
 		}();
 		return path;
@@ -299,5 +305,6 @@ namespace nagaSettings
 	// notification_disappear   - Expire notification on dismiss by appending the -e flag (true / false, defaults to true)
 	// notification_icon        - File path to the icon displayed in notifications (optional)
 	// notification_icon_base64 - Base64 encoded icon fallback written to ~/.naga/naga-notification-icon
+	// notification_icon_gzip_base64 - Gzip-compressed base64 icon fallback written by the installer
 	// nagaNotifyCommand        - Custom command or arguments for notifications (supports $notifyOptions, $notifyStatus, $profileName)
 }
