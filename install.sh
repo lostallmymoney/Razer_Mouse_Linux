@@ -45,7 +45,7 @@ WAYLANDTYPE=false
 
 get_asset() {
     asset_key="$1"
-    awk -F= -v key="$asset_key" '$1 == key { print substr($0, index($0, "=") + 1); exit }' ./nagaAssets.txt
+    awk -F= -v key="$asset_key" '$1 == key { print substr($0, index($0, "=") + 1); exit }' ./src/nagaAssets.txt
 }
 
 touch ~/.bash_aliases
@@ -56,10 +56,10 @@ if [ ! -f ~/.naga/nagaSettings.txt ]; then
         printf '%s\n' 'notification_enabled=true'
         printf '%s\n' 'notification_disappear=true'
         printf '%s\n' 'notification_timeout=1000'
+        printf '%s\n' "nagaNotifyCommand=notify-send -a Naga \"\$notifyOptions\" \"\$notifyStatus: \$profileName\""
         printf '%s\n' 'notification_icon='
         printf '%s\n' 'notification_icon_base64='
         printf 'notification_icon_gzip_base64=%s\n' "$(get_asset razer_mouse_linux_default_icon)"
-        printf '%s\n' "nagaNotifyCommand=notify-send -a Naga \"\$notifyStatus: \$profileName\""
     } > ~/.naga/nagaSettings.txt
 else
     insert_missing_setting() {
@@ -75,14 +75,28 @@ else
         fi
     }
 
+    insert_missing_asset_setting() {
+        setting_name="$1"
+        asset_key="$2"
+        if grep -Eq "^[[:space:]]*${setting_name}[[:space:]]*=" ~/.naga/nagaSettings.txt; then
+            return
+        fi
+
+        {
+            printf '%s=' "$setting_name"
+            get_asset "$asset_key"
+            printf '\n'
+        } | sudo tee -a ~/.naga/nagaSettings.txt >/dev/null
+    }
+
     insert_missing_setting 'nagaEditCommand' "nagaEditCommand=sudo nano \$nagaConfigFile"
     insert_missing_setting 'notification_enabled' 'notification_enabled=true'
     insert_missing_setting 'notification_disappear' 'notification_disappear=true'
     insert_missing_setting 'notification_timeout' 'notification_timeout=1000'
     insert_missing_setting 'notification_icon' 'notification_icon='
     insert_missing_setting 'notification_icon_base64' 'notification_icon_base64='
-    insert_missing_setting 'notification_icon_gzip_base64' "notification_icon_gzip_base64=$(get_asset razer_mouse_linux_default_icon)"
-    insert_missing_setting 'nagaNotifyCommand' "nagaNotifyCommand=notify-send -a Naga \"\$notifyStatus: \$profileName\""
+    insert_missing_asset_setting 'notification_icon_gzip_base64' 'razer_mouse_linux_default_icon'
+    insert_missing_setting 'nagaNotifyCommand' "nagaNotifyCommand=notify-send -a Naga \"\$notifyOptions\" \"\$notifyStatus: \$profileName\""
 fi
 sudo chown "root:root" ~/.naga/nagaSettings.txt
 

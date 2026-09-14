@@ -1437,6 +1437,7 @@ namespace NagaDaemon
 		registerCoreCommands();
 		initAndRegisterPlatformCommands();
 		initConf();
+		std::ignore = nagaSettings::notificationIconPath();
 		configSwitcher::scheduleReMap(mapConfig);
 		configSwitcher::loadConf();
 		run();

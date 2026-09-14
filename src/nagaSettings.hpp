@@ -3,6 +3,7 @@
 #include "nagaText.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -136,7 +137,7 @@ namespace nagaSettings
 	}
 
 	// Use notification_icon path, then base64, then the named gzip-base64 asset.
-	// Encoded values are decoded once into "<settings dir>/naga-notification-icon".
+	// Encoded values are decoded once into "<settings dir>/naga-notification-icon.svg".
 	inline const std::string &notificationIconPath()
 	{
 		static const std::string path = []()
@@ -146,21 +147,26 @@ namespace nagaSettings
 				return configured;
 
 			std::string encoded = readSetting("notification_icon_base64");
-			std::string decodeCommand = "base64 -d";
+			bool isGzipBase64 = false;
 			if (encoded.empty())
 			{
 				encoded = readSetting("notification_icon_gzip_base64");
-				decodeCommand = "base64 -d | gzip -dc";
+				isGzipBase64 = true;
 			}
 			const std::string settingsFile = settingsPath();
 			if (encoded.empty() || settingsFile.empty())
 				return std::string();
 
 			const std::string iconPath = settingsFile.substr(0, settingsFile.rfind('/') + 1) +
-				"naga-notification-icon";
-			const std::string command = "printf %s " + nagaText::shellQuote(encoded) +
-				" | " + decodeCommand + " > " + nagaText::shellQuote(iconPath);
-			return system(command.c_str()) == 0 ? iconPath : std::string();
+				"naga-notification-icon.svg";
+			const std::string command = "base64 -d" + std::string(isGzipBase64 ? " | gzip -dc" : "") +
+				" > " + nagaText::shellQuote(iconPath);
+			FILE *decoder = popen(command.c_str(), "w");
+			if (decoder == nullptr)
+				return std::string();
+			const std::size_t bytesWritten = fwrite(encoded.data(), 1, encoded.size(), decoder);
+			const int decoderStatus = pclose(decoder);
+			return bytesWritten == encoded.size() && decoderStatus == 0 ? iconPath : std::string();
 		}();
 		return path;
 	}
@@ -215,8 +221,16 @@ namespace nagaSettings
 	inline void migrateLegacyNotifyCommand(std::vector<std::string> &arguments)
 	{
 		if (arguments.size() < 2 || arguments.front() != "notify-send" ||
-			arguments.back() != "Profile : $profileName" ||
 			std::find(arguments.begin(), arguments.end(), "$notifyOptions") != arguments.end())
+			return;
+
+		if (arguments == std::vector<std::string>{"notify-send", "-a", "Naga", "$notifyStatus: $profileName"})
+		{
+			arguments.insert(arguments.end() - 1, "$notifyOptions");
+			return;
+		}
+
+		if (arguments.back() != "Profile : $profileName")
 			return;
 
 		std::vector<std::string> options(arguments.begin() + 1, arguments.end() - 1);
@@ -287,7 +301,7 @@ namespace nagaSettings
 		const std::string editAndMonitorCommand =
 			"lastFileChecksum=\"$(sudo md5sum " + quotedTargetFilePath +
 			" 2>/dev/null)\"; bash -c " + nagaText::shellQuote(editorCommand) +
-			" & editorProcessId=$!; while kill -0 \"$editorProcessId\" 2>/dev/null; do "
+			" </dev/tty & editorProcessId=$!; while kill -0 \"$editorProcessId\" 2>/dev/null; do "
 			"currentFileChecksum=\"$(sudo md5sum " + quotedTargetFilePath +
 			" 2>/dev/null)\"; if [[ \"$currentFileChecksum\" != \"$lastFileChecksum\" ]]; then "
 			"sudo systemctl restart naga; lastFileChecksum=\"$currentFileChecksum\"; fi; sleep 1; done; "
@@ -304,7 +318,7 @@ namespace nagaSettings
 	// notification_timeout     - Duration in milliseconds before notification auto-closes (defaults to 1000)
 	// notification_disappear   - Expire notification on dismiss by appending the -e flag (true / false, defaults to true)
 	// notification_icon        - File path to the icon displayed in notifications (optional)
-	// notification_icon_base64 - Base64 encoded icon fallback written to ~/.naga/naga-notification-icon
+	// notification_icon_base64 - Base64 encoded icon fallback written to ~/.naga/naga-notification-icon.svg
 	// notification_icon_gzip_base64 - Gzip-compressed base64 icon fallback written by the installer
 	// nagaNotifyCommand        - Custom command or arguments for notifications (supports $notifyOptions, $notifyStatus, $profileName)
 }
