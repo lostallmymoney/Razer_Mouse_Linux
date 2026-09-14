@@ -5,7 +5,7 @@ printf "Installing requirements...\n"
 # Try to detect and use the available package manager
 if command -v apt >/dev/null 2>&1; then
     sudo apt install -y \
-        g++ nano pkexec procps wget gnome-shell-extension-manager dbus-x11 curl \
+        g++ nano pkexec procps wget gnome-shell-extension-manager curl \
         libdbus-1-dev libxkbcommon-dev golang-go scdoc || {
         printf "\033[0;31mAPT install failed. Aborting.\033[0m\n" >&2
         exit 1
@@ -17,7 +17,7 @@ elif command -v zypper >/dev/null 2>&1; then
         }
     done
 elif command -v dnf >/dev/null 2>&1; then
-    for pkg in gcc-c++ nano polkit procps-ng wget gnome-extensions-app dbus-x11 curl dbus-devel libxkbcommon-devel golang scdoc; do
+    for pkg in gcc-c++ nano polkit procps-ng wget gnome-extensions-app curl dbus-devel libxkbcommon-devel golang scdoc; do
         sudo dnf install -y "$pkg" >/dev/null 2>&1 || {
             printf "\033[0;33mSkipping (dnf): %s\033[0m\n" "$pkg"
         }
