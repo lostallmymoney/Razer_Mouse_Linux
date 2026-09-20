@@ -58,14 +58,6 @@ config=nonDefaultConfig
     11 - chmap=defaultConfig
     13 - key=playpause
 
-context=1to6
-    1 - key=1
-    2 - key=2
-    3 - key=3
-    4 - key=4
-    5 - key=5
-    6 - key=6
-
 configWindow=Spotify
     context=multimedia
     1 - string=Travis Scott
@@ -108,6 +100,14 @@ config=Alternative-Terminal-Profile
             '
     8 - unlockChmap=org.gnome.Ptyxis
     11 - key=playpause
+
+context=1to6
+    1 - key=1
+    2 - key=2
+    3 - key=3
+    4 - key=4
+    5 - key=5
+    6 - key=6
 
 configWindowExpr=Minecraft*
     context=1to6
