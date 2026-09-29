@@ -92,7 +92,18 @@ public:
 	}
 	void runInternal() const override
 	{
-		command.run(commandArgument);
+		try
+		{
+			command.run(commandArgument);
+		}
+		catch (const std::exception &thrownError)
+		{
+			std::cerr << "\033[91mError : Macro action failed: " << thrownError.what() << "\033[0m\n";
+		}
+		catch (...)
+		{
+			std::cerr << "\033[91mError : Macro action failed with unknown error\033[0m\n";
+		}
 	}
 };
 
@@ -374,7 +385,7 @@ namespace configSwitcher
 	unordered_map<string, WindowConfigMap::iterator> windowClassCache;
 	// Keys owned by configWindowAndLockMap: element refs survive a rehash, iterators do not.
 	vector<const string *> configWindowExprList;
-	IMacroEventKeyMap *currentConfigPtr = nullptr;
+	std::atomic<IMacroEventKeyMap *> currentConfigPtr = nullptr;
 	WindowConfigMap::iterator matchedWindowConfigPtr, scheduledUnlockWindowCfgPtr;
 	unordered_map<string, shared_ptr<notifySendHelper::NotificationCommand>> notifySendMap, unlockNotifySendMap;
 
@@ -391,10 +402,10 @@ namespace configSwitcher
 			return;
 		}
 		currentConfigName = scheduledReMapName;
-		currentConfigPtr = &scheduledConfig->second;
+		currentConfigPtr.store(&scheduledConfig->second, std::memory_order_release);
 		if (!silent)
 		{
-			const auto notification = notifySendMap.find(*scheduledReMapName);
+			const unordered_map<string, shared_ptr<notifySendHelper::NotificationCommand>>::const_iterator notification = notifySendMap.find(*scheduledReMapName);
 			if (notification == notifySendMap.end() || !notification->second || notification->second->empty())
 			{
 				std::cerr << "Warning : No prepared notification for profile : " << *scheduledReMapName << std::endl;
@@ -529,7 +540,7 @@ namespace NagaDaemon
 	static constexpr bool OnKeyPressed = true;
 	static constexpr bool OnKeyReleased = false;
 	static constexpr size_t BufferSize = 1024;
-	static unordered_map<string, nagaCommandClass *const> nagaCommandsMap;
+	static unordered_map<string, unique_ptr<nagaCommandClass>> nagaCommandsMap;
 	static std::map<std::string, bool> multilineEnabledList;
 
 	static constexpr size_t input_event_size = sizeof(input_event);
@@ -599,7 +610,7 @@ namespace NagaDaemon
 
 	static void emplaceConfigKey(const string &nagaCommand, bool onKeyPressed, void (*functionPtr)(const string &), const string &prefix = "", const string &suffix = "")
 	{
-		nagaCommandsMap.emplace(nagaCommand, new nagaCommandClass(onKeyPressed, functionPtr, prefix, suffix));
+		nagaCommandsMap.emplace(nagaCommand, make_unique<nagaCommandClass>(onKeyPressed, functionPtr, prefix, suffix));
 	}
 
 	static void emplaceMultilineConfigKey(const string &nagaCommand, bool onKeyPressed, void (*functionPtr)(const string &), const string &prefix = "", const string &suffix = "")
@@ -713,6 +724,13 @@ namespace NagaDaemon
 		return result;
 	}
 
+	static void emplaceMacroEvent(ParsedCommandList &result, const std::string &commandKey, const std::string &content)
+	{
+		const nagaCommandClass &command = *nagaCommandsMap[commandKey];
+		result.emplace_back(command.IsOnKeyPressed(),
+							make_shared<MacroEvent>(command, command.generateCommand(content)));
+	}
+
 	static ParsedCommandList parseCommand(ConfigParseState &state, std::string commandContent)
 	{
 		ParsedCommandList result;
@@ -758,31 +776,20 @@ namespace NagaDaemon
 				multilineCommand +
 				"nagaDelimiter1\n";
 
-			result.emplace_back(
-				nagaCommandsMap[commandType]->IsOnKeyPressed(),
-				make_shared<MacroEvent>(
-					*nagaCommandsMap[commandType],
-					nagaCommandsMap[commandType]->generateCommand(wrappedCommand)));
+			emplaceMacroEvent(result, commandType, wrappedCommand);
 		}
 		else if (nagaCommandsMap.contains(commandType))
 		{
-			result.emplace_back(
-				nagaCommandsMap[commandType]->IsOnKeyPressed(), make_shared<MacroEvent>(
-																	*nagaCommandsMap[commandType],
-																	nagaCommandsMap[commandType]->generateCommand(commandContent)));
+			emplaceMacroEvent(result, commandType, commandContent);
 		}
 		else if (parsePlatformCommands(result, commandType, commandContent))
 		{
 		}
 		else if (commandType == "key")
 		{
-			result.emplace_back(true, make_shared<MacroEvent>(
-										  *nagaCommandsMap["keypressonpress"],
-										  nagaCommandsMap["keypressonpress"]->generateCommand(commandContent)));
+			emplaceMacroEvent(result, "keypressonpress", commandContent);
 
-			result.emplace_back(false, make_shared<MacroEvent>(
-										   *nagaCommandsMap["keyreleaseonrelease"],
-										   nagaCommandsMap["keyreleaseonrelease"]->generateCommand(commandContent)));
+			emplaceMacroEvent(result, "keyreleaseonrelease", commandContent);
 		}
 		else if (commandType == "loop" || commandType == "loop2")
 		{
@@ -934,6 +941,30 @@ namespace NagaDaemon
 		constexpr string_view configWindowPrefix = "configWindow=";
 		constexpr string_view configWindowExprPrefix = "configWindowExpr=";
 
+		const std::function<void(const std::string &)> processConfigLine = [&](const std::string &configLine)
+		{
+			int buttonNumberInt = nagaText::getButtonNumber(configLine);
+
+			if (buttonNumberInt == -1)
+				return;
+
+			if (buttonNumberInt < FirstButtonSlot || buttonNumberInt >= ButtonSlotCount)
+			{
+				clog << "\033[38;5;208mSkipping out of range button : " << buttonNumberInt - 1 << "\033[0m\n";
+				return;
+			}
+
+			std::string modifiedConfigLine = configLine;
+			modifiedConfigLine = nagaText::textAfter(modifiedConfigLine, '-');
+			modifiedConfigLine = nagaText::trimWhiteSpaces(modifiedConfigLine);
+
+			ParsedCommandList commands = parseCommand(parseState, modifiedConfigLine);
+
+			for (const ParsedCommand &command : commands)
+				(*iteratedConfig)[buttonNumberInt][command.isOnKeyPressed]
+					.emplace_back(command.macroEvent);
+		};
+
 		for (; static_cast<std::size_t>(parseState.currentlyReadLine) < configLines.size(); ++parseState.currentlyReadLine)
 		{
 			const std::string_view &line = configLines[parseState.currentlyReadLine];
@@ -971,30 +1002,6 @@ namespace NagaDaemon
 				}
 				else
 				{
-					const std::function<void(const std::string &)> processConfigLine = [&](const std::string &configLine)
-					{
-						int buttonNumberInt = nagaText::getButtonNumber(configLine);
-
-						if (buttonNumberInt == -1)
-							return;
-
-						if (buttonNumberInt < FirstButtonSlot || buttonNumberInt >= ButtonSlotCount)
-						{
-							clog << "\033[38;5;208mSkipping out of range button : " << buttonNumberInt - 1 << "\033[0m\n";
-							return;
-						}
-
-						std::string modifiedConfigLine = configLine;
-						modifiedConfigLine = nagaText::textAfter(modifiedConfigLine, '-');
-						modifiedConfigLine = nagaText::trimWhiteSpaces(modifiedConfigLine);
-
-						ParsedCommandList commands = parseCommand(parseState, modifiedConfigLine);
-
-						for (const ParsedCommand &command : commands)
-							(*iteratedConfig)[buttonNumberInt][command.isOnKeyPressed]
-								.emplace_back(command.macroEvent);
-					};
-
 					if (commandContent.starts_with(contextPrefix))
 					{
 						commandContent = nagaText::textAfter(commandContent, '=');
@@ -1198,7 +1205,8 @@ namespace NagaDaemon
 			std::unique_lock<std::mutex> lock(queueMutex);
 			while (true)
 			{
-				queuePending.wait(lock, [this] { return !queue.empty(); });
+				queuePending.wait(lock, [this]
+								  { return !queue.empty(); });
 				const std::vector<shared_ptr<IMacroEvent>> *const actions = queue.front();
 				queue.pop_front();
 				runningAction = true;
@@ -1232,6 +1240,36 @@ namespace NagaDaemon
 	};
 
 	static std::array<ButtonWorker, ButtonSlotCount> buttonWorkers;
+
+	// The config that was active when each slot was last pressed. Parked at press
+	// time so the release below always undoes the ORIGINAL config's press, even if
+	// a chmap (or a window auto-profile) switched configs while the button was held.
+	// Zero-copy by design: profiles are parsed once at startup and never mutated or
+	// freed afterwards (naga edit restarts the daemon), so the pointer stays valid
+	// until the next press on that slot overwrites it.
+	static std::array<IMacroEventKeyMap *, ButtonSlotCount> configActiveAtPress{};
+
+	// Press and release are two halves of one press: the release half is resolved
+	// from the config parked at press time, never from the live one. A release with
+	// no prior press is a no-op by construction. No action list is ever copied here.
+	static void handleButtonEvent(const int slot, const bool pressed)
+	{
+		if (pressed)
+		{
+			// Remember WHICH config served this press; the release reads that same config.
+			configActiveAtPress[slot] = configSwitcher::currentConfigPtr.load(std::memory_order_acquire);
+			const std::vector<shared_ptr<IMacroEvent>> &pressActions = (*configActiveAtPress[slot])[slot][1];
+			if (!pressActions.empty())
+				buttonWorkers[slot].submit(pressActions);
+		}
+		else if (configActiveAtPress[slot] != nullptr)
+		{
+			const std::vector<shared_ptr<IMacroEvent>> &releaseActions = (*configActiveAtPress[slot])[slot][0];
+			configActiveAtPress[slot] = nullptr;
+			if (!releaseActions.empty())
+				buttonWorkers[slot].submit(releaseActions);
+		}
+	}
 
 	static bool reopenDevice(const char *devicePath, int &fd, struct input_event *ev, size_t ev_size, bool checkGrab)
 	{
@@ -1334,10 +1372,7 @@ namespace NagaDaemon
 				}
 
 				const int slot = event.code + Device::SlotOffset;
-				const std::vector<shared_ptr<IMacroEvent>> &actions =
-					(*configSwitcher::currentConfigPtr)[slot][event.value == 1];
-				if (!actions.empty())
-					buttonWorkers[slot].submit(actions);
+				handleButtonEvent(slot, event.value == 1);
 			}
 			checkedForWindowConfig = false;
 		}
@@ -1471,56 +1506,57 @@ static int nagaMain(const int argc, const char *const argv[])
 
 	if (argc > 1)
 	{
-		if (strstr(argv[1], "serviceHelper"))
+		const string_view command = argv[1];
+		if (command == "serviceHelper")
 		{
 			stopD();
 			NagaDaemon::init(argc > 2 && argv[2][0] != '\0' ? argv[2] : "defaultConfig");
 		}
-		else if (strstr(argv[1], "start"))
+		else if (command == "start" || command == "restart")
 		{
 			clog << "Starting naga daemon as service, naga debug to see logs...\n";
 			usleep(100000);
 			std::ignore = system("sudo systemctl restart naga");
 		}
-		else if (strstr(argv[1], "debug"))
+		else if (command == "debug")
 		{
 			clog << "Starting naga debug, logs :\n";
 			std::ignore = system((argc > 2 ? ("journalctl -o cat " + std::string(argv[2]) + " naga") : "journalctl -o cat -fu naga").c_str());
 		}
-		else if (strstr(argv[1], "kill"))
+		else if (command == "kill")
 		{
 			clog << "Killing naga daemon processes:\n";
 			std::ignore = system(("sudo sh /usr/local/bin/Naga_Linux/nagaKillroot.sh " + to_string((int)getpid())).c_str());
 		}
-		else if (strstr(argv[1], "stop"))
+		else if (command == "stop")
 		{
 			clog << "Stopping possible naga daemon\n";
 			std::ignore = system("sudo systemctl stop naga");
 		}
-		else if (strstr(argv[1], "disable") || strstr(argv[1], "stop"))
+		else if (command == "disable")
 		{
 			clog << "Disabling naga daemon\n";
 			std::ignore = system("sudo systemctl disable naga");
 		}
-		else if (strstr(argv[1], "enable") || strstr(argv[1], "stop"))
+		else if (command == "enable")
 		{
 			clog << "Enabling naga daemon\n";
 			std::ignore = system("sudo systemctl enable naga");
 		}
-		else if (strstr(argv[1], "repair") || strstr(argv[1], "tame") || strstr(argv[1], "fix"))
+		else if (command == "repair" || command == "tame" || command == "fix")
 		{
 			clog << "Fixing dead keypad syndrome... STUTTER!!\n";
 			std::ignore = system("sudo bash -c \"sh /usr/local/bin/Naga_Linux/nagaKillroot.sh && modprobe -r usbhid && modprobe -r psmouse && modprobe usbhid && modprobe psmouse && sleep 1 && sudo systemctl start naga\"");
 		}
-		else if (strstr(argv[1], "edit"))
+		else if (command == "edit")
 		{
 			return nagaSettings::editFile(argc, argv, conf_file);
 		}
-		else if (strstr(argv[1], "settings"))
+		else if (command == "settings")
 		{
 			return nagaSettings::editFile(argc, argv, nagaSettings::settingsPath());
 		}
-		else if (strstr(argv[1], "vendor"))
+		else if (command == "vendor")
 		{
 			std::ignore = system("lsusb | sed -E 's/ID ([0-9a-fA-F]{4}):([0-9a-fA-F]{4})/ID \\x1b[38;5;208m\\1\\x1b[0m:\\2/g'");
 
@@ -1559,7 +1595,7 @@ static int nagaMain(const int argc, const char *const argv[])
 			usleep(100000);
 			std::ignore = system("sudo systemctl restart naga");
 		}
-		else if (strstr(argv[1], "uninstall"))
+		else if (command == "uninstall")
 		{
 			string answer;
 			clog << "Are you sure you want to uninstall ? y/n\n";

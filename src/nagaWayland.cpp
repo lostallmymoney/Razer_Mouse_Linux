@@ -79,7 +79,14 @@ void initAndRegisterPlatformCommands()
 NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser([[maybe_unused]] const std::string &commandType, [[maybe_unused]] const std::string &commandContent)
 {
 	NagaDaemon::ParsedCommandList results;
-	// Fit additional combo-commands here.. See X11 for example.
+	// Contributors: to add a combo-command, register its press/release commands with
+	// NagaDaemon::emplaceConfigKey in initAndRegisterPlatformCommands, then add a branch here.
+	// See the X11 "specialkey" combo in nagaX11.cpp for a working example:
+	//	if (commandType == "mycombo")
+	//	{
+	//		NagaDaemon::emplaceMacroEvent(results, "mypressonpress", commandContent);
+	//		NagaDaemon::emplaceMacroEvent(results, "myreleaseonrelease", commandContent);
+	//	}
 	return results;
 }
 

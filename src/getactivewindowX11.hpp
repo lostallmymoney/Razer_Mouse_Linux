@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdlib>
 #include <cstdio>
 #include <locale.h>
@@ -6,9 +8,9 @@
 #include <X11/Xlib.h>        // `apt-get install libx11-dev`
 #include <X11/Xmu/WinUtil.h> // `apt-get install libxmu-dev`
 
-Bool xerror = False;
+inline Bool xerror = False;
 
-Display *open_display()
+inline Display *open_display()
 {
     Display *d = XOpenDisplay(nullptr);
     if (d == nullptr)
@@ -19,14 +21,14 @@ Display *open_display()
     return d;
 }
 
-int handle_error([[maybe_unused]] Display *display, [[maybe_unused]] XErrorEvent *error)
+inline int handle_error([[maybe_unused]] Display *display, [[maybe_unused]] XErrorEvent *error)
 {
     printf("\033[91mError : X11 error\033[0m\n");
     xerror = True;
     return 1;
 }
 
-Window get_focus_window(Display *d)
+inline Window get_focus_window(Display *d)
 {
     Window w;
     int revert_to;
@@ -51,7 +53,7 @@ Window get_focus_window(Display *d)
 // a top window have the following specifications.
 //  * the start window is contained the descendent windows.
 //  * the parent window is the root window.
-Window get_top_window(Display *d, Window start)
+inline Window get_top_window(Display *d, Window start)
 {
     Window w = start;
     Window parent = start;
@@ -78,14 +80,14 @@ Window get_top_window(Display *d, Window start)
 
 // search a named window (that has a WM_STATE prop)
 // on the descendent windows of the argment Window.
-Window get_named_window(Display *d, Window start)
+inline Window get_named_window(Display *d, Window start)
 {
     Window w;
     w = XmuClientWindow(d, start); // see man
     return w;
 }
 
-std::string print_window_class(Display *d, Window w)
+inline std::string print_window_class(Display *d, Window w)
 {
     Status s;
     XClassHint *clas;
@@ -126,7 +128,7 @@ std::string print_window_class(Display *d, Window w)
     return result;
 }
 
-std::string getActiveWindowTitle()
+inline std::string getActiveWindowTitle()
 {
     Display *d;
     Window w;

@@ -11,7 +11,7 @@ using namespace std;
 static mutex fakeKeyFollowUpsMutex;
 string conf_file = string(getenv("HOME")) + "/.naga/keyMapX11.txt";
 
-static map<const char *const, FakeKey *const> *const fakeKeyFollowUps = new map<const char *const, FakeKey *const>();
+static map<string, FakeKey *> fakeKeyFollowUps;
 
 static void writeStringNow(const string &macroContent)
 {
@@ -38,31 +38,33 @@ static void writeStringNow(const string &macroContent)
 static void specialPressNow(const string &macroContent)
 {
 	lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-	FakeKey *const aKeyFaker = fakekey_init(XOpenDisplay(nullptr));
-	const char *const keyCodeChar = &macroContent[0];
-	fakekey_press(aKeyFaker, reinterpret_cast<const unsigned char *>(keyCodeChar), 8, 0);
-	XFlush(aKeyFaker->xdpy);
-	fakeKeyFollowUps->emplace(keyCodeChar, aKeyFaker);
+	FakeKey *const keyFaker = fakekey_init(XOpenDisplay(nullptr));
+	if (keyFaker == nullptr)
+	{
+		clog << "\033[91mError : Could not open display for special key press\033[0m\n";
+		return;
+	}
+	fakekey_press(keyFaker, reinterpret_cast<const unsigned char *>(macroContent.c_str()), 8, 0);
+
+	XFlush(keyFaker->xdpy);
+	fakeKeyFollowUps.emplace(macroContent, keyFaker);
 }
 
 static void specialReleaseNow(const string &macroContent)
 {
-	const char *const targetChar = &macroContent[0];
-	for (map<const char *const, FakeKey *const>::iterator aKeyFollowUpPair = fakeKeyFollowUps->begin(); aKeyFollowUpPair != fakeKeyFollowUps->end(); ++aKeyFollowUpPair)
+	lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
+	map<string, FakeKey *>::iterator followUp = fakeKeyFollowUps.find(macroContent);
+	if (followUp == fakeKeyFollowUps.end())
 	{
-		if (*aKeyFollowUpPair->first == *targetChar)
-		{
-			lock_guard<mutex> guard(fakeKeyFollowUpsMutex);
-			FakeKey *const aKeyFaker = aKeyFollowUpPair->second;
-			fakekey_release(aKeyFaker);
-			XFlush(aKeyFaker->xdpy);
-			XCloseDisplay(aKeyFaker->xdpy);
-			fakeKeyFollowUps->erase(aKeyFollowUpPair);
-			delete aKeyFaker;
-			return;
-		}
+		clog << "\033[93mWarning : No candidate for key release\033[0m\n";
+		return;
 	}
-	clog << "\033[93mWarning : No candidate for key release\033[0m\n";
+	FakeKey *const keyFaker = followUp->second;
+	fakeKeyFollowUps.erase(followUp);
+	fakekey_release(keyFaker);
+	XFlush(keyFaker->xdpy);
+	XCloseDisplay(keyFaker->xdpy);
+	delete keyFaker;
 }
 
 void platformRunAndWrite(const string &macroContent)
@@ -70,7 +72,8 @@ void platformRunAndWrite(const string &macroContent)
 	unique_ptr<FILE, int (*)(FILE *)> pipe(popen(macroContent.c_str(), "r"), &pclose);
 	if (!pipe)
 	{
-		throw runtime_error("\033[91mError : runAndWrite Failed !\033[0m");
+		clog << "\033[91mError : runAndWrite failed to start process\033[0m\n";
+		return;
 	}
 
 	constexpr size_t BufferSize = 1024;
@@ -109,12 +112,12 @@ void initAndRegisterPlatformCommands()
 NagaDaemon::ParsedCommandList NagaDaemon::platformComboKeyParser(const std::string &commandType, const std::string &commandContent)
 {
 	NagaDaemon::ParsedCommandList results;
-	if(commandType == "specialkey")
+	if (commandType == "specialkey")
 	{
-		results.emplace_back(true, NagaDaemon::MacroEvent(*nagaCommandsMap["specialpressonpress"], *pressCmd->generateCommand(commandContent)));
-		results.emplace_back(false, NagaDaemon::MacroEvent(*nagaCommandsMap["specialreleaseonrelease"], *releaseCmd->generateCommand(commandContent)));
+		NagaDaemon::emplaceMacroEvent(results, "specialpressonpress", commandContent);
+		NagaDaemon::emplaceMacroEvent(results, "specialreleaseonrelease", commandContent);
 	}
-	// Fit additionnal combo-commands here..
+	// Fit additional combo-commands here..
 	return results;
 }
 
