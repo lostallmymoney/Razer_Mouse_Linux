@@ -2,28 +2,41 @@
 
 printf "Installing requirements...\n"
 
+CXX="${NAGA_CXX:-g++}"
+
+# The clang package is named "clang" on apt, zypper, dnf and pacman.
+# Empty when building with g++, so the install lines below stay unchanged.
+clang_pkg=""
+if [ "$CXX" = "clang++" ]; then
+    clang_pkg="clang"
+fi
+
 # Try to detect and use the available package manager
 if command -v apt >/dev/null 2>&1; then
+    # shellcheck disable=SC2086
     sudo apt install -y \
         g++ nano pkexec procps wget gnome-shell-extension-manager curl \
-        libdbus-1-dev libxkbcommon-dev golang-go scdoc || {
+        libdbus-1-dev libxkbcommon-dev golang-go scdoc $clang_pkg || {
         printf "\033[0;31mAPT install failed. Aborting.\033[0m\n" >&2
         exit 1
     }
 elif command -v zypper >/dev/null 2>&1; then
-    for pkg in gcc-c++ nano polkit procps wget gnome-extensions-app dbus-1 curl libdbus-1-devel libxkbcommon-devel go scdoc; do
+    # shellcheck disable=SC2086
+    for pkg in gcc-c++ nano polkit procps wget gnome-extensions-app dbus-1 curl libdbus-1-devel libxkbcommon-devel go scdoc $clang_pkg; do
         sudo zypper --non-interactive install "$pkg" >/dev/null 2>&1 || {
             printf "\033[0;33mSkipping (zypper): %s\033[0m\n" "$pkg"
         }
     done
 elif command -v dnf >/dev/null 2>&1; then
-    for pkg in gcc-c++ nano polkit procps-ng wget gnome-extensions-app curl dbus-devel libxkbcommon-devel golang scdoc; do
+    # shellcheck disable=SC2086
+    for pkg in gcc-c++ nano polkit procps-ng wget gnome-extensions-app curl dbus-devel libxkbcommon-devel golang scdoc $clang_pkg; do
         sudo dnf install -y "$pkg" >/dev/null 2>&1 || {
             printf "\033[0;33mSkipping (dnf): %s\033[0m\n" "$pkg"
         }
     done
 elif command -v pacman >/dev/null 2>&1; then
-    for pkg in base-devel nano polkit procps-ng wget gnome-extensions-app dbus curl libxkbcommon go scdoc; do
+    # shellcheck disable=SC2086
+    for pkg in base-devel nano polkit procps-ng wget gnome-extensions-app dbus curl libxkbcommon go scdoc $clang_pkg; do
         sudo pacman -S --noconfirm "$pkg" >/dev/null 2>&1 || {
             printf "\033[0;33mSkipping (pacman): %s\033[0m\n" "$pkg"
         }
@@ -35,19 +48,19 @@ fi
 
 printf "Checking requirements...\n"
 
-command -v g++ >/dev/null 2>&1 || {
-    printf "\033[0;31mI require g++ but it's not installed! Aborting.\033[0m\n"
+command -v "$CXX" >/dev/null 2>&1 || {
+    printf "\033[0;31mI require %s but it's not installed! Aborting.\033[0m\n" "$CXX"
     exit 1
 }
 
 clear -x
 
-printf "Compiling code...\n"
-g++ -I/usr/lib64/dbus-1.0/include -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -Ofast --std=c++23 -ldbus-1
+printf "Compiling code with %s...\n" "$CXX"
+"$CXX" -I/usr/lib64/dbus-1.0/include -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include -I/usr/include/dbus-1.0 ./src/nagaWayland.cpp -o ./src/nagaWayland -pthread -O3 -march=native -s --std=c++23 -ldbus-1
 
 if [ ! -f ./src/nagaWayland ]; then
 
-    printf "\033[0;31mError at compile! Ensure you have g++ installed. !!!Aborting!!!\033[0m\n"
+    printf "\033[0;31mError at compile! Ensure you have %s installed. !!!Aborting!!!\033[0m\n" "$CXX"
     exit 1
 fi
 printf "Compiled nagaWayland...\n"

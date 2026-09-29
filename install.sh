@@ -43,6 +43,22 @@ sudo groupadd -f razerInputGroup
 
 WAYLANDTYPE=false
 
+# Compiler selection: --clang anywhere in the args switches the build to clang++.
+# The session arg (X11/wayland) is also picked up anywhere, so order doesn't matter.
+# With no explicit compiler flag, g++ is tried first and clang++ is the fallback.
+# NAGA_CXX reaches the sub-installers through the environment.
+NAGA_CXX=g++
+compiler_explicit=""
+install_session=""
+for arg in "$@"; do
+    case "$arg" in
+        --clang) NAGA_CXX=clang++; compiler_explicit=1 ;;
+        X11 | x11) install_session=x11 ;;
+        Wayland | wayland) install_session=wayland ;;
+    esac
+done
+export NAGA_CXX
+
 get_asset() {
     asset_key="$1"
     awk -F= -v key="$asset_key" '$1 == key { print substr($0, index($0, "=") + 1); exit }' ./src/nagaAssets.txt
@@ -132,22 +148,37 @@ run_sub_install() {
     fi
 }
 
-case "$1" in
-X11 | x11)
-    run_sub_install ./src/_installX11.sh
+# Tries g++ first, falls back to clang++ if the build fails.
+# An explicit --clang is honored directly with no fallback.
+run_with_compiler_fallback() {
+    script_path="$1"
+    if [ -z "$compiler_explicit" ]; then
+        export NAGA_CXX=g++
+        if sh "$script_path"; then
+            return 0
+        fi
+        printf "\033[0;33mg++ build failed, falling back to clang++...\033[0m\n"
+        export NAGA_CXX=clang++
+    fi
+    run_sub_install "$script_path"
+}
+
+case "$install_session" in
+x11)
+    run_with_compiler_fallback ./src/_installX11.sh
     ;;
-Wayland | wayland)
-    run_sub_install ./src/_installWayland.sh
+wayland)
+    run_with_compiler_fallback ./src/_installWayland.sh
     ;;
 *)
     # shellcheck disable=SC2046
     if [ "$(loginctl show-session $(loginctl | grep "$(whoami)" | awk '{print $1}') | grep -c "Type=wayland")" -ne 0 ]; then
         WAYLANDTYPE=true
-        run_sub_install ./src/_installWayland.sh
+        run_with_compiler_fallback ./src/_installWayland.sh
         sed -i '/alias naga=/d' ~/.bash_aliases
         grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaWayland'" | tee -a ~/.bash_aliases >/dev/null
     else
-        run_sub_install ./src/_installX11.sh
+        run_with_compiler_fallback ./src/_installX11.sh
         sed -i '/alias naga=/d' ~/.bash_aliases
         grep 'alias naga=' ~/.bash_aliases || printf "alias naga='nagaX11'" | tee -a ~/.bash_aliases >/dev/null
     fi
