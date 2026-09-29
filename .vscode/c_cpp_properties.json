@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "cppStandard": "c++23",
+            "defines": [],
+            "includePath": [
+                "${workspaceFolder}/src",
+                "/usr/include",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include/dbus-1.0",
+                "/usr/lib/x86_64-linux-gnu/dbus-1.0/include"
+            ],
+            "intelliSenseMode": "linux-gcc-x64",
+            "name": "Linux"
+        }
+    ],
+    "version": 4
+}
