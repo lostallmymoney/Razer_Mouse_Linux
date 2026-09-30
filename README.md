@@ -182,6 +182,9 @@ window entry can switch to a separate profile with `chmap=<profileName>`.
 return control to automatic matching. Use the full wildcard expression when
 applicable.
 
+
+On Wayland, window classes come from the [Focus Class Fetcher](https://github.com/lostallmymoney/focus-class-fetcher) GNOME extension, installed automatically (optional — per-window profiles are skipped if it's missing).
+
 ---
 
 ### 📚 Full Option Reference
