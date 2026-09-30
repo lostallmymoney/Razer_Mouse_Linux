@@ -23,22 +23,19 @@
 // does not exist yet, the thread retries once a second, sleeping with zero
 // CPU cost in between.
 //
-// changed() and renewBaseline() must be called from the same thread; the
+// changed() and renewBaseline() must be called under the same mutex; the
 // watcher thread only touches the cache under its own lock. The instance must
 // live as long as the process: the watcher thread is detached, never joined.
 class NagaStreamWatcher
 {
 public:
+	// The watcher thread starts with the instance and runs for the life of
+	// the process: detached, never joined.
 	NagaStreamWatcher(std::string (*directoryResolver)(), const char *watchedFileName)
 		: directoryResolver(directoryResolver),
 		  watchedFileName(watchedFileName)
 	{
-	}
-
-	// Spawns the watcher thread on first call; later calls cost one atomic load.
-	void startWatching()
-	{
-		std::call_once(watcherStarted, [this] { std::thread(&NagaStreamWatcher::watcherThread, this).detach(); });
+		std::thread(&NagaStreamWatcher::watcherThread, this).detach();
 	}
 
 	// True when the file was rewritten since the last renewBaseline().
@@ -129,5 +126,4 @@ private:
 	std::string cachedFileContents; // guarded by cacheMutex
 	std::atomic<unsigned long> cachedVersion{0};
 	unsigned long baselineVersion = 0; // only touched by the calling thread
-	std::once_flag watcherStarted;
 };
