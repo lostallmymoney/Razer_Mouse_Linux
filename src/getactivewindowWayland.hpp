@@ -58,11 +58,6 @@ namespace
 	// it to exist. Single-threaded by contract (checkForWindowConfig holds
 	// configSwitcherMutex), so a plain pointer is enough. Outlives the process.
 	NagaStreamWatcher *windowClassStreamWatcher = nullptr;
-
-	NagaStreamWatcher *windowClassWatcher()
-	{
-		return windowClassStreamWatcher;
-	}
 }
 
 inline bool windowClassChanged()
@@ -85,9 +80,6 @@ inline void newWindowClassBaseline()
 // the process.
 inline void initWindowClassWatcher()
 {
-	if (windowClassStreamWatcher == nullptr)
-	{
-		windowClassStreamWatcher = new NagaStreamWatcher(resolveFocusClassSignalDir, FOCUS_CLASS_SIGNAL_NAME);
-		windowClassStreamWatcher->startWatching();
-	}
+	windowClassStreamWatcher = new NagaStreamWatcher(resolveFocusClassSignalDir, FOCUS_CLASS_SIGNAL_NAME);
+	windowClassStreamWatcher->startWatching();
 }
