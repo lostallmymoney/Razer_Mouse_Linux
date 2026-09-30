@@ -23,7 +23,6 @@ void platformRunAndWrite(const string &macroContent)
 	constexpr size_t DotoolCommandSizeLimit = 65536;
 	string currentLine;
 	FILE *fp = pipe.get();
-	size_t counter = 0;
 	for (int ch = fgetc(fp); ch != EOF; ch = fgetc(fp))
 	{
 		if (ch == '\n')
@@ -31,7 +30,6 @@ void platformRunAndWrite(const string &macroContent)
 			if (!currentLine.empty())
 			{
 				writeNagaDotoolCommand("type " + currentLine);
-				counter = 0;
 				currentLine.clear();
 			}
 			writeNagaDotoolCommand("key enter");
@@ -40,11 +38,9 @@ void platformRunAndWrite(const string &macroContent)
 		else
 		{
 			currentLine.push_back(static_cast<char>(ch));
-			counter++;
-			if (counter >= DotoolCommandSizeLimit)
+			if (currentLine.size() >= DotoolCommandSizeLimit)
 			{
 				writeNagaDotoolCommand("type " + currentLine);
-				counter = 0;
 				currentLine.clear();
 			}
 		}
