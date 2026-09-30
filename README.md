@@ -100,7 +100,7 @@ naga edit
 ## 📦 Dependencies
 ### Wayland  
 ```bash
-sudo apt install g++ nano pkexec procps wget gnome-shell-extension-prefs dbus-x11 curl libdbus-1-dev golang-go
+sudo apt install g++ nano pkexec procps wget gnome-shell-extension-prefs golang-go
 ```
 
 ### X11  

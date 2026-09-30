@@ -12,8 +12,14 @@ sudo rm -vf /usr/local/bin/nagaDotool /usr/local/bin/nagaDotoolc /usr/local/bin/
 sudo rm -rvf /run/nagaProtected
 sudo rm -vf /etc/tmpfiles.d/nagaProtected.conf
 
-# Note: the Focus Class Fetcher V4 extension is standalone and keeps its own
-# lifecycle; it is intentionally left installed.
+# The extension is per-user session state: running gnome-extensions under sudo
+# would act on root's own (nonexistent) session instead of the real user's.
+gnome-extensions disable focus-class-fetcher@lostallmymoney >/dev/null 2>&1
+gnome-extensions uninstall -q focus-class-fetcher@lostallmymoney >/dev/null 2>&1
+# Drop the extension's signal dir for the user running this uninstall.
+rm -rf "/run/user/$(id -u)/focusClassFetcher"
+
+
 sudo groupdel razerInputGroup 2>/dev/null || true
 
 sudo rm -vf /usr/local/bin/nagaX11
