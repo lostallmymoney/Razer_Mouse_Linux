@@ -1,0 +1,2 @@
+# Installer download cache: purged before each install, kept afterwards.
+temp/

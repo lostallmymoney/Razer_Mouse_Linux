@@ -47,8 +47,8 @@ if [ "$NAGA" = "nagaWayland" ]; then
 	print_green "Starting Wayland"
 
 	if command -v gnome-extensions >/dev/null 2>&1; then
-		if ! gnome-extensions info window-calls-extended@hseliger.eu | grep -q "Enabled: Yes"; then
-			gnome-extensions enable window-calls-extended@hseliger.eu
+		if ! gnome-extensions info focus-class-fetcher@lostallmymoney | grep -q "Enabled: Yes"; then
+			gnome-extensions enable focus-class-fetcher@lostallmymoney
 		fi
 	fi
 

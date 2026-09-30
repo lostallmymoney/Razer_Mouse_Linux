@@ -49,6 +49,51 @@ inline Window get_focus_window(Display *d)
     }
 }
 
+inline Window windowClassBaselineWindow = None;
+inline Window lastSeenFocusWindow = None;
+inline std::string windowClassCache;
+
+// Has the focused window changed since the last baseline? One XGetInputFocus;
+// on a real change the full tree walk + class fetch runs here and the class is
+// cached, so getActiveWindowTitle() never fetches twice. A changed focus
+// window may still resolve to the same class; that just re-applies.
+
+inline bool windowClassChanged()
+{
+    Display *d = open_display();
+    XSetErrorHandler(handle_error);
+    lastSeenFocusWindow = get_focus_window(d);
+    if (lastSeenFocusWindow == windowClassBaselineWindow)
+    {
+        XCloseDisplay(d);
+        return false;
+    }
+    const Window topWindow = get_top_window(d, lastSeenFocusWindow);
+    const Window namedWindow = get_named_window(d, topWindow);
+    windowClassCache = print_window_class(d, namedWindow); // closes the display
+    return true;
+}
+
+// Hands back the class fetched by the last windowClassChanged(); only valid
+// after that call reported a change.
+inline std::string getActiveWindowTitle()
+{
+    return windowClassCache;
+}
+
+// The reported change has been treated: the current focus window is the new baseline.
+inline void newWindowClassBaseline()
+{
+    windowClassBaselineWindow = lastSeenFocusWindow;
+}
+
+// The locale is process-global and only needed for XmbTextPropertyToTextList:
+// set it once here instead of on every poll (setlocale is slow and MT-unsafe).
+inline void initWindowClassWatcher()
+{
+    setlocale(LC_ALL, ""); // see man locale
+}
+
 // get the top window.
 // a top window have the following specifications.
 //  * the start window is contained the descendent windows.
@@ -126,22 +171,4 @@ inline std::string print_window_class(Display *d, Window w)
     XFree(clas);
     XCloseDisplay(d);
     return result;
-}
-
-inline std::string getActiveWindowTitle()
-{
-    Display *d;
-    Window w;
-
-    // for XmbTextPropertyToTextList
-    setlocale(LC_ALL, ""); // see man locale
-
-    d = open_display();
-    XSetErrorHandler(handle_error);
-
-    // get active window
-    w = get_focus_window(d);
-    w = get_top_window(d, w);
-    w = get_named_window(d, w);
-    return print_window_class(d, w);
 }

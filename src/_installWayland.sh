@@ -68,14 +68,19 @@ printf "Compiled nagaWayland...\n"
 sudo mv ./src/nagaWayland /usr/local/bin/
 sudo chmod 755 /usr/local/bin/nagaWayland
 
+# Everything this installer downloads (dotool, Focus Class Fetcher) goes into
+# ./temp and is kept after the install; the folder is purged before each install.
+rm -rf temp
+mkdir -p temp
+
 printf "Installing dotool :\n"
 
 sleep 0.1
-wget https://git.sr.ht/~geb/dotool/archive/27ec57e52012ffcb1e8c6419278fbf4b6311e2c2.tar.gz -O dotool.tar.gz
-tar -xf dotool.tar.gz >/dev/null
-mv -fu dotool-27ec57e52012ffcb1e8c6419278fbf4b6311e2c2 dotool >/dev/null
+wget https://git.sr.ht/~geb/dotool/archive/27ec57e52012ffcb1e8c6419278fbf4b6311e2c2.tar.gz -O temp/dotool.tar.gz
+tar -xf temp/dotool.tar.gz -C temp >/dev/null
+mv -fu temp/dotool-27ec57e52012ffcb1e8c6419278fbf4b6311e2c2 temp/dotool >/dev/null
 sleep 0.1
-cd dotool || exit 1
+cd temp/dotool || exit 1
 GOFLAGS="${GOFLAGS:+$GOFLAGS }-buildvcs=false" ./build.sh
 dotool_stage="$(mktemp -d)"
 if [ ! -d "$dotool_stage" ]; then
@@ -119,13 +124,42 @@ cleanup_dotool_stage
 trap - EXIT INT TERM
 dotool_stage=""
 
-cd ..
+cd ../..
 sleep 0.1
-rm -rf dotool* >/dev/null
 
-EXT_ZIP="./src/window-calls-extended@hseliger.eu.shell-extension.zip"
-gnome-extensions enable window-calls-extended@hseliger.eu >/dev/null 2>&1
-gnome-extensions install "$EXT_ZIP" --force
+# Window class detection comes from the standalone Focus Class Fetcher
+# extension. It is optional: on platforms where GNOME extensions do not
+# work, a warning is printed and the install continues without it.
+install_focus_class_fetcher() {
+	fetcher_dir="temp/focus-class-fetcher"
+	if command -v git >/dev/null 2>&1; then
+		git clone --depth 1 https://github.com/lostallmymoney/focus-class-fetcher.git "$fetcher_dir" || return 1
+	else
+		# No git: download the tarball, like dotool above.
+		for branch in main master; do
+			if wget "https://github.com/lostallmymoney/focus-class-fetcher/archive/refs/heads/$branch.tar.gz" -O "$fetcher_dir.tar.gz"; then
+				break
+			fi
+			rm -f "$fetcher_dir.tar.gz"
+		done
+		[ -f "$fetcher_dir.tar.gz" ] || return 1
+		tar -xf "$fetcher_dir.tar.gz" -C temp >/dev/null || return 1
+		mv -fu "$fetcher_dir"-*/ "$fetcher_dir" || return 1
+	fi
+	sh "$fetcher_dir/install.sh" || return 1
+}
+
+printf "Installing Focus Class Fetcher extension:\n"
+if ! install_focus_class_fetcher; then
+	printf "\033[0;33m"
+	printf "================================================================\n"
+	printf "WARNING: the Focus Class Fetcher extension could not be installed.\n"
+	printf "Window-class detection is unavailable on this system: per-window\n"
+	printf "keymaps will not work. You can install it manually later from\n"
+	printf "https://github.com/lostallmymoney/focus-class-fetcher\n"
+	printf "================================================================\n"
+	printf "\033[0m\n"
+fi
 
 _dir="/home/$USER/.naga"
 mkdir -p "$_dir"

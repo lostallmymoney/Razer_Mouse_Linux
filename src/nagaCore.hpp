@@ -372,6 +372,9 @@ using WindowConfigMap = unordered_map<string, WindowConfigLock>;
  * Must be implemented by each platform (X11 or Wayland)
  */
 extern string getActiveWindowTitle();
+extern bool windowClassChanged();
+extern void newWindowClassBaseline();
+extern void initWindowClassWatcher();
 extern string conf_file;
 extern void platformRunAndWrite(const string &macroContent);
 extern void initAndRegisterPlatformCommands();
@@ -380,7 +383,6 @@ namespace configSwitcher
 {
 	bool scheduledReMap = false, winConfigActive = false, scheduledUnlock = false, forceRecheck = false, notifyOnNextLoad = false;
 	const string *currentConfigName = nullptr, *scheduledReMapName = nullptr, *bckConfName = nullptr;
-	string lastWindowClassChecked;
 	WindowConfigMap configWindowAndLockMap;
 	unordered_map<string, WindowConfigMap::iterator> windowClassCache;
 	// Keys owned by configWindowAndLockMap: element refs survive a rehash, iterators do not.
@@ -464,18 +466,26 @@ namespace configSwitcher
 
 	static void checkForWindowConfig()
 	{
-		const string currAppClass(getActiveWindowTitle());
 		lock_guard<mutex> guard(configSwitcherMutex);
-		if (currAppClass != lastWindowClassChecked || forceRecheck)
+		if (!windowClassChanged())
 		{
-			if (currAppClass != lastWindowClassChecked)
+			// No window change: only a forced recheck (config mapping changed,
+			// not the window) needs work — re-resolve the current class.
+			if (forceRecheck)
 			{
-				clog << "\033[35mInfo : WindowName : " << currAppClass << "\033[0m" << '\n';
-				lastWindowClassChecked = currAppClass;
+				forceRecheck = false;
+				applyWindowConfig(resolveWindowMatch(getActiveWindowTitle()));
 			}
+		}
+		else
+		{
+			// Class changed: one fetch, lifetime-extended on the reference —
+			// log and apply share it, still exactly one copy.
+			const string &windowClass = getActiveWindowTitle();
+			clog << "\033[35mInfo : WindowName : " << windowClass << "\033[0m" << '\n';
 			forceRecheck = false;
-
-			applyWindowConfig(resolveWindowMatch(currAppClass));
+			applyWindowConfig(resolveWindowMatch(windowClass));
+			newWindowClassBaseline();
 		}
 	}
 
@@ -1471,6 +1481,7 @@ namespace NagaDaemon
 		initDevices();
 		registerCoreCommands();
 		initAndRegisterPlatformCommands();
+		initWindowClassWatcher();
 		initConf();
 		std::ignore = nagaSettings::notificationIconPath();
 		configSwitcher::scheduleReMap(mapConfig);

@@ -1,198 +1,101 @@
 #pragma once
 
-#include <dbus/dbus.h>
-#include <cstdlib>
-#include <iostream>
-#include <mutex>
+#include <dirent.h>
 #include <string>
+#include <unistd.h>
+
+#include "nagaStreamWatcher.hpp"
 
 namespace
 {
-	std::string currentSessionBusAddress()
-	{
-		if (const char *runtime = getenv("XDG_RUNTIME_DIR"); runtime && *runtime)
-			return std::string("unix:path=") + runtime + "/bus";
-		return {};
-	}
+constexpr const char *FOCUS_CLASS_SIGNAL_NAME = "focusClassFetcher-pipe";
 
-	DBusConnection *openSessionBusConnection(DBusError &error)
+// Root has no session of its own: find the human login's runtime dir by
+// scanning /run/user. UIDs below 1000 are system users (gdm, ...), so the
+// smallest UID >= 1000 wins. Empty while nobody is logged in.
+std::string loginUserRuntimeDir()
+{
+	std::string loginUid;
+	DIR *runUserDir = opendir("/run/user");
+	if (runUserDir != nullptr)
 	{
-		DBusConnection *connection = nullptr;
-
-		const std::string busAddress = currentSessionBusAddress();
-		if (!busAddress.empty())
+		while (const dirent *entry = readdir(runUserDir))
 		{
-			connection = dbus_connection_open_private(busAddress.c_str(), &error);
-			if (connection)
+			const char *name = entry->d_name;
+			bool numeric = name[0] != '\0';
+			for (const char *digit = name; numeric && *digit != '\0'; ++digit)
+				numeric = *digit >= '0' && *digit <= '9';
+			if (numeric)
 			{
-				dbus_connection_set_exit_on_disconnect(connection, FALSE);
-				if (!dbus_bus_register(connection, &error))
-				{
-					dbus_connection_close(connection);
-					dbus_connection_unref(connection);
-					dbus_error_free(&error);
-					dbus_error_init(&error);
-					connection = nullptr;
-				}
+				const unsigned long uid = std::stoul(name);
+				if (uid >= 1000 && (loginUid.empty() || uid < std::stoul(loginUid)))
+					loginUid = name;
 			}
 		}
-
-		if (!connection)
-		{
-			connection = dbus_bus_get_private(DBUS_BUS_SESSION, &error);
-			if (connection)
-				dbus_connection_set_exit_on_disconnect(connection, FALSE);
-		}
-
-		return connection;
+		closedir(runUserDir);
 	}
+	return loginUid.empty() ? std::string() : "/run/user/" + loginUid + "/focusClassFetcher";
+}
 
-	void initDbusThreads()
+// Resolves the signal directory for the watcher thread: the thread calls this
+// until it returns a valid path, then caches it. Empty while nobody is logged
+// in (root service case). A root service has no session of its own and must
+// never trust $XDG_RUNTIME_DIR (systemd doesn't set it for plain system
+// services, but a stray Environment= or sudo -E could plant a wrong one).
+std::string resolveFocusClassSignalDir()
+{
+	if (getuid() != 0)
 	{
-		static std::once_flag once;
-		std::call_once(once, []
-						{ dbus_threads_init_default(); });
+		const char *runtimeDir = getenv("XDG_RUNTIME_DIR");
+		if (runtimeDir != nullptr && runtimeDir[0] != '\0')
+			return std::string(runtimeDir) + "/focusClassFetcher";
+		return "/run/user/" + std::to_string(getuid()) + "/focusClassFetcher";
 	}
+	return loginUserRuntimeDir();
+}
 
-	// Single process-wide connection, reused until it dies. A dead or missing
-	// bus is detected and a replacement is opened at the current address, so a
-	// session restart (gnome-shell crash, logout/login, resume) is self-healed.
-	std::mutex busMutex;
-	DBusConnection *cachedBus = nullptr;
+// Built once; the watcher thread resolves the directory itself and waits for
+// it to exist. Single-threaded by contract (checkForWindowConfig holds
+// configSwitcherMutex), so a plain pointer is enough. Outlives the process.
+NagaStreamWatcher *windowClassStreamWatcher = nullptr;
 
-	DBusConnection *acquireSessionBusConnection(DBusError &error)
+NagaStreamWatcher *windowClassWatcher()
+{
+	if (windowClassStreamWatcher == nullptr)
 	{
-		initDbusThreads();
-		std::lock_guard<std::mutex> lock(busMutex);
-
-		if (cachedBus && dbus_connection_get_is_connected(cachedBus))
-		{
-			dbus_connection_ref(cachedBus);
-			return cachedBus;
-		}
-
-		if (cachedBus)
-		{
-			dbus_connection_close(cachedBus);
-			dbus_connection_unref(cachedBus);
-			cachedBus = nullptr;
-		}
-
-		cachedBus = openSessionBusConnection(error);
-		if (cachedBus)
-			dbus_connection_ref(cachedBus);
-
-		return cachedBus;
+		windowClassStreamWatcher = new NagaStreamWatcher(resolveFocusClassSignalDir, FOCUS_CLASS_SIGNAL_NAME);
+		windowClassStreamWatcher->startWatching();
 	}
+	return windowClassStreamWatcher;
+}
+}
 
-	void releaseSessionBusConnection(DBusConnection *connection)
-	{
-		dbus_connection_unref(connection);
-	}
-
-	void invalidateSessionBusConnection(DBusConnection *connection)
-	{
-		std::lock_guard<std::mutex> lock(busMutex);
-		if (cachedBus == connection)
-		{
-			dbus_connection_close(cachedBus);
-			dbus_connection_unref(cachedBus);
-			cachedBus = nullptr;
-		}
-	}
-
-	void logDbusMessage(const char *color, const char *tag, const std::string &message)
-	{
-		static std::string lastMessage;
-		if (lastMessage == message)
-			return;
-		lastMessage = message;
-		std::cerr << "\033[" << color << "m" << tag << message << "\033[0m" << '\n';
-	}
-
-	void logDbusError(const char *tag, const DBusError &error)
-	{
-		logDbusMessage("91", tag, error.message);
-	}
-
-	void logDbusWarning(const char *message)
-	{
-		logDbusMessage("93", "Warning : ", message);
-	}
+// Hot path: one null check (predictable once resolved) + one atomic load.
+// No syscalls, no locks once resolved.
+inline bool windowClassChanged()
+{
+	NagaStreamWatcher *watcher = windowClassWatcher();
+	return watcher != nullptr && watcher->changed();
 }
 
 inline std::string getActiveWindowTitle()
 {
-	constexpr const char *DB_INTERFACE = "org.gnome.Shell.Extensions.WindowsExt";
-	constexpr const char *DB_DESTINATION = "org.gnome.Shell";
-	constexpr const char *DB_PATH = "/org/gnome/Shell/Extensions/WindowsExt";
-	constexpr const char *DB_METHOD = "FocusClass";
+	NagaStreamWatcher *watcher = windowClassWatcher();
+	return watcher != nullptr ? watcher->cachedContents() : std::string();
+}
 
-	DBusError error;
-	dbus_error_init(&error);
+// The reported change has been treated: the current contents are the new baseline.
+inline void newWindowClassBaseline()
+{
+	NagaStreamWatcher *watcher = windowClassWatcher();
+	if (watcher != nullptr)
+		watcher->renewBaseline();
+}
 
-	DBusConnection *connection = acquireSessionBusConnection(error);
-	if (!connection)
-	{
-		logDbusError("Error : Connecting to bus: ", error);
-		dbus_error_free(&error);
-		return {};
-	}
-
-	DBusMessage *message = dbus_message_new_method_call(
-		DB_DESTINATION,
-		DB_PATH,
-		DB_INTERFACE,
-		DB_METHOD);
-
-	if (!message)
-	{
-		std::cerr << "\033[91mError : Creating DBus message\033[0m\n";
-		releaseSessionBusConnection(connection);
-		return {};
-	}
-
-	DBusMessage *reply = dbus_connection_send_with_reply_and_block(
-		connection,
-		message,
-		-1,
-		&error);
-
-	dbus_message_unref(message);
-
-	bool wasDisconnected = dbus_error_is_set(&error) && dbus_error_has_name(&error, DBUS_ERROR_DISCONNECTED);
-	releaseSessionBusConnection(connection);
-	if (wasDisconnected)
-		invalidateSessionBusConnection(connection);
-
-	if (dbus_error_is_set(&error))
-	{
-		if (wasDisconnected)
-			logDbusWarning("DBus session connection was lost, attempting to re-establish session");
-		else
-			logDbusError("Error : Calling DBus method: ", error);
-		dbus_error_free(&error);
-		return {};
-	}
-
-	char *result = nullptr;
-
-	if (!dbus_message_get_args(
-			reply,
-			&error,
-			DBUS_TYPE_STRING,
-			&result,
-			DBUS_TYPE_INVALID))
-	{
-		logDbusError("Error : Reading DBus reply: ", error);
-		dbus_error_free(&error);
-		dbus_message_unref(reply);
-		return {};
-	}
-
-	std::string output = result ? result : "";
-
-	dbus_message_unref(reply);
-
-	return output;
+// First resolution attempt at daemon startup; the poll loop keeps retrying
+// until the directory exists, then the watcher thread runs for the life of
+// the process.
+inline void initWindowClassWatcher()
+{
+	windowClassWatcher();
 }
