@@ -62,6 +62,7 @@ inline bool windowClassChanged()
 {
     Display *d = open_display();
     XSetErrorHandler(handle_error);
+    xerror = False;
     lastSeenFocusWindow = get_focus_window(d);
     if (lastSeenFocusWindow == windowClassBaselineWindow)
     {
