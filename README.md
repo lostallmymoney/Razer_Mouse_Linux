@@ -200,6 +200,8 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `keyReleaseOnRelease` – Release key on button release
 - `keyPressOnRelease` – Hold key on button release
 - `keyReleaseOnPress` – Release key on button press
+- `keyClick` – Press key once on press
+- `keyClickOnRelease` – Press key once on release
 - `run` – Run a shell command asynchronously *see multiline
 - `run2` – Run a shell command synchronously
 - `runOnRelease` – Run command on release asynchronously
@@ -212,8 +214,6 @@ Looking for higher-level building blocks? Check out [Functions, Loops & Contexts
 - `runAndWrite2` – Same as above, synchronous
 - `runAndWriteOnRelease` – Run a command and write its output live to screen on release
 - `runAndWriteOnRelease2` – Same as above, synchronous
-- `keyClick` – Press key once on press
-- `keyClickOnRelease` – Press key once on release
 - `function` / `functionOnRelease` – Call a predefined function
 - `loop` – Start/stop a predefined loop inline (synchronous)
 - `loop2` – Start a predefined loop in a detached thread (asynchronous)
